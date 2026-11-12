@@ -1,0 +1,128 @@
+name: Shreddish
+
+options:
+  bundleIdPrefix: app.shreddish
+  deploymentTarget:
+    iOS: "26.0"
+  developmentLanguage: fr
+  createIntermediateGroups: true
+  groupSortPosition: top
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    SWIFT_STRICT_CONCURRENCY: complete
+    TARGETED_DEVICE_FAMILY: "1"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    CODE_SIGN_STYLE: Automatic
+    LOCALIZATION_PREFERS_STRING_CATALOGS: YES
+    SWIFT_EMIT_LOC_STRINGS: YES
+    ENABLE_USER_SCRIPT_SANDBOXING: NO
+    DEAD_CODE_STRIPPING: YES
+    ALWAYS_SEARCH_USER_PATHS: NO
+  configs:
+    Debug:
+      ONLY_ACTIVE_ARCH: YES
+
+packages:
+  ShreddishCore:
+    path: Packages/ShreddishCore
+
+targets:
+  Shreddish:
+    type: application
+    platform: iOS
+    sources:
+      - path: App
+        excludes:
+          - "Info.plist"
+    dependencies:
+      - package: ShreddishCore
+    # Builds Debug : secrets locaux optionnels (Config/Secrets.example.xcconfig) ; Release jamais.
+    configFiles:
+      Debug: Config/Debug.xcconfig
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleDisplayName: Shreddish
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        CFBundleDevelopmentRegion: fr
+        CFBundleLocalizations: [fr]
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        ITSAppUsesNonExemptEncryption: false
+        # Debug seulement (research R13) : vide sauf si Config/Secrets.xcconfig la définit.
+        ShreddishOpenAIDevKey: $(OPENAI_DEV_KEY)
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.shreddish
+        PRODUCT_NAME: Shreddish
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    preBuildScripts:
+      - name: SwiftLint
+        basedOnDependencyAnalysis: false
+        script: |
+          export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin:$HOME/.local/bin"
+          if command -v swiftlint >/dev/null 2>&1; then
+            cd "${SRCROOT}" && swiftlint lint --config .swiftlint.yml --quiet
+          else
+            echo "warning: SwiftLint non installé"
+          fi
+
+  AppTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: AppTests
+    dependencies:
+      - target: Shreddish
+      - package: ShreddishCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.shreddish.apptests
+        PRODUCT_NAME: AppTests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Shreddish.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Shreddish"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+
+  UITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: UITests
+    dependencies:
+      - target: Shreddish
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.shreddish.uitests
+        PRODUCT_NAME: UITests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: Shreddish
+
+schemes:
+  Shreddish:
+    build:
+      targets:
+        Shreddish: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+      gatherCoverageData: true
+      targets:
+        - AppTests
+    archive:
+      config: Release
+
+  Shreddish-UITests:
+    build:
+      targets:
+        Shreddish: all
+        UITests: [test]
+    test:
+      config: Debug
+      targets:
+        - UITests

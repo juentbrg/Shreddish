@@ -1,0 +1,51 @@
+# SwiftLint : pré-build de la cible Shreddish (project.yml). Règles reprises de Nowtick.
+included:
+  - App
+  - Packages/ShreddishCore/Sources
+  - Packages/ShreddishCore/Tests
+  - AppTests
+  - UITests
+excluded:
+  - Packages/ShreddishCore/.build
+  - "*.xcodeproj"
+
+disabled_rules:
+  - todo
+  - trailing_comma
+
+opt_in_rules:
+  - empty_count
+  - first_where
+  - closure_spacing
+  - redundant_nil_coalescing
+  - sorted_first_last
+  - unneeded_parentheses_in_closure_argument
+
+line_length:
+  warning: 140
+  error: 200
+  ignores_comments: true
+  ignores_urls: true
+
+identifier_name:
+  min_length: 1
+  max_length: 60
+
+type_body_length:
+  warning: 400
+  error: 600
+
+file_length:
+  warning: 600
+  error: 1000
+
+function_body_length:
+  warning: 80
+  error: 150
+
+function_parameter_count:
+  warning: 8
+  error: 10
+
+nesting:
+  type_level: 3

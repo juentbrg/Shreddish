@@ -1,0 +1,2 @@
+// Builds Debug seulement. Secrets locaux optionnels, jamais versionnés (research R13).
+#include? "Secrets.xcconfig"

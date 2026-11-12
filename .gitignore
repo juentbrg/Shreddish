@@ -1,0 +1,21 @@
+# macOS
+.DS_Store
+
+# Claude Code local settings
+.claude/settings.local.json
+
+# Xcode
+xcuserdata/
+DerivedData/
+*.xcuserstate
+build/
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# XcodeGen output (regenerate with `xcodegen generate --spec ios/project.yml`)
+ios/*.xcodeproj/
+
+# Local secrets (developer OpenAI key, research R13)
+ios/Config/Secrets.xcconfig
