@@ -44,6 +44,7 @@ struct WeeklySummaryView: View {
                 }
             }
         }
+        .themedList()
         .navigationTitle("Bilan de la semaine")
     }
 }

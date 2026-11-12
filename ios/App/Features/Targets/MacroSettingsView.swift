@@ -39,6 +39,7 @@ struct MacroSettingsView: View {
                 }
             }
         }
+        .themedList()
         .navigationTitle("Macros")
     }
 

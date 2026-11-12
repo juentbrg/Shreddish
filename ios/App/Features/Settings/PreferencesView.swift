@@ -17,6 +17,7 @@ struct PreferencesView: View {
                 ModelSection(preferences: preferences)
             }
         }
+        .themedList()
         .navigationTitle("Préférences repas")
         .keyboardDoneButton()
         .onAppear {
@@ -82,14 +83,16 @@ private struct BudgetSection: View {
                 Text("300 €").font(.caption)
             }
             .accessibilityValue(Format.euros(preferences.weeklyBudget))
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    ForEach([30.0, 40, 50, 60, 70, 80, 100, 120], id: \.self) { preset in
-                        Button(Format.euros(preset).replacingOccurrences(of: ",00", with: "")) { budget.wrappedValue = preset }
-                            .buttonStyle(.bordered)
-                            .tint(preferences.weeklyBudget == preset ? .accentColor : .secondary)
-                            .accessibilityIdentifier("budgetPreset-\(Int(preset))")
-                    }
+            HStack(spacing: 6) {
+                ForEach([40.0, 50, 60, 80, 100], id: \.self) { preset in
+                    let isSelected = preferences.weeklyBudget == preset
+                    Button("\(Int(preset)) €") { budget.wrappedValue = preset }
+                        .font(Theme.text(.subheadline, .semibold))
+                        .foregroundStyle(isSelected ? Theme.onGreen : Theme.ink)
+                        .frame(maxWidth: .infinity, minHeight: 40)
+                        .background(isSelected ? Theme.green : Theme.paper, in: Capsule())
+                        .buttonStyle(.borderless)
+                        .accessibilityIdentifier("budgetPreset-\(Int(preset))")
                 }
             }
             Picker("Dépassement toléré", selection: Binding(get: { preferences.tolerance }, set: { preferences.tolerance = $0 })) {

@@ -11,12 +11,16 @@ struct ShreddishApp: App {
         let model = AppModel.live()
         _model = State(initialValue: model)
         container = ModelContainerFactory.make(inMemory: model.isUITest)
+        Theme.applyAppearance()
     }
 
     var body: some Scene {
         WindowGroup {
             RootView()
                 .environment(model)
+                .tint(Theme.green)
+                .font(Theme.text())
+                .foregroundStyle(Theme.ink)
         }
         .modelContainer(container)
     }

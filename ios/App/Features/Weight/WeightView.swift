@@ -23,6 +23,7 @@ struct WeightView: View {
                 if entries.count >= 2 { chartSection }
                 historySection
             }
+            .themedList()
             .navigationTitle("Poids")
             .keyboardDoneButton()
         }

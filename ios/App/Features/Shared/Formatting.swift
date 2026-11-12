@@ -41,6 +41,26 @@ enum Format {
         return date.formatted(format.locale(locale)).capitalizedFirst
     }
 
+    /// « JEU. » pour le sélecteur de jours.
+    static func weekdayShort(_ day: LocalDay) -> String {
+        day.startDate(calendar: frenchCalendar)
+            .formatted(Date.FormatStyle(date: .omitted, time: .omitted).weekday(.abbreviated).locale(locale))
+            .replacingOccurrences(of: ".", with: "")
+            .uppercased()
+    }
+
+    /// « jeudi 12 novembre ».
+    static func weekdayLong(_ day: LocalDay) -> String {
+        day.startDate(calendar: frenchCalendar)
+            .formatted(Date.FormatStyle(date: .omitted, time: .omitted).weekday(.wide).day().month(.wide).locale(locale))
+    }
+
+    private static var frenchCalendar: Calendar {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.locale = locale
+        return calendar
+    }
+
     /// « Du mercredi 11 nov. au mardi 17 nov. »
     static func range(_ plan: WeeklyPlan, calendar: Calendar) -> String {
         let start = day(plan.startDay, calendar: calendar).lowercased()
@@ -194,9 +214,12 @@ struct WarningBadge: View {
 
     var body: some View {
         Label(text, systemImage: systemImage)
-            .font(.caption.weight(.semibold))
-            .foregroundStyle(.orange)
+            .font(Theme.text(.caption, .semibold))
+            .foregroundStyle(Theme.tomato)
             .labelStyle(.titleAndIcon)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(Theme.tomatoSoft, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 }
 
@@ -217,7 +240,7 @@ struct TargetGauge: View {
                     .foregroundStyle(.secondary)
             }
             ProgressView(value: min(value, target * 1.5), total: max(target, 1))
-                .tint(target > 0 && abs(value - target) / target > Totals.offTargetThreshold && value > target ? .orange : .accentColor)
+                .tint(target > 0 && abs(value - target) / target > Totals.offTargetThreshold && value > target ? Theme.tomato : Theme.green)
         }
         .accessibilityElement(children: .combine)
     }

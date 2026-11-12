@@ -21,6 +21,7 @@ struct JournalView: View {
                     )
                 }
             }
+            .themedList()
             .navigationTitle("Journal")
             .toolbar {
                 if let plan = plans.first {

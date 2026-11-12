@@ -16,6 +16,7 @@ struct TargetsView: View {
                     ContentUnavailableView("Profil incomplet", systemImage: "person.crop.circle.badge.exclamationmark")
                 }
             }
+            .themedList()
             .navigationTitle("Mes cibles")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -176,6 +177,7 @@ struct ProfileEditView: View {
                 }
             }
         }
+        .themedList()
         .navigationTitle("Mon profil")
         .keyboardDoneButton()
     }

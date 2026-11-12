@@ -25,6 +25,7 @@ struct PrepSessionView: View {
                 }
             }
         }
+        .themedList()
         .navigationTitle("Batch cooking")
     }
 }
@@ -41,6 +42,7 @@ struct PlanHistoryView: View {
             ForEach(plans) { plan in
                 NavigationLink {
                     WeekPlanList(plan: plan)
+                        .themedList()
                         .navigationTitle(plan.isCurrent ? "Semaine en cours" : "Ancienne semaine")
                 } label: {
                     VStack(alignment: .leading) {
@@ -76,6 +78,7 @@ struct PlanHistoryView: View {
                 ContentUnavailableView("Aucun planning", systemImage: "clock")
             }
         }
+        .themedList()
         .navigationTitle("Historique")
     }
 }

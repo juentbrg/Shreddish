@@ -19,7 +19,7 @@ struct WeekView: View {
                 if let plan = plans.first {
                     WeekPlanList(plan: plan)
                 } else {
-                    emptyState
+                    emptyState.paperBackground()
                 }
             }
             .navigationTitle("Ma semaine")
@@ -101,28 +101,47 @@ struct WeekView: View {
     }
 }
 
-/// Liste des 7 jours d'un planning (courant ou historique).
+/// Planning de 7 jours (courant ou historique) : sélecteur de jour, carte du jour et repas (design « Marché »).
 struct WeekPlanList: View {
     @Environment(AppModel.self) private var model
     @Query var allPreferences: [Preferences]
     let plan: WeeklyPlan
+    @State private var selectedOffset: Int?
+
+    private var days: [DayPlan] { plan.sortedDays }
+
+    private var selectedDay: DayPlan? {
+        let offset = selectedOffset ?? days.first { $0.day == model.clock.today }?.offset ?? 0
+        return days.first { $0.offset == offset } ?? days.first
+    }
 
     var body: some View {
-        List {
-            if plan.isCurrent, let warning = model.warningMessage {
-                Section {
-                    WarningBadge(text: warning)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 18) {
+                if plan.isCurrent, let warning = model.warningMessage {
+                    WarningBadge(text: warning).card()
                 }
+                DayStrip(days: days, selected: selectedDay?.offset, today: model.clock.today) { selectedOffset = $0 }
+                if let day = selectedDay {
+                    DayContent(day: day)
+                }
+                weekCard
             }
-            Section {
-                Text(Format.range(plan, calendar: model.clock.calendar))
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+            .padding(.horizontal, 20)
+            .padding(.bottom, 24)
+        }
+        .paperBackground()
+    }
+
+    private var weekCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            SectionTitle(title: "La semaine", trailing: Format.range(plan, calendar: model.clock.calendar))
+            VStack(alignment: .leading, spacing: 10) {
                 if let targets = plan.targets {
                     LabeledContent("Cible", value: Format.kcal(Double(targets.targetKcal)))
                 }
                 if let preferences = allPreferences.first {
-                    WeekCostRow(cost: plan.sortedDays.reduce(0) { $0 + $1.plannedCostEUR }, preferences: preferences)
+                    WeekCostRow(cost: days.reduce(0) { $0 + $1.plannedCostEUR }, preferences: preferences)
                 }
                 if !plan.prepSessions.isEmpty {
                     NavigationLink {
@@ -132,47 +151,45 @@ struct WeekPlanList: View {
                     }
                 }
             }
-            ForEach(plan.sortedDays) { day in
-                Section {
-                    NavigationLink {
-                        DayView(day: day)
-                    } label: {
-                        DaySummaryRow(day: day, targets: plan.targets)
-                    }
-                    .accessibilityIdentifier("day-\(day.offset)")
-                }
-            }
+            .font(Theme.text(.subheadline))
+            .card()
         }
     }
 }
 
-struct DaySummaryRow: View {
-    @Environment(AppModel.self) private var model
-    let day: DayPlan
-    let targets: NutritionTargets?
+/// Sélecteur des 7 jours.
+struct DayStrip: View {
+    let days: [DayPlan]
+    let selected: Int?
+    let today: LocalDay
+    let select: (Int) -> Void
 
     var body: some View {
-        let totals = day.plannedTotals
-        VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Text(Format.day(day.day, calendar: model.clock.calendar))
-                    .font(.headline)
-                if day.day == model.clock.today {
-                    Text("Aujourd'hui")
-                        .font(.caption.weight(.semibold))
-                        .padding(.horizontal, 6).padding(.vertical, 2)
-                        .background(.tint.opacity(0.15), in: Capsule())
+        HStack(spacing: 6) {
+            ForEach(days) { day in
+                let isSelected = day.offset == selected
+                Button {
+                    select(day.offset)
+                } label: {
+                    VStack(spacing: 2) {
+                        Text(Format.weekdayShort(day.day))
+                            .font(Theme.text(.caption2, .semibold))
+                        Text("\(day.day.day)")
+                            .font(Theme.display(19, .bold, relativeTo: .headline))
+                        Circle()
+                            .fill(day.day == today ? (isSelected ? Theme.onGreen : Theme.tomato) : .clear)
+                            .frame(width: 5, height: 5)
+                    }
+                    .foregroundStyle(isSelected ? Theme.onGreen : Theme.ink)
+                    .frame(maxWidth: .infinity, minHeight: 60)
+                    .background(isSelected ? Theme.green : Theme.card, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                 }
+                .buttonStyle(.plain)
+                .accessibilityLabel(Format.weekdayLong(day.day) + (day.day == today ? ", aujourd'hui" : ""))
+                .accessibilityAddTraits(isSelected ? .isSelected : [])
+                .accessibilityIdentifier("day-\(day.offset)")
             }
-            ForEach(day.sortedMeals) { meal in
-                Text([meal.time, meal.type.label, meal.name].compactMap(\.self).joined(separator: " · "))
-                    .font(.subheadline)
-                    .lineLimit(1)
-            }
-            MacroLine(macros: totals)
-            DayBadges(day: day, targets: targets)
         }
-        .padding(.vertical, 4)
     }
 }
 
@@ -206,9 +223,11 @@ struct WeekCostRow: View {
             LabeledContent("Courses estimées", value: Format.euros(cost))
                 .accessibilityIdentifier("weekCost")
             let budget = Format.euros(preferences.weeklyBudget)
+            ProgressView(value: min(cost, preferences.budgetCeiling), total: max(preferences.budgetCeiling, 1))
+                .tint(cost > preferences.weeklyBudget + 0.005 ? Theme.tomato : Theme.green)
             Text("Budget \(budget) · tolérance \(Format.percent(preferences.tolerance)) · \(preferences.storeName)")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                .font(Theme.text(.caption))
+                .foregroundStyle(Theme.muted)
             if cost > preferences.weeklyBudget + 0.005 {
                 let beyond = cost > preferences.budgetCeiling + 0.005
                 WarningBadge(

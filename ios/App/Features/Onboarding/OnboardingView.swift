@@ -36,6 +36,7 @@ struct OnboardingView: View {
                     .accessibilityIdentifier("computeTargets")
             }
         }
+        .themedList()
         .navigationTitle("Ton profil")
         .keyboardDoneButton()
     }

@@ -26,6 +26,7 @@ struct CalibrationView: View {
                 }
             }
         }
+        .themedList()
         .navigationTitle("Calibration")
     }
 

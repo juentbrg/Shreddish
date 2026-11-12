@@ -48,6 +48,7 @@ struct AddExtraView: View {
                     }
                 }
             }
+            .themedList()
             .navigationTitle("Extra")
             .keyboardDoneButton()
             .navigationBarTitleDisplayMode(.inline)

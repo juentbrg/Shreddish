@@ -40,6 +40,7 @@ struct SettingsView: View {
                     .foregroundStyle(.secondary)
             }
         }
+        .themedList()
         .navigationTitle("Réglages")
         .confirmationDialog("Supprimer toutes tes données ?", isPresented: $confirmErase, titleVisibility: .visible) {
             Button("Tout supprimer", role: .destructive, action: eraseAll)
@@ -99,6 +100,7 @@ struct APIKeyView: View {
                 Section { Text(status).accessibilityIdentifier("keyStatus") }
             }
         }
+        .themedList()
         .navigationTitle("Clé API")
     }
 

@@ -30,7 +30,7 @@ struct RootView: View {
     private var tabs: some View {
         @Bindable var model = model
         return TabView(selection: $model.selectedTab) {
-            Tab("Semaine", systemImage: "fork.knife", value: AppModel.Tab.week) {
+            Tab("Semaine", systemImage: "calendar", value: AppModel.Tab.week) {
                 WeekView()
             }
             Tab("Journal", systemImage: "checklist", value: AppModel.Tab.journal) {
@@ -72,14 +72,14 @@ struct BusyOverlay: View {
                 ProgressView()
                     .controlSize(.large)
                 Text(message)
-                    .font(.headline)
+                    .font(Theme.display(20, .bold, relativeTo: .headline))
                     .multilineTextAlignment(.center)
                 Text("Ça peut prendre jusqu'à une minute.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
             .padding(24)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20))
+            .background(Theme.card, in: RoundedRectangle(cornerRadius: 26, style: .continuous))
             .padding(32)
         }
         .accessibilityElement(children: .combine)
