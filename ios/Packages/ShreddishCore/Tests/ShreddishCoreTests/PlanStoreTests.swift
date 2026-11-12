@@ -68,4 +68,53 @@ struct PlanStoreTests {
                                      macros: MacroTotals(kcal: 300, proteinG: 4, carbsG: 30, fatG: 18), loggedAt: .now))
         #expect(day.actualTotals.kcal == meals[1].kcal + 300)
     }
+
+    // MARK: Spec 006 : semaine à venir
+
+    @Test func upcomingWeekTrimsOverlappingDays() throws {
+        // En cours : jeudi 11 → mercredi 17 ; nouvelle semaine dimanche 15 → samedi 21.
+        let (container, context, targets) = try Self.setup()
+        _ = container
+        let current = try PlanStore.saveWeek(try Fixture.week(), startDay: Self.start, targets: targets, createdAt: .now, in: context)
+        let sunday = Self.start.adding(days: 4)
+        let upcoming = try PlanStore.saveWeek(
+            try Fixture.week(), startDay: sunday, targets: targets, createdAt: .now.addingTimeInterval(60),
+            today: Self.start, in: context
+        )
+        #expect(current.isCurrent)
+        #expect(upcoming.isCurrent)
+        #expect(current.days.count == 4)
+        #expect(current.endDay == Self.start.adding(days: 3))
+        #expect(upcoming.startDay == sunday)
+        #expect(PlanStore.activePlans(in: context).map(\.startDay) == [Self.start, sunday])
+        #expect(PlanStore.focusPlan(PlanStore.activePlans(in: context), today: Self.start) === current)
+        #expect(PlanStore.focusPlan(PlanStore.activePlans(in: context), today: sunday) === upcoming)
+        // Courses de la semaine en cours : 4 jours seulement.
+        let oats = try #require(current.shoppingItems.first { $0.key.hasPrefix("flocon d'avoine") })
+        #expect(oats.totalQuantity == 4 * 80)
+    }
+
+    @Test func weekStartingSameDayReplacesActivePlan() throws {
+        let (container, context, targets) = try Self.setup()
+        _ = container
+        let first = try PlanStore.saveWeek(try Fixture.week(), startDay: Self.start, targets: targets, createdAt: .now, in: context)
+        _ = try PlanStore.saveWeek(
+            try Fixture.week(), startDay: Self.start, targets: targets, createdAt: .now.addingTimeInterval(60),
+            today: Self.start, in: context
+        )
+        #expect(!first.isCurrent)
+        #expect(first.days.count == 7)
+        #expect(PlanStore.activePlans(in: context).count == 1)
+    }
+
+    @Test func endedPlanIsArchivedWhenNextWeekStarts() throws {
+        let (container, context, targets) = try Self.setup()
+        _ = container
+        let first = try PlanStore.saveWeek(try Fixture.week(), startDay: Self.start, targets: targets, createdAt: .now, in: context)
+        _ = try PlanStore.saveWeek(
+            try Fixture.week(), startDay: Self.start.adding(days: 9), targets: targets, createdAt: .now,
+            today: Self.start.adding(days: 8), in: context
+        )
+        #expect(!first.isCurrent)
+    }
 }

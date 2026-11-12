@@ -27,7 +27,10 @@ public final class WeeklyPlan {
     }
 
     public var startDay: LocalDay { LocalDay(key: startDayKey) }
-    public var endDay: LocalDay { startDay.adding(days: 6) }
+    /// Dernier jour : J+6, ou plus tôt si une semaine suivante a repris les derniers jours (spec 006).
+    public var endDay: LocalDay { days.map(\.day).max() ?? startDay.adding(days: 6) }
+
+    public func contains(_ day: LocalDay) -> Bool { startDay <= day && day <= endDay }
 
     public var targets: NutritionTargets? {
         try? JSONDecoder().decode(NutritionTargets.self, from: targetsData)

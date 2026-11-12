@@ -82,9 +82,31 @@ final class OnboardingUITests: XCTestCase {
         let generate = app.buttons["generateWeek"]
         XCTAssertTrue(generate.waitForExistence(timeout: 5))
         generate.tap()
+        let start = app.buttons["startGeneration"]
+        XCTAssertTrue(start.waitForExistence(timeout: 3))
+        start.tap()
         XCTAssertTrue(app.buttons["day-0"].waitForExistence(timeout: 10))
         app.tabBars.buttons["Courses"].tap()
         XCTAssertTrue(app.descendants(matching: .any)["weekCost"].waitForExistence(timeout: 5))
+    }
+
+    /// Spec 006 : une semaine à venir se planifie sans remplacer celle en cours.
+    func testPlanUpcomingWeek() {
+        let app = launch()
+        onboard(app)
+        app.tabBars.buttons["Semaine"].tap()
+        app.buttons["generateWeek"].tap()
+        app.buttons["startGeneration"].tap()
+        XCTAssertTrue(app.buttons["day-0"].waitForExistence(timeout: 10))
+        app.buttons["weekMenu"].tap()
+        app.buttons["newWeek"].tap()
+        let tomorrow = app.buttons.containing(NSPredicate(format: "label BEGINSWITH 'Demain'")).firstMatch
+        XCTAssertTrue(tomorrow.waitForExistence(timeout: 3))
+        tomorrow.tap()
+        app.buttons["startGeneration"].tap()
+        let upcoming = app.buttons.containing(NSPredicate(format: "label BEGINSWITH 'À venir'")).firstMatch
+        XCTAssertTrue(upcoming.waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons.containing(NSPredicate(format: "label BEGINSWITH 'En cours'")).firstMatch.exists)
     }
 
     /// Spec 004 : le planning courant se supprime depuis le menu, après confirmation.
@@ -95,6 +117,9 @@ final class OnboardingUITests: XCTestCase {
         let generate = app.buttons["generateWeek"]
         XCTAssertTrue(generate.waitForExistence(timeout: 5))
         generate.tap()
+        let start = app.buttons["startGeneration"]
+        XCTAssertTrue(start.waitForExistence(timeout: 3))
+        start.tap()
         XCTAssertTrue(app.buttons["day-0"].waitForExistence(timeout: 10))
         app.buttons["weekMenu"].tap()
         app.buttons["deletePlan"].tap()

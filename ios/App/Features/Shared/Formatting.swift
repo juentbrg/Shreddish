@@ -55,6 +55,19 @@ enum Format {
             .formatted(Date.FormatStyle(date: .omitted, time: .omitted).weekday(.wide).day().month(.wide).locale(locale))
     }
 
+    /// « 15 nov. »
+    static func shortDate(_ day: LocalDay) -> String {
+        day.startDate(calendar: frenchCalendar)
+            .formatted(Date.FormatStyle(date: .omitted, time: .omitted).day().month(.abbreviated).locale(locale))
+    }
+
+    /// Prochain jour de la semaine (1 = dimanche … 7 = samedi), strictement après `day`.
+    static func next(weekday: Int, after day: LocalDay) -> LocalDay {
+        let current = frenchCalendar.component(.weekday, from: day.startDate(calendar: frenchCalendar))
+        let delta = (weekday - current + 7) % 7
+        return day.adding(days: delta == 0 ? 7 : delta)
+    }
+
     private static var frenchCalendar: Calendar {
         var calendar = Calendar(identifier: .gregorian)
         calendar.locale = locale

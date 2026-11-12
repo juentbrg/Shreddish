@@ -2,7 +2,7 @@ import ShreddishCore
 import SwiftData
 import SwiftUI
 
-/// Planning courant de 7 jours (US2).
+/// Plannings actifs : semaine en cours et semaine à venir (US2, spec 006).
 struct WeekView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.modelContext) private var context
@@ -10,35 +10,54 @@ struct WeekView: View {
     var plans: [WeeklyPlan]
     @Query var profiles: [Profile]
     @Query var allPreferences: [Preferences]
-    @State private var confirmNewWeek = false
+    @State private var showNewWeek = false
     @State private var confirmDelete = false
+    @State private var selectedPlanID: UUID?
+
+    private var activePlans: [WeeklyPlan] { plans.sorted { $0.startDay < $1.startDay } }
+
+    private var shownPlan: WeeklyPlan? {
+        activePlans.first { $0.id == selectedPlanID } ?? PlanStore.focusPlan(activePlans, today: model.clock.today)
+    }
 
     var body: some View {
         NavigationStack {
             Group {
-                if let plan = plans.first {
-                    WeekPlanList(plan: plan)
+                if let plan = shownPlan {
+                    VStack(spacing: 0) {
+                        if activePlans.count > 1 {
+                            PlanSwitcher(plans: activePlans, selected: plan, today: model.clock.today) { selectedPlanID = $0 }
+                                .padding(.horizontal, 20)
+                                .padding(.bottom, 8)
+                        }
+                        WeekPlanList(plan: plan)
+                            .id(plan.id)
+                    }
+                    .paperBackground()
                 } else {
                     emptyState.paperBackground()
                 }
             }
             .navigationTitle("Ma semaine")
             .toolbar { toolbar }
-            .confirmationDialog(
-                "Générer une nouvelle semaine ?", isPresented: $confirmNewWeek, titleVisibility: .visible
-            ) {
-                Button("Nouvelle semaine à partir d'aujourd'hui") { generate() }
-            } message: {
-                Text("Le planning actuel reste consultable dans l'historique.")
+            .sheet(isPresented: $showNewWeek) {
+                NewWeekSheet(today: model.clock.today, activePlans: activePlans) { start in
+                    showNewWeek = false
+                    generate(from: start)
+                }
+                .presentationDetents([.medium, .large])
             }
             .confirmationDialog(
                 "Supprimer ce planning ?", isPresented: $confirmDelete, titleVisibility: .visible
             ) {
                 Button("Supprimer le planning", role: .destructive) {
-                    if let plan = plans.first { try? PlanStore.deletePlan(plan, in: context) }
+                    if let plan = shownPlan {
+                        selectedPlanID = nil
+                        try? PlanStore.deletePlan(plan, in: context)
+                    }
                 }
             } message: {
-                Text("Repas, liste de courses et extras du journal de ces 7 jours seront supprimés. Tes pesées sont conservées.")
+                Text("Repas, liste de courses et extras du journal de ces jours seront supprimés. Tes pesées sont conservées.")
             }
         }
     }
@@ -48,8 +67,9 @@ struct WeekView: View {
         ToolbarItem(placement: .topBarTrailing) {
             Menu {
                 if !plans.isEmpty {
-                    Button("Nouvelle semaine", systemImage: "arrow.clockwise") { confirmNewWeek = true }
-                        .disabled(model.isBusy)
+                    Button("Planifier une semaine", systemImage: "calendar.badge.plus") { showNewWeek = true }
+                        .disabled(model.isBusy || !model.hasAPIKey)
+                        .accessibilityIdentifier("newWeek")
                     Button("Supprimer ce planning", systemImage: "trash", role: .destructive) { confirmDelete = true }
                         .disabled(model.isBusy)
                         .accessibilityIdentifier("deletePlan")
@@ -77,7 +97,7 @@ struct WeekView: View {
             }
         } actions: {
             if model.hasAPIKey {
-                Button("Générer ma semaine") { generate() }
+                Button("Planifier ma semaine") { showNewWeek = true }
                     .buttonStyle(.borderedProminent)
                     .disabled(model.isBusy)
                     .accessibilityIdentifier("generateWeek")
@@ -89,14 +109,132 @@ struct WeekView: View {
         }
     }
 
-    private func generate() {
+    private func generate(from start: LocalDay) {
         guard let profile = profiles.first, let preferences = allPreferences.first else { return }
         let generator = model.generator
         let context = context
+        selectedPlanID = nil
         Task {
             await model.run("Préparation de ta semaine…") { () async throws(AIError) -> [ValidationIssue] in
-                try await generator.generateWeek(profile: profile, preferences: preferences, in: context)
+                try await generator.generateWeek(profile: profile, preferences: preferences, startDay: start, in: context)
             }
+        }
+    }
+}
+
+/// Bascule entre semaine en cours et semaine à venir.
+struct PlanSwitcher: View {
+    let plans: [WeeklyPlan]
+    let selected: WeeklyPlan
+    let today: LocalDay
+    let select: (UUID) -> Void
+
+    var body: some View {
+        HStack(spacing: 6) {
+            ForEach(plans) { plan in
+                let isSelected = plan.id == selected.id
+                Button {
+                    select(plan.id)
+                } label: {
+                    VStack(spacing: 1) {
+                        Text(plan.contains(today) ? "En cours" : plan.startDay > today ? "À venir" : "Terminée")
+                            .font(Theme.text(.subheadline, .bold))
+                        Text("\(Format.shortDate(plan.startDay)) → \(Format.shortDate(plan.endDay))")
+                            .font(Theme.text(.caption))
+                    }
+                    .foregroundStyle(isSelected ? Theme.paper : Theme.ink)
+                    .frame(maxWidth: .infinity, minHeight: 50)
+                    .background(isSelected ? Theme.ink : Theme.card, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(isSelected ? .isSelected : [])
+            }
+        }
+    }
+}
+
+/// Choix du premier jour de la semaine à planifier : aujourd'hui ou jusqu'à 13 jours plus tard (spec 006).
+struct NewWeekSheet: View {
+    let today: LocalDay
+    let activePlans: [WeeklyPlan]
+    let start: (LocalDay) -> Void
+    @State private var startDay: LocalDay?
+
+    private var chosen: LocalDay { startDay ?? today }
+
+    /// Raccourcis : aujourd'hui, demain, prochain lundi, prochain dimanche, lendemain du dernier planning.
+    private var shortcuts: [(String, LocalDay)] {
+        var items: [(String, LocalDay)] = [("Aujourd'hui", today), ("Demain", today.adding(days: 1))]
+        for (label, weekday) in [("Lundi prochain", 2), ("Dimanche prochain", 1)] {
+            let day = Format.next(weekday: weekday, after: today)
+            if !items.contains(where: { $0.1 == day }) { items.append((label, day)) }
+        }
+        if let last = activePlans.map(\.endDay).max()?.adding(days: 1), last > today,
+           last <= today.adding(days: 13), !items.contains(where: { $0.1 == last }) {
+            items.append(("Après le planning actuel", last))
+        }
+        return items.sorted { $0.1 < $1.1 }
+    }
+
+    private var effect: String {
+        if chosen <= today {
+            return "Le planning actuel passe dans l'historique, ton journal est conservé."
+        }
+        let overlapped = activePlans.filter { $0.contains(chosen) || $0.startDay > chosen }
+        guard !overlapped.isEmpty else { return "Le planning en cours reste tel quel jusqu'à cette date." }
+        return "Les jours prévus à partir du \(Format.weekdayLong(chosen)) sont remplacés ; les jours d'avant restent."
+    }
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) {
+                    SectionTitle(title: "Premier jour")
+                    LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)], spacing: 8) {
+                        ForEach(shortcuts, id: \.1) { label, day in
+                            let isSelected = day == chosen
+                            Button {
+                                startDay = day
+                            } label: {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(label).font(Theme.text(.subheadline, .semibold))
+                                    Text(Format.weekdayLong(day)).font(Theme.text(.caption))
+                                }
+                                .foregroundStyle(isSelected ? Theme.onGreen : Theme.ink)
+                                .frame(maxWidth: .infinity, minHeight: 56, alignment: .leading)
+                                .padding(.horizontal, 12)
+                                .background(
+                                    isSelected ? Theme.green : Theme.card,
+                                    in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                )
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityAddTraits(isSelected ? .isSelected : [])
+                        }
+                    }
+                    DatePicker(
+                        "Autre date",
+                        selection: Binding(
+                            get: { chosen.startDate(calendar: .current) },
+                            set: { startDay = LocalDay(date: $0, calendar: .current) }
+                        ),
+                        in: today.startDate(calendar: .current)...today.adding(days: 13).startDate(calendar: .current),
+                        displayedComponents: .date
+                    )
+                    .font(Theme.text(.body))
+                    .card()
+                    Text("Du \(Format.weekdayLong(chosen)) au \(Format.weekdayLong(chosen.adding(days: 6))). \(effect)")
+                        .font(Theme.text(.footnote))
+                        .foregroundStyle(Theme.muted)
+                    Button("Générer la semaine") { start(chosen) }
+                        .buttonStyle(PillButtonStyle())
+                        .accessibilityIdentifier("startGeneration")
+                }
+                .padding(20)
+            }
+            .paperBackground()
+            .navigationTitle("Planifier")
+            .navigationBarTitleDisplayMode(.inline)
         }
     }
 }

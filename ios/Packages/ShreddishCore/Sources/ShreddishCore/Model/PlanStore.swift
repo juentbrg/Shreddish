@@ -5,22 +5,49 @@ import SwiftData
 /// Appelé seulement avec des DTO déjà validés (`AIOutputValidator`).
 @MainActor
 public enum PlanStore {
+    /// Dernier planning actif créé.
     public static func currentPlan(in context: ModelContext) -> WeeklyPlan? {
-        var descriptor = FetchDescriptor<WeeklyPlan>(
-            predicate: #Predicate { $0.isCurrent }, sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
-        )
-        descriptor.fetchLimit = 1
-        return try? context.fetch(descriptor).first
+        activePlans(in: context).max { $0.createdAt < $1.createdAt }
     }
 
-    /// Enregistre une semaine validée comme planning courant ; l'ancien passe en historique.
+    /// Plannings actifs (en cours ou à venir), triés par date de début (spec 006).
+    public static func activePlans(in context: ModelContext) -> [WeeklyPlan] {
+        let plans = (try? context.fetch(FetchDescriptor<WeeklyPlan>(predicate: #Predicate { $0.isCurrent }))) ?? []
+        return plans.sorted { $0.startDay < $1.startDay }
+    }
+
+    /// Planning affiché par défaut : celui qui contient `today`, sinon le prochain, sinon le plus récent.
+    public static func focusPlan(_ plans: [WeeklyPlan], today: LocalDay) -> WeeklyPlan? {
+        let sorted = plans.sorted { $0.startDay < $1.startDay }
+        return sorted.first { $0.contains(today) }
+            ?? sorted.first { $0.startDay > today }
+            ?? sorted.last
+    }
+
+    /// Enregistre une semaine validée à partir de `startDay` (aujourd'hui ou plus tard, spec 006).
+    /// Semaine qui démarre aujourd'hui : les plannings actifs passent en historique, intacts (journal conservé).
+    /// Semaine à venir : plannings commençant le même jour ou après → historique ; chevauchants → jours futurs
+    /// à partir de `startDay` remplacés ; terminés avant `today` → historique.
     /// Une seule sauvegarde à la fin : aucun état partiel si l'app est fermée avant (edge case spec).
     @discardableResult
     public static func saveWeek(
-        _ week: WeekPlanDTO, startDay: LocalDay, targets: NutritionTargets, createdAt: Date, in context: ModelContext
+        _ week: WeekPlanDTO, startDay: LocalDay, targets: NutritionTargets, createdAt: Date, today: LocalDay? = nil,
+        in context: ModelContext
     ) throws -> WeeklyPlan {
-        let previous = (try? context.fetch(FetchDescriptor<WeeklyPlan>(predicate: #Predicate { $0.isCurrent }))) ?? []
-        for plan in previous { plan.isCurrent = false }
+        let today = today ?? startDay
+        for plan in activePlans(in: context) {
+            if plan.startDay >= startDay || startDay <= today {
+                plan.isCurrent = false
+                continue
+            }
+            let replaced = plan.days.filter { $0.day >= startDay }
+            if !replaced.isEmpty {
+                plan.days = plan.days.filter { $0.day < startDay }
+                for day in replaced { context.delete(day) }
+                rebuildShoppingList(for: plan, in: context)
+            }
+            if plan.endDay < today { plan.isCurrent = false }
+        }
 
         let plan = WeeklyPlan(startDay: startDay, createdAt: createdAt, targets: targets, prepSessions: week.prepSessions)
         context.insert(plan)

@@ -9,10 +9,13 @@ struct JournalView: View {
     var plans: [WeeklyPlan]
     @State private var selectedKey: Int?
 
+    /// Planning du jour (spec 006 : semaine en cours avant la semaine à venir).
+    private var plan: WeeklyPlan? { PlanStore.focusPlan(plans, today: model.clock.today) }
+
     var body: some View {
         NavigationStack {
             Group {
-                if let plan = plans.first {
+                if let plan {
                     content(plan)
                 } else {
                     ContentUnavailableView(
@@ -24,7 +27,7 @@ struct JournalView: View {
             .themedList()
             .navigationTitle("Journal")
             .toolbar {
-                if let plan = plans.first {
+                if let plan {
                     ToolbarItem(placement: .topBarTrailing) {
                         NavigationLink {
                             WeeklySummaryView(plan: plan)

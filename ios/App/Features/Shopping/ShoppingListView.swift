@@ -9,11 +9,18 @@ struct ShoppingListView: View {
     var plans: [WeeklyPlan]
     @Query var allPreferences: [Preferences]
     @State private var aisleFilter: Aisle?
+    @State private var selectedPlanID: UUID?
+    @Environment(AppModel.self) private var model
+
+    private var activePlans: [WeeklyPlan] { plans.sorted { $0.startDay < $1.startDay } }
+
+    /// Par défaut la semaine la plus lointaine : on fait les courses pour la semaine à venir (spec 006).
+    private var shownPlan: WeeklyPlan? { activePlans.first { $0.id == selectedPlanID } ?? activePlans.last }
 
     var body: some View {
         NavigationStack {
             Group {
-                if let plan = plans.first, !plan.shoppingItems.isEmpty {
+                if let plan = shownPlan, !plan.shoppingItems.isEmpty {
                     list(plan)
                 } else {
                     ContentUnavailableView(
@@ -36,6 +43,9 @@ struct ShoppingListView: View {
         let cost = items.reduce(0) { $0 + $1.costEUR }
         return ScrollView {
             VStack(alignment: .leading, spacing: 16) {
+                if activePlans.count > 1 {
+                    PlanSwitcher(plans: activePlans, selected: plan, today: model.clock.today) { selectedPlanID = $0 }
+                }
                 if let preferences = allPreferences.first {
                     Text("\(preferences.storeName) · \(preferences.priceArea.replacingOccurrences(of: ", France", with: ""))")
                         .font(Theme.text(.subheadline))

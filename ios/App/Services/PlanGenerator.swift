@@ -40,10 +40,13 @@ final class PlanGenerator {
 
     // MARK: Semaine
 
-    /// Génère et enregistre 7 jours à partir d'aujourd'hui. Renvoie les avertissements (jours hors cible,
+    /// Génère et enregistre 7 jours à partir de `startDay` (aujourd'hui par défaut, ou plus tard : spec 006). Renvoie les avertissements (jours hors cible,
     /// semaine au-dessus du budget dans la tolérance).
     @discardableResult
-    func generateWeek(profile: Profile, preferences: Preferences, in store: ModelContext) async throws(AIError) -> [ValidationIssue] {
+    func generateWeek(
+        profile: Profile, preferences: Preferences, startDay: LocalDay? = nil, in store: ModelContext
+    ) async throws(AIError) -> [ValidationIssue] {
+        let startDay = max(startDay ?? clock.today, clock.today)
         let ctx = try context(profile: profile, preferences: preferences)
         let week: ValidationResult<WeekPlanDTO>
         do {
@@ -54,7 +57,9 @@ final class PlanGenerator {
         }
         guard let sanitized = week.sanitized else { throw .invalidOutput("Semaine invalide") }
         do {
-            try PlanStore.saveWeek(sanitized, startDay: clock.today, targets: ctx.targets, createdAt: clock.now, in: store)
+            try PlanStore.saveWeek(
+                sanitized, startDay: startDay, targets: ctx.targets, createdAt: clock.now, today: clock.today, in: store
+            )
         } catch {
             throw .unexpected("Enregistrement impossible")
         }

@@ -158,6 +158,19 @@ struct PlanGeneratorTests {
         #expect(plan.sortedDays.reduce(0) { $0 + $1.plannedCostEUR } < 100)
     }
 
+    @Test func upcomingWeekStartsOnChosenDayAndKeepsCurrentWeek() async throws {
+        // Spec 006 : semaine en cours puis semaine à venir dans 3 jours.
+        let transport = ScriptedTransport([.output(try weekText()), .output(try weekText())])
+        let generator = generator(transport)
+        try await generator.generateWeek(profile: profile, preferences: preferences, in: context)
+        let start = clock.today.adding(days: 3)
+        try await generator.generateWeek(profile: profile, preferences: preferences, startDay: start, in: context)
+        let active = PlanStore.activePlans(in: context)
+        #expect(active.count == 2)
+        #expect(active.map(\.startDay) == [clock.today, start])
+        #expect(active[0].days.count == 3)
+    }
+
     @Test func ownedSupplementsAndTrainingReachThePrompt() async throws {
         preferences.supplementList = ["Whey"]
         preferences.trainingTimeMinutes = 18 * 60 + 30
