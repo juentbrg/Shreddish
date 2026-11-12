@@ -4,23 +4,33 @@ import Foundation
 public struct PromptPreferences: Codable, Sendable, Equatable {
     public var mealsPerDay: Int
     public var maxPrepMinutes: Int
-    public var dailyBudgetEur: Double
-    public var excludedFoods: [String]
+    public var weeklyBudgetEur: Double
+    public var budgetTolerance: Double
+    public var allergies: [String]
+    public var dislikedFoods: [String]
     public var likedFoods: [String]
     public var equipment: [String]
     public var batchCooking: Bool
+    public var ingredientAvailability: IngredientAvailability
+    /// Nom de l'enseigne : produits et prix de ce magasin (spec 003).
+    public var store: String
 
     public init(
-        mealsPerDay: Int, maxPrepMinutes: Int, dailyBudgetEur: Double, excludedFoods: [String],
-        likedFoods: [String], equipment: [String], batchCooking: Bool
+        mealsPerDay: Int, maxPrepMinutes: Int, weeklyBudgetEur: Double, budgetTolerance: Double,
+        allergies: [String], dislikedFoods: [String], likedFoods: [String], equipment: [String],
+        batchCooking: Bool, ingredientAvailability: IngredientAvailability, store: String
     ) {
         self.mealsPerDay = mealsPerDay
         self.maxPrepMinutes = maxPrepMinutes
-        self.dailyBudgetEur = dailyBudgetEur
-        self.excludedFoods = excludedFoods
+        self.weeklyBudgetEur = weeklyBudgetEur
+        self.budgetTolerance = budgetTolerance
+        self.allergies = allergies
+        self.dislikedFoods = dislikedFoods
         self.likedFoods = likedFoods
         self.equipment = equipment
         self.batchCooking = batchCooking
+        self.ingredientAvailability = ingredientAvailability
+        self.store = store
     }
 }
 
@@ -59,6 +69,7 @@ public enum PromptBuilder {
         var mealTypeToReplace: MealType?
         var remainingTargets: TargetsPayload?
         var avoidMealNames: [String]?
+        var costLimitEur: Double?
     }
 
     public static func weekInput(targets: MacroTotals, goal: Goal, preferences: PromptPreferences) -> String {
@@ -66,17 +77,18 @@ public enum PromptBuilder {
     }
 
     public static func dayInput(
-        targets: MacroTotals, goal: Goal, preferences: PromptPreferences, dayOffset: Int, avoidMealNames: [String]
+        targets: MacroTotals, goal: Goal, preferences: PromptPreferences, dayOffset: Int, avoidMealNames: [String],
+        costLimitEur: Double
     ) -> String {
         encode(Input(
             task: "day", targets: TargetsPayload(targets), goal: goal, preferences: preferences,
-            dayOffset: dayOffset, avoidMealNames: avoidMealNames
+            dayOffset: dayOffset, avoidMealNames: avoidMealNames, costLimitEur: BudgetMath.cents(costLimitEur)
         ))
     }
 
     public static func replaceMealInput(
         targets: MacroTotals, goal: Goal, preferences: PromptPreferences, dayOffset: Int,
-        existingDayMeals: [MealDTO], mealTypeToReplace: MealType, avoidMealNames: [String]
+        existingDayMeals: [MealDTO], mealTypeToReplace: MealType, avoidMealNames: [String], costLimitEur: Double
     ) -> String {
         let remaining = targets - Totals.planned(existingDayMeals)
         let summaries = existingDayMeals.map {
@@ -88,7 +100,8 @@ public enum PromptBuilder {
         return encode(Input(
             task: "replace_meal", targets: TargetsPayload(targets), goal: goal, preferences: preferences,
             dayOffset: dayOffset, existingDayMeals: summaries, mealTypeToReplace: mealTypeToReplace,
-            remainingTargets: TargetsPayload(remaining), avoidMealNames: avoidMealNames
+            remainingTargets: TargetsPayload(remaining), avoidMealNames: avoidMealNames,
+            costLimitEur: BudgetMath.cents(costLimitEur)
         ))
     }
 
@@ -105,11 +118,20 @@ public enum PromptBuilder {
         et tu réponds uniquement avec le JSON demandé par le schéma.
 
         Règles strictes :
-        - Repas simples, ingrédients courants de supermarché français, budget serré.
+        - Repas simples, budget serré.
         - Respecte strictement max_prep_minutes pour chaque repas.
-        - N'utilise jamais un aliment de excluded_foods, même en trace ou en variante.
+        - allergies : aucun de ces aliments, ni trace, ni dérivé, ni ingrédient qui en contient souvent \
+        (ex. arachide → beurre de cacahuète, huile d'arachide ; lait → beurre, fromage, crème).
+        - disliked_foods : jamais, sous aucune forme.
         - Exactement meals_per_day repas par jour, collations incluses (types : breakfast, lunch, dinner, snack).
-        - Coût total d'un jour ≤ daily_budget_eur (prix moyens France).
+        - Budget : coût total de la semaine ≤ weekly_budget_eur ; dépassement au plus de budget_tolerance \
+        (0,1 = 10 %), à éviter. task "day" ou "replace_meal" : coût total ≤ cost_limit_eur.
+        - store : n'utilise que des produits vendus dans cette enseigne et estime cost_eur avec les prix \
+        pratiqués par cette enseigne en France, marque distributeur en priorité.
+        - ingredient_availability : "everywhere" = uniquement des ingrédients basiques trouvables dans tout \
+        supermarché et en hard discount (Lidl, Aldi), aucun produit de niche (tempeh, seitan, spiruline, levure \
+        maltée, sirop d'agave, farines spéciales, superaliments) ; "supermarket" = rayon d'un grand \
+        supermarché, sans magasin spécialisé ; "specialty" = magasins bio ou spécialisés acceptés.
         - Totaux journaliers à ±5 % de targets.kcal ; protéines ≥ targets.protein_g.
         - Valeurs cohérentes : kcal ≈ 4 × protein_g + 4 × carbs_g + 9 × fat_g.
         - Quantités en g, ml ou piece, pesées crues / non cuites. cost_eur = coût de la quantité utilisée.

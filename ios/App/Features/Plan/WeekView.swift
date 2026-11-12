@@ -108,6 +108,9 @@ struct WeekPlanList: View {
                 if let targets = plan.targets {
                     LabeledContent("Cible", value: Format.kcal(Double(targets.targetKcal)))
                 }
+                if let preferences = allPreferences.first {
+                    WeekCostRow(cost: plan.sortedDays.reduce(0) { $0 + $1.plannedCostEUR }, preferences: preferences)
+                }
                 if !plan.prepSessions.isEmpty {
                     NavigationLink {
                         PrepSessionView(sessions: plan.prepSessions, startDay: plan.startDay)
@@ -121,7 +124,7 @@ struct WeekPlanList: View {
                     NavigationLink {
                         DayView(day: day)
                     } label: {
-                        DaySummaryRow(day: day, targets: plan.targets, budget: allPreferences.first?.dailyBudgetEUR)
+                        DaySummaryRow(day: day, targets: plan.targets)
                     }
                     .accessibilityIdentifier("day-\(day.offset)")
                 }
@@ -134,7 +137,6 @@ struct DaySummaryRow: View {
     @Environment(AppModel.self) private var model
     let day: DayPlan
     let targets: NutritionTargets?
-    let budget: Double?
 
     var body: some View {
         let totals = day.plannedTotals
@@ -155,29 +157,44 @@ struct DaySummaryRow: View {
                     .lineLimit(1)
             }
             MacroLine(macros: totals)
-            DayBadges(day: day, targets: targets, budget: budget)
+            DayBadges(day: day, targets: targets)
         }
         .padding(.vertical, 4)
     }
 }
 
-/// Badges hors cible (> 10 %) et hors budget (> 110 %) d'un jour (FR-009, FR-011).
+/// Badge hors cible (> 10 %) d'un jour (FR-011). Le budget se contrôle à la semaine (spec 003).
 struct DayBadges: View {
     let day: DayPlan
     let targets: NutritionTargets?
-    let budget: Double?
 
     var body: some View {
         let deviation = Totals.deviation(day.plannedTotals, targetKcal: Double(targets?.targetKcal ?? 0))
-        let overBudget = budget.map { day.plannedCostEUR > $0 * 1.1 + 0.0001 } ?? false
-        if Totals.isOffTarget(deviation) || overBudget {
-            HStack(spacing: 12) {
-                if Totals.isOffTarget(deviation) {
-                    WarningBadge(text: "Hors cible \(Format.percent(deviation, signed: true))")
-                }
-                if overBudget {
-                    WarningBadge(text: "Budget \(Format.euros(day.plannedCostEUR))", systemImage: "eurosign.circle.fill")
-                }
+        if Totals.isOffTarget(deviation) {
+            WarningBadge(text: "Hors cible \(Format.percent(deviation, signed: true))")
+        }
+    }
+}
+
+/// Coût estimé de la semaine face au budget et à la tolérance (spec 003, FR-207).
+struct WeekCostRow: View {
+    let cost: Double
+    let preferences: Preferences
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            LabeledContent("Courses estimées", value: Format.euros(cost))
+                .accessibilityIdentifier("weekCost")
+            let budget = Format.euros(preferences.weeklyBudget)
+            Text("Budget \(budget) · tolérance \(Format.percent(preferences.tolerance)) · \(preferences.storeName)")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            if cost > preferences.weeklyBudget + 0.005 {
+                let beyond = cost > preferences.budgetCeiling + 0.005
+                WarningBadge(
+                    text: beyond ? "Au-dessus de la tolérance" : "Au-dessus du budget, dans la tolérance",
+                    systemImage: "eurosign.circle.fill"
+                )
             }
         }
     }

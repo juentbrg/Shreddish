@@ -131,6 +131,28 @@ struct PlanGeneratorTests {
 
     typealias Step = ScriptedTransport.Step
 
+    @Test func weekAboveBudgetCeilingIsRegenerated() async throws {
+        // 28 repas à 5 € = 140 € pour un plafond de 56 € × 1,10 = 61,60 € : refus, nouvel essai.
+        let expensive = try weekText().replacingOccurrences(of: "\"cost_eur\":1.45", with: "\"cost_eur\":5")
+        let transport = ScriptedTransport([.output(expensive), .output(try weekText())])
+        try await generator(transport).generateWeek(profile: profile, preferences: preferences, in: context)
+        #expect(transport.requestCount == 2)
+        let plan = try #require(PlanStore.currentPlan(in: context))
+        #expect(plan.sortedDays.reduce(0) { $0 + $1.plannedCostEUR } <= preferences.budgetCeiling)
+    }
+
+    @Test func storeAndAllergiesReachThePrompt() async throws {
+        preferences.store = .lidl
+        preferences.allergyList = ["arachide"]
+        let transport = ScriptedTransport([.output(try weekText())])
+        try await generator(transport).generateWeek(profile: profile, preferences: preferences, in: context)
+        let body = try #require(try JSONSerialization.jsonObject(with: transport.requests[0].httpBody ?? Data()) as? [String: Any])
+        let input = try #require(body["input"] as? String)
+        #expect(input.contains("\"store\":\"Lidl\""))
+        #expect(input.contains("arachide"))
+        #expect(input.contains("\"weekly_budget_eur\":56"))
+    }
+
     @Test func missingKeyThrowsWithoutNetwork() async throws {
         let transport = ScriptedTransport([])
         await #expect(throws: AIError.missingKey) {

@@ -71,17 +71,20 @@ final class AppModel {
 
     static func describe(_ warnings: [ValidationIssue]) -> String? {
         var offTarget = 0
-        var overBudget = 0
+        var overBudget: (cost: Double, budget: Double)?
         for warning in warnings {
             switch warning {
             case .dayOffTarget: offTarget += 1
-            case .dayOverBudget: overBudget += 1
+            case let .weekOverBudgetWithinTolerance(cost, budget): overBudget = (cost, budget)
             default: break
             }
         }
         var parts: [String] = []
         if offTarget > 0 { parts.append("\(offTarget) jour(s) à plus de 10 % de ta cible") }
-        if overBudget > 0 { parts.append("\(overBudget) jour(s) au-dessus du budget") }
+        if let overBudget {
+            let cost = Format.euros(overBudget.cost)
+            parts.append("courses estimées à \(cost) pour \(Format.euros(overBudget.budget)) de budget (dans la tolérance)")
+        }
         return parts.isEmpty ? nil : parts.joined(separator: " · ") + ". Signalé(s) dans le planning."
     }
 }

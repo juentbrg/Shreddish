@@ -84,6 +84,6 @@ final class OnboardingUITests: XCTestCase {
         generate.tap()
         XCTAssertTrue(app.buttons["day-0"].waitForExistence(timeout: 10))
         app.tabBars.buttons["Courses"].tap()
-        XCTAssertTrue(app.staticTexts["Coût estimé"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Courses estimées"].waitForExistence(timeout: 5))
     }
 }

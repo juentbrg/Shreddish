@@ -78,19 +78,6 @@ struct AIOutputValidatorTests {
         #expect(result.warnings.contains { if case .dayOffTarget(dayOffset: 2, _) = $0 { true } else { false } })
     }
 
-    @Test func dayOverBudgetIsWarning() throws {
-        // Coût fixture : 8,20 € / jour. Budget 7 € → 110 % = 7,70 € → signalé.
-        let result = AIOutputValidator.validate(week: try Fixture.week(), constraints: constraints(dailyBudgetEur: 7))
-        #expect(result.fatal.isEmpty)
-        #expect(result.warnings.contains { if case .dayOverBudget(dayOffset: 0, _) = $0 { true } else { false } })
-    }
-
-    @Test func dayWithinTenPercentOfBudgetIsNotFlagged() throws {
-        // 8,20 € ≤ 7,5 × 1,1 = 8,25 €.
-        let result = AIOutputValidator.validate(week: try Fixture.week(), constraints: constraints(dailyBudgetEur: 7.5))
-        #expect(!result.warnings.contains { if case .dayOverBudget = $0 { true } else { false } })
-    }
-
     @Test func batchCookingRequiresOneOrTwoSessions() throws {
         let result = AIOutputValidator.validate(week: try Fixture.week(), constraints: constraints(batchCooking: true))
         #expect(result.fatal.contains(.prepSessionCount(0)))

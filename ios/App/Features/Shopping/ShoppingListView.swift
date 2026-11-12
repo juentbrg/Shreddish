@@ -7,6 +7,7 @@ struct ShoppingListView: View {
     @Environment(\.modelContext) private var context
     @Query(filter: #Predicate<WeeklyPlan> { $0.isCurrent }, sort: \WeeklyPlan.createdAt, order: .reverse)
     var plans: [WeeklyPlan]
+    @Query var allPreferences: [Preferences]
 
     var body: some View {
         NavigationStack {
@@ -31,8 +32,11 @@ struct ShoppingListView: View {
         let checked = items.filter(\.isChecked).count
         return List {
             Section {
-                LabeledContent("Coût estimé", value: Format.euros(items.reduce(0) { $0 + $1.costEUR }))
-                    .accessibilityIdentifier("shoppingTotal")
+                if let preferences = allPreferences.first {
+                    WeekCostRow(cost: items.reduce(0) { $0 + $1.costEUR }, preferences: preferences)
+                } else {
+                    LabeledContent("Coût estimé", value: Format.euros(items.reduce(0) { $0 + $1.costEUR }))
+                }
                 ProgressView(value: Double(checked), total: Double(max(items.count, 1))) {
                     Text("\(checked) / \(items.count) dans le panier")
                         .font(.subheadline)

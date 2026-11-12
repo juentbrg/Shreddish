@@ -37,4 +37,30 @@ struct MigrationTests {
         #expect(profile.isAutoCalibrationOn)
         #expect(try container.mainContext.fetchCount(FetchDescriptor<WeightEntry>()) == 1)
     }
+
+    @Test func v2PreferencesMigrateToV3WithDefaults() throws {
+        let directory = FileManager.default.temporaryDirectory.appending(path: "shreddish-migration-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let url = directory.appending(path: "store.sqlite")
+
+        do {
+            let schema = Schema(versionedSchema: SchemaV2.self)
+            let container = try ModelContainer(for: schema, configurations: [ModelConfiguration(schema: schema, url: url)])
+            let preferences = SchemaV1.Preferences()
+            preferences.dailyBudgetEUR = 9
+            preferences.excludedFoods = ["thon"]
+            container.mainContext.insert(preferences)
+            try container.mainContext.save()
+        }
+
+        let container = try ShreddishStore.makeContainer(url: url)
+        let preferences = try #require(try container.mainContext.fetch(FetchDescriptor<Preferences>()).first)
+        #expect(preferences.weeklyBudget == 63)
+        #expect(preferences.tolerance == 0.1)
+        #expect(preferences.excludedFoods == ["thon"])
+        #expect(preferences.allergyList.isEmpty)
+        #expect(preferences.availability == .everywhere)
+        #expect(preferences.store == .generic)
+    }
 }

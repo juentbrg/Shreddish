@@ -5,21 +5,47 @@ public struct GenerationConstraints: Sendable, Equatable {
     public var targets: MacroTotals
     public var mealsPerDay: Int
     public var maxPrepMinutes: Int
-    public var dailyBudgetEur: Double
+    public var weeklyBudgetEur: Double
+    /// Dépassement toléré du budget hebdo, 0 à 0,20 (spec 003).
+    public var budgetTolerance: Double
     public var batchCooking: Bool
+    public var allergies: [String]
+    /// Aliments que l'utilisateur n'aime pas.
     public var excludedFoods: [String]
+    /// Plafond de coût d'un jour régénéré ou d'un repas remplacé (FR-203).
+    public var costLimitEur: Double?
 
     public init(
-        targets: MacroTotals, mealsPerDay: Int, maxPrepMinutes: Int, dailyBudgetEur: Double,
-        batchCooking: Bool, excludedFoods: [String]
+        targets: MacroTotals, mealsPerDay: Int, maxPrepMinutes: Int, weeklyBudgetEur: Double, budgetTolerance: Double,
+        batchCooking: Bool, allergies: [String], excludedFoods: [String], costLimitEur: Double? = nil
     ) {
         self.targets = targets
         self.mealsPerDay = mealsPerDay
         self.maxPrepMinutes = maxPrepMinutes
-        self.dailyBudgetEur = dailyBudgetEur
+        self.weeklyBudgetEur = weeklyBudgetEur
+        self.budgetTolerance = budgetTolerance
         self.batchCooking = batchCooking
+        self.allergies = allergies
         self.excludedFoods = excludedFoods
+        self.costLimitEur = costLimitEur
     }
+
+    /// Budget × (1 + tolérance).
+    public var budgetCeilingEur: Double { weeklyBudgetEur * (1 + budgetTolerance) }
+}
+
+/// Plafonds de coût pour une régénération partielle (FR-203).
+public enum BudgetMath {
+    public static func dayLimit(weeklyBudget: Double, tolerance: Double, otherDaysCost: Double) -> Double {
+        max(0, weeklyBudget * (1 + tolerance) - otherDaysCost)
+    }
+
+    public static func mealLimit(dayLimit: Double, otherMealsCost: Double) -> Double {
+        max(0, dayLimit - otherMealsCost)
+    }
+
+    /// Arrondi au centime, pour les messages et les comparaisons.
+    public static func cents(_ value: Double) -> Double { (value * 100).rounded() / 100 }
 }
 
 public enum ValidationIssue: Equatable, Sendable {
@@ -32,6 +58,9 @@ public enum ValidationIssue: Equatable, Sendable {
     case negativeValue(meal: String)
     case prepTooLong(meal: String, minutes: Int)
     case excludedFood(meal: String, food: String)
+    case allergen(meal: String, food: String)
+    case weekOverBudget(costEur: Double, ceilingEur: Double)
+    case overCostLimit(costEur: Double, limitEur: Double)
     case prepSessionCount(Int)
     case orphanPrepSessionRef(meal: String, ref: Int)
     // Corrections appliquées.
@@ -41,7 +70,7 @@ public enum ValidationIssue: Equatable, Sendable {
     case mealTypeCorrected(meal: String)
     // Avertissements affichés.
     case dayOffTarget(dayOffset: Int, deviation: Double)
-    case dayOverBudget(dayOffset: Int, costEur: Double)
+    case weekOverBudgetWithinTolerance(costEur: Double, budgetEur: Double)
 }
 
 public struct ValidationResult<Value: Sendable>: Sendable {
@@ -59,8 +88,8 @@ public struct ValidationResult<Value: Sendable>: Sendable {
 public enum AIOutputValidator {
     /// Écart kcal annoncées / recalculées toléré avant correction.
     static let kcalTolerance = 0.10
-    /// Coût d'un jour toléré au-delà du budget avant signalement.
-    static let budgetTolerance = 1.10
+    /// Marge d'arrondi sur les coûts, en euros.
+    static let costEpsilon = 0.005
 
     // MARK: Semaine
 
@@ -91,6 +120,14 @@ public enum AIOutputValidator {
             if let sanitized = dayResult.sanitized { days.append(sanitized) }
         }
 
+        if result.fatal.isEmpty {
+            let cost = BudgetMath.cents(days.flatMap(\.meals).reduce(0) { $0 + $1.costEur })
+            if cost > constraints.budgetCeilingEur + costEpsilon {
+                result.fatal.append(.weekOverBudget(costEur: cost, ceilingEur: BudgetMath.cents(constraints.budgetCeilingEur)))
+            } else if cost > constraints.weeklyBudgetEur + costEpsilon {
+                result.warnings.append(.weekOverBudgetWithinTolerance(costEur: cost, budgetEur: constraints.weeklyBudgetEur))
+            }
+        }
         result.sanitized = result.fatal.isEmpty ? WeekPlanDTO(prepSessions: sessions, days: days) : nil
         return result
     }
@@ -131,9 +168,9 @@ public enum AIOutputValidator {
         if result.fatal.isEmpty, Totals.isOffTarget(deviation) {
             result.warnings.append(.dayOffTarget(dayOffset: expectedOffset, deviation: deviation))
         }
-        let cost = meals.reduce(0) { $0 + $1.costEur }
-        if result.fatal.isEmpty, cost > constraints.dailyBudgetEur * budgetTolerance + 0.000_1 {
-            result.warnings.append(.dayOverBudget(dayOffset: expectedOffset, costEur: cost))
+        let cost = BudgetMath.cents(meals.reduce(0) { $0 + $1.costEur })
+        if result.fatal.isEmpty, let limit = constraints.costLimitEur, cost > limit + costEpsilon {
+            result.fatal.append(.overCostLimit(costEur: cost, limitEur: BudgetMath.cents(limit)))
         }
 
         result.sanitized = result.fatal.isEmpty ? DayPlanDTO(dayOffset: expectedOffset, meals: meals) : nil
@@ -166,8 +203,14 @@ public enum AIOutputValidator {
 
         meal.ingredients = meal.ingredients.map { normalizeUnit($0, result: &result) }
 
+        if let food = excludedFood(in: meal, excluded: constraints.allergies) {
+            result.fatal.append(.allergen(meal: name, food: food))
+        }
         if let food = excludedFood(in: meal, excluded: constraints.excludedFoods) {
             result.fatal.append(.excludedFood(meal: name, food: food))
+        }
+        if let limit = constraints.costLimitEur, meal.costEur > limit + costEpsilon {
+            result.fatal.append(.overCostLimit(costEur: BudgetMath.cents(meal.costEur), limitEur: BudgetMath.cents(limit)))
         }
 
         let computed = meal.macros.kcalFromMacros

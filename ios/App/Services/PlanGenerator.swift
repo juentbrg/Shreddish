@@ -38,8 +38,8 @@ final class PlanGenerator {
 
     // MARK: Semaine
 
-    /// Génère et enregistre 7 jours à partir d'aujourd'hui. Renvoie les avertissements (jours hors cible
-    /// ou hors budget).
+    /// Génère et enregistre 7 jours à partir d'aujourd'hui. Renvoie les avertissements (jours hors cible,
+    /// semaine au-dessus du budget dans la tolérance).
     @discardableResult
     func generateWeek(profile: Profile, preferences: Preferences, in store: ModelContext) async throws(AIError) -> [ValidationIssue] {
         let ctx = try context(profile: profile, preferences: preferences)
@@ -76,10 +76,12 @@ final class PlanGenerator {
     private func requestWeekByDays(_ ctx: Context) async throws(AIError) -> ValidationResult<WeekPlanDTO> {
         var days: [DayPlanDTO] = []
         var warnings: [ValidationIssue] = []
+        // Chaque jour reçoit un septième du plafond de la semaine (spec 003, FR-203).
+        let dayLimit = ctx.constraints.budgetCeilingEur / 7
         do {
             try await withThrowingTaskGroup(of: ValidationResult<DayPlanDTO>.self) { group in
                 for offset in 0...6 {
-                    group.addTask { try await self.requestDay(ctx, offset: offset, avoid: []) }
+                    group.addTask { try await self.requestDay(ctx, offset: offset, avoid: [], costLimit: dayLimit) }
                 }
                 for try await result in group {
                     if let day = result.sanitized { days.append(day) }
@@ -89,20 +91,27 @@ final class PlanGenerator {
         } catch {
             throw error as? AIError ?? .unexpected(error.localizedDescription)
         }
-        var result = ValidationResult<WeekPlanDTO>()
-        result.warnings = warnings
-        result.sanitized = WeekPlanDTO(prepSessions: [], days: days.sorted { $0.dayOffset < $1.dayOffset })
+        // Semaine reconstituée : contrôle global (7 jours, budget) sans batch cooking.
+        var constraints = ctx.constraints
+        constraints.batchCooking = false
+        var result = AIOutputValidator.validate(week: WeekPlanDTO(prepSessions: [], days: days), constraints: constraints)
+        guard result.isValid else { throw .invalidOutput(String(describing: result.fatal)) }
+        result.warnings = warnings + result.warnings
         return result
     }
 
     // MARK: Jour et repas
 
     private func requestDay(
-        _ ctx: Context, offset: Int, avoid: [String], prepSessions: Set<Int> = []
+        _ ctx: Context, offset: Int, avoid: [String], prepSessions: Set<Int> = [], costLimit: Double
     ) async throws(AIError) -> ValidationResult<DayPlanDTO> {
         let input = PromptBuilder.dayInput(
-            targets: ctx.targets.macros, goal: ctx.goal, preferences: ctx.preferences, dayOffset: offset, avoidMealNames: avoid
+            targets: ctx.targets.macros, goal: ctx.goal, preferences: ctx.preferences, dayOffset: offset,
+            avoidMealNames: avoid, costLimitEur: costLimit
         )
+        var dayConstraints = ctx.constraints
+        dayConstraints.costLimitEur = costLimit
+        let constraints = dayConstraints
         let client = client
         return try await withRetry {
             let data = try await client.generate(
@@ -110,7 +119,7 @@ final class PlanGenerator {
                 model: ctx.model, apiKey: ctx.apiKey
             )
             let result = AIOutputValidator.validate(
-                day: try AIResponseDecoder.decodeDay(data), constraints: ctx.constraints,
+                day: try AIResponseDecoder.decodeDay(data), constraints: constraints,
                 expectedOffset: offset, prepSessionIndexes: prepSessions
             )
             guard result.isValid else { throw AIError.invalidOutput(String(describing: result.fatal)) }
@@ -130,8 +139,12 @@ final class PlanGenerator {
             constraints: preferences.constraints(targets: (plan.targets ?? ctx.targets).macros), model: ctx.model
         )
         let avoid = plan.days.flatMap(\.meals).map(\.name)
+        let otherDaysCost = plan.days.filter { $0.persistentModelID != day.persistentModelID }.reduce(0) { $0 + $1.plannedCostEUR }
+        let limit = BudgetMath.dayLimit(
+            weeklyBudget: preferences.weeklyBudget, tolerance: preferences.tolerance, otherDaysCost: otherDaysCost
+        )
         let result = try await requestDay(
-            ctx, offset: day.offset, avoid: avoid, prepSessions: Set(plan.prepSessions.map(\.index))
+            ctx, offset: day.offset, avoid: avoid, prepSessions: Set(plan.prepSessions.map(\.index)), costLimit: limit
         )
         guard let sanitized = result.sanitized else { throw .invalidOutput("Jour invalide") }
         do { try PlanStore.replaceDay(day, with: sanitized, in: store) } catch { throw .unexpected("Enregistrement impossible") }
@@ -144,12 +157,17 @@ final class PlanGenerator {
         let base = try context(profile: profile, preferences: preferences)
         let targets = plan.targets ?? base.targets
         let others = day.sortedMeals.filter { $0.persistentModelID != meal.persistentModelID }.map(\.dto)
+        let otherDaysCost = plan.days.filter { $0.persistentModelID != day.persistentModelID }.reduce(0) { $0 + $1.plannedCostEUR }
+        let dayLimit = BudgetMath.dayLimit(
+            weeklyBudget: preferences.weeklyBudget, tolerance: preferences.tolerance, otherDaysCost: otherDaysCost
+        )
+        let mealLimit = BudgetMath.mealLimit(dayLimit: dayLimit, otherMealsCost: others.reduce(0) { $0 + $1.costEur })
         let input = PromptBuilder.replaceMealInput(
             targets: targets.macros, goal: base.goal, preferences: base.preferences, dayOffset: day.offset,
             existingDayMeals: others, mealTypeToReplace: meal.type,
-            avoidMealNames: plan.days.flatMap(\.meals).map(\.name)
+            avoidMealNames: plan.days.flatMap(\.meals).map(\.name), costLimitEur: mealLimit
         )
-        let constraints = preferences.constraints(targets: targets.macros)
+        let constraints = preferences.constraints(targets: targets.macros, costLimitEur: mealLimit)
         let sessionIndexes = Set(plan.prepSessions.map(\.index))
         let type = meal.type
         let client = client

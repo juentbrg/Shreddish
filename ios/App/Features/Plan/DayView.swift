@@ -24,7 +24,7 @@ struct DayView: View {
                     TargetGauge(title: "Lipides", value: totals.fatG, target: Double(targets.fatG), format: Format.grams)
                 }
                 LabeledContent("Coût estimé", value: Format.euros(day.plannedCostEUR))
-                DayBadges(day: day, targets: day.plan?.targets, budget: allPreferences.first?.dailyBudgetEUR)
+                DayBadges(day: day, targets: day.plan?.targets)
             }
             Section("Repas") {
                 ForEach(day.sortedMeals) { meal in

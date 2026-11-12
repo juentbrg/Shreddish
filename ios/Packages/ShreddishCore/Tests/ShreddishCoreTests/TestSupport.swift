@@ -17,12 +17,13 @@ enum Fixture {
 let referenceTargets = MacroTotals(kcal: 2207, proteinG: 160, carbsG: 248, fatG: 64)
 
 func constraints(
-    mealsPerDay: Int = 4, maxPrepMinutes: Int = 20, dailyBudgetEur: Double = 8,
-    batchCooking: Bool = false, excludedFoods: [String] = []
+    mealsPerDay: Int = 4, maxPrepMinutes: Int = 20, weeklyBudgetEur: Double = 70, budgetTolerance: Double = 0.1,
+    batchCooking: Bool = false, allergies: [String] = [], excludedFoods: [String] = [], costLimitEur: Double? = nil
 ) -> GenerationConstraints {
     GenerationConstraints(
         targets: referenceTargets, mealsPerDay: mealsPerDay, maxPrepMinutes: maxPrepMinutes,
-        dailyBudgetEur: dailyBudgetEur, batchCooking: batchCooking, excludedFoods: excludedFoods
+        weeklyBudgetEur: weeklyBudgetEur, budgetTolerance: budgetTolerance, batchCooking: batchCooking,
+        allergies: allergies, excludedFoods: excludedFoods, costLimitEur: costLimitEur
     )
 }
 

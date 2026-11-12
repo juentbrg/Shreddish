@@ -4,8 +4,9 @@ import Testing
 
 struct PromptBuilderTests {
     static let preferences = PromptPreferences(
-        mealsPerDay: 4, maxPrepMinutes: 20, dailyBudgetEur: 8, excludedFoods: ["thon"],
-        likedFoods: ["poulet"], equipment: ["micro-ondes"], batchCooking: false
+        mealsPerDay: 4, maxPrepMinutes: 20, weeklyBudgetEur: 56, budgetTolerance: 0.1,
+        allergies: ["arachide"], dislikedFoods: ["thon"], likedFoods: ["poulet"], equipment: ["micro-ondes"],
+        batchCooking: false, ingredientAvailability: .everywhere, store: "Lidl"
     )
 
     static func json(_ text: String) throws -> [String: Any] {
@@ -33,8 +34,13 @@ struct PromptBuilderTests {
         #expect(targets["protein_g"] as? Int == 160)
         let preferences = try #require(input["preferences"] as? [String: Any])
         #expect(preferences["meals_per_day"] as? Int == 4)
-        #expect(preferences["daily_budget_eur"] as? Double == 8)
-        #expect(preferences["excluded_foods"] as? [String] == ["thon"])
+        #expect(preferences["weekly_budget_eur"] as? Double == 56)
+        #expect(preferences["budget_tolerance"] as? Double == 0.1)
+        #expect(preferences["allergies"] as? [String] == ["arachide"])
+        #expect(preferences["disliked_foods"] as? [String] == ["thon"])
+        #expect(preferences["ingredient_availability"] as? String == "everywhere")
+        #expect(preferences["store"] as? String == "Lidl")
+        #expect(input["cost_limit_eur"] == nil)
         #expect(preferences["batch_cooking"] as? Bool == false)
         #expect(input["day_offset"] == nil)
     }
@@ -43,16 +49,18 @@ struct PromptBuilderTests {
         let texts = [
             PromptBuilder.weekInput(targets: referenceTargets, goal: .cut, preferences: Self.preferences),
             PromptBuilder.dayInput(
-                targets: referenceTargets, goal: .cut, preferences: Self.preferences, dayOffset: 2, avoidMealNames: ["A"]
+                targets: referenceTargets, goal: .cut, preferences: Self.preferences, dayOffset: 2, avoidMealNames: ["A"],
+                costLimitEur: 9
             ),
             PromptBuilder.replaceMealInput(
                 targets: referenceTargets, goal: .cut, preferences: Self.preferences, dayOffset: 2,
-                existingDayMeals: [meal(.breakfast)], mealTypeToReplace: .lunch, avoidMealNames: ["A"]
+                existingDayMeals: [meal(.breakfast)], mealTypeToReplace: .lunch, avoidMealNames: ["A"], costLimitEur: 3
             ),
         ]
         let allowed: Set<String> = [
             "task", "targets", "kcal", "protein_g", "carbs_g", "fat_g", "goal", "preferences",
-            "meals_per_day", "max_prep_minutes", "daily_budget_eur", "excluded_foods", "liked_foods",
+            "meals_per_day", "max_prep_minutes", "weekly_budget_eur", "budget_tolerance", "allergies",
+            "disliked_foods", "ingredient_availability", "store", "cost_limit_eur", "liked_foods",
             "equipment", "batch_cooking", "day_offset", "existing_day_meals", "meal_type_to_replace",
             "remaining_targets", "avoid_meal_names", "type", "name",
         ]
@@ -68,9 +76,10 @@ struct PromptBuilderTests {
     @Test func dayInputCarriesOffsetAndAvoidList() throws {
         let input = try Self.json(PromptBuilder.dayInput(
             targets: referenceTargets, goal: .cut, preferences: Self.preferences, dayOffset: 3,
-            avoidMealNames: ["Poulet riz"]
+            avoidMealNames: ["Poulet riz"], costLimitEur: 9.5
         ))
         #expect(input["task"] as? String == "day")
+        #expect(input["cost_limit_eur"] as? Double == 9.5)
         #expect(input["day_offset"] as? Int == 3)
         #expect(input["avoid_meal_names"] as? [String] == ["Poulet riz"])
     }
@@ -80,7 +89,7 @@ struct PromptBuilderTests {
         let snack = meal(.snack, kcal: 350, protein: 30, carbs: 35, fat: 9)
         let input = try Self.json(PromptBuilder.replaceMealInput(
             targets: referenceTargets, goal: .cut, preferences: Self.preferences, dayOffset: 2,
-            existingDayMeals: [breakfast, snack], mealTypeToReplace: .lunch, avoidMealNames: []
+            existingDayMeals: [breakfast, snack], mealTypeToReplace: .lunch, avoidMealNames: [], costLimitEur: 3
         ))
         #expect(input["task"] as? String == "replace_meal")
         #expect(input["meal_type_to_replace"] as? String == "lunch")
@@ -96,7 +105,7 @@ struct PromptBuilderTests {
         let huge = meal(.breakfast, kcal: 3000, protein: 300, carbs: 300, fat: 100)
         let input = try Self.json(PromptBuilder.replaceMealInput(
             targets: referenceTargets, goal: .cut, preferences: Self.preferences, dayOffset: 0,
-            existingDayMeals: [huge], mealTypeToReplace: .dinner, avoidMealNames: []
+            existingDayMeals: [huge], mealTypeToReplace: .dinner, avoidMealNames: [], costLimitEur: 3
         ))
         let remaining = try #require(input["remaining_targets"] as? [String: Any])
         #expect(remaining["kcal"] as? Int == 0)
@@ -104,9 +113,14 @@ struct PromptBuilderTests {
 
     @Test func systemInstructionsStateHardRules() {
         let text = PromptBuilder.systemInstructions()
-        #expect(text.contains("excluded_foods"))
+        #expect(text.contains("disliked_foods"))
         #expect(text.contains("max_prep_minutes"))
         #expect(text.contains("infeasible"))
+        #expect(text.contains("allergies"))
+        #expect(text.contains("weekly_budget_eur"))
+        #expect(text.contains("cost_limit_eur"))
+        #expect(text.contains("ingredient_availability"))
+        #expect(text.contains("store"))
         #expect(text.contains("français"))
     }
 }
