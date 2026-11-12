@@ -10,13 +10,18 @@ public struct IngredientDTO: Codable, Sendable, Equatable {
     public var unit: String
     public var aisle: Aisle
     public var costEur: Double
+    /// Prix au kg (g), au litre (ml) ou à la pièce estimé pour l'enseigne et le secteur (spec 005).
+    public var unitPriceEur: Double?
 
-    public init(name: String, quantity: Double, unit: String, aisle: Aisle, costEur: Double) {
+    public init(
+        name: String, quantity: Double, unit: String, aisle: Aisle, costEur: Double, unitPriceEur: Double? = nil
+    ) {
         self.name = name
         self.quantity = quantity
         self.unit = unit
         self.aisle = aisle
         self.costEur = costEur
+        self.unitPriceEur = unitPriceEur
     }
 
     public var measureUnit: MeasureUnit? { MeasureUnit(rawValue: unit) }

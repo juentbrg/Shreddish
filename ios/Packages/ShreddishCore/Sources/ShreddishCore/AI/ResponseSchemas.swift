@@ -42,11 +42,11 @@ public enum ResponseSchemas {
     private static let definitions = """
     {
      "ingredient":{"type":"object","additionalProperties":false,
-      "required":["name","quantity","unit","aisle","cost_eur"],
+      "required":["name","quantity","unit","aisle","unit_price_eur","cost_eur"],
       "properties":{"name":{"type":"string"},"quantity":{"type":"number"},
        "unit":{"type":"string","enum":["g","ml","piece"]},
        "aisle":{"type":"string","enum":["fruits_legumes","viande_poisson","cremerie","epicerie","surgeles","boulangerie","autre"]},
-       "cost_eur":{"type":"number"}}},
+       "unit_price_eur":{"type":"number"},"cost_eur":{"type":"number"}}},
      "meal":{"type":"object","additionalProperties":false,
       "required":["type","name","ingredients","steps","prep_minutes","cost_eur","kcal","protein_g","carbs_g","fat_g",
        "prep_session_ref","time"],

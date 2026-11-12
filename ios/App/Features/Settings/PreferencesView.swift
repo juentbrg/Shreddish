@@ -117,6 +117,11 @@ private struct StoreSection: View {
         preferences.store == .generic ? "dans un supermarché classique" : "chez \(preferences.storeName)"
     }
 
+    private var area: String {
+        let city = preferences.city?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return city.isEmpty ? "en France" : "autour de \(city)"
+    }
+
     var body: some View {
         Section {
             Picker("Magasin", selection: Binding(get: { preferences.store }, set: { preferences.store = $0 })) {
@@ -128,6 +133,13 @@ private struct StoreSection: View {
                     get: { preferences.customStoreName ?? "" }, set: { preferences.customStoreName = $0 }
                 ))
             }
+            HStack {
+                Text("Ville")
+                TextField("ex. Toulouse", text: Binding(get: { preferences.city ?? "" }, set: { preferences.city = $0 }))
+                    .multilineTextAlignment(.trailing)
+                    .textContentType(.addressCity)
+                    .accessibilityIdentifier("city")
+            }
             Picker("Ingrédients", selection: Binding(get: { preferences.availability }, set: { preferences.availability = $0 })) {
                 ForEach(IngredientAvailability.allCases, id: \.self) { Text($0.label).tag($0) }
             }
@@ -136,8 +148,9 @@ private struct StoreSection: View {
             Text("Où tu fais tes courses")
         } footer: {
             Text(
-                "\(preferences.availability.detail) L'IA choisit des produits vendus \(storePlace) "
-                    + "et estime leurs prix, marque distributeur en priorité."
+                "\(preferences.availability.detail) L'IA choisit des produits vendus \(storePlace) \(area) "
+                    + "et estime leur prix au kilo ou à la pièce pour ce secteur ; l'app en déduit le coût. "
+                    + "Estimations, pas de prix relevés : aucune base de prix publique ne couvre les magasins."
             )
         }
     }

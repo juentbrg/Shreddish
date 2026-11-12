@@ -108,6 +108,7 @@ struct MigrationTests {
         #expect(preferences.weeklyBudget == 80)
         #expect(preferences.supplementList.isEmpty)
         #expect(preferences.trainingTimeMinutes == nil)
+        #expect(preferences.city == nil)
     }
 
     @Test func deletingPlanRemovesItsDays() throws {

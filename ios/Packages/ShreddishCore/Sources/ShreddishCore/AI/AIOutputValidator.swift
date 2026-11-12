@@ -228,6 +228,7 @@ public enum AIOutputValidator {
         }
 
         meal.ingredients = meal.ingredients.map { normalizeUnit($0, result: &result) }
+        applyUnitPrices(&meal)
 
         if let food = excludedFood(in: meal, excluded: constraints.allergies) {
             result.fatal.append(.allergen(meal: name, food: food))
@@ -253,6 +254,21 @@ public enum AIOutputValidator {
     }
 
     // MARK: Helpers
+
+    /// Coût déterministe (spec 005) : quantité × prix unitaire, puis coût du repas = somme des ingrédients.
+    static func applyUnitPrices(_ meal: inout MealDTO) {
+        guard !meal.ingredients.isEmpty else { return }
+        meal.ingredients = meal.ingredients.map { ingredient in
+            guard let price = ingredient.unitPriceEur, price >= 0, let unit = ingredient.measureUnit else { return ingredient }
+            var ingredient = ingredient
+            let divisor: Double = unit == .piece ? 1 : 1000
+            ingredient.costEur = BudgetMath.cents(ingredient.quantity * price / divisor)
+            return ingredient
+        }
+        if meal.ingredients.contains(where: { $0.unitPriceEur != nil }) {
+            meal.costEur = BudgetMath.cents(meal.ingredients.reduce(0) { $0 + $1.costEur })
+        }
+    }
 
     /// Ingrédients issus d'un complément possédé : coût 0, retiré du coût du repas (FR-303).
     private static func clearSupplementCosts<T>(

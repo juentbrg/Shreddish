@@ -63,7 +63,7 @@ struct PromptBuilderTests {
             "disliked_foods", "ingredient_availability", "store", "cost_limit_eur", "liked_foods",
             "equipment", "batch_cooking", "day_offset", "existing_day_meals", "meal_type_to_replace",
             "remaining_targets", "avoid_meal_names", "type", "name", "owned_supplements", "training_time",
-            "training_sessions_per_week", "previous_attempt_feedback",
+            "training_sessions_per_week", "previous_attempt_feedback", "location",
         ]
         for text in texts {
             let keys = Self.allKeys(try JSONSerialization.jsonObject(with: Data(text.utf8)))

@@ -73,8 +73,10 @@ struct UITestAITransport: AITransport {
         return MealDTO(
             type: type, name: "\(names[type] ?? "Repas") \(variant)",
             ingredients: [
-                IngredientDTO(name: "Riz basmati", quantity: 80, unit: "g", aisle: .epicerie, costEur: 0.25),
-                IngredientDTO(name: "Blanc de poulet", quantity: 120, unit: "g", aisle: .viandePoisson, costEur: 1.2),
+                IngredientDTO(name: "Riz basmati", quantity: 80, unit: "g", aisle: .epicerie, costEur: 0.25, unitPriceEur: 3.125),
+                IngredientDTO(
+                    name: "Blanc de poulet", quantity: 120, unit: "g", aisle: .viandePoisson, costEur: 1.2, unitPriceEur: 10
+                ),
             ],
             steps: ["Cuire le riz.", "Saisir le poulet.", "Servir."], prepMinutes: 10, costEur: 1.45,
             kcal: 4 * protein + 4 * carbs + 9 * fat, proteinG: protein, carbsG: carbs, fatG: fat, prepSessionRef: nil,

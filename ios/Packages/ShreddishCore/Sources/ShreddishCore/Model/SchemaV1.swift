@@ -242,6 +242,52 @@ public enum SchemaV4: VersionedSchema {
 
     public static var models: [any PersistentModel.Type] {
         [
+            Profile.self, SchemaV4.Preferences.self, WeeklyPlan.self, DayPlan.self, Meal.self,
+            ExtraEntry.self, ShoppingItem.self, WeightEntry.self,
+        ]
+    }
+
+    /// Forme V4 des préférences, figée (spec 005 ajoute la ville).
+    @Model
+    public final class Preferences {
+        public var mealsPerDay: Int
+        public var maxPrepMinutes: Int
+        public var dailyBudgetEUR: Double
+        public var excludedFoods: [String]
+        public var likedFoods: [String]
+        public var equipment: [String]
+        public var batchCooking: Bool
+        public var aiModel: String
+        public var weeklyBudgetEUR: Double?
+        public var budgetTolerance: Double?
+        public var allergies: [String]?
+        public var ingredientAvailabilityRaw: String?
+        public var storeRaw: String?
+        public var customStoreName: String?
+        public var supplements: [String]?
+        public var trainingTimeMinutes: Int?
+
+        public init() {
+            mealsPerDay = 4
+            maxPrepMinutes = 20
+            dailyBudgetEUR = 8
+            excludedFoods = []
+            likedFoods = []
+            equipment = []
+            batchCooking = false
+            aiModel = "gpt-6-luna"
+            weeklyBudgetEUR = 56
+            budgetTolerance = 0.1
+        }
+    }
+}
+
+/// Schéma V5 (spec 005) : ville des courses, pour des prix estimés sur le secteur.
+public enum SchemaV5: VersionedSchema {
+    public static let versionIdentifier = Schema.Version(5, 0, 0)
+
+    public static var models: [any PersistentModel.Type] {
+        [
             Profile.self, Preferences.self, WeeklyPlan.self, DayPlan.self, Meal.self,
             ExtraEntry.self, ShoppingItem.self, WeightEntry.self,
         ]
@@ -249,7 +295,7 @@ public enum SchemaV4: VersionedSchema {
 }
 
 public enum ShreddishMigrationPlan: SchemaMigrationPlan {
-    public static var schemas: [any VersionedSchema.Type] { [SchemaV1.self, SchemaV2.self, SchemaV3.self, SchemaV4.self] }
+    public static var schemas: [any VersionedSchema.Type] { [SchemaV1.self, SchemaV2.self, SchemaV3.self, SchemaV4.self, SchemaV5.self] }
 
     public static var stages: [MigrationStage] {
         // Champs ajoutés tous optionnels : migrations légères, aucune donnée transformée.
@@ -257,6 +303,7 @@ public enum ShreddishMigrationPlan: SchemaMigrationPlan {
             .lightweight(fromVersion: SchemaV1.self, toVersion: SchemaV2.self),
             .lightweight(fromVersion: SchemaV2.self, toVersion: SchemaV3.self),
             .lightweight(fromVersion: SchemaV3.self, toVersion: SchemaV4.self),
+            .lightweight(fromVersion: SchemaV4.self, toVersion: SchemaV5.self),
         ]
     }
 }
@@ -264,7 +311,7 @@ public enum ShreddishMigrationPlan: SchemaMigrationPlan {
 public enum ShreddishStore {
     /// Container local, sans CloudKit. `inMemory` : previews et tests ; `url` : tests de migration.
     public static func makeContainer(inMemory: Bool = false, url: URL? = nil) throws -> ModelContainer {
-        let schema = Schema(versionedSchema: SchemaV4.self)
+        let schema = Schema(versionedSchema: SchemaV5.self)
         let configuration = if let url {
             ModelConfiguration(schema: schema, url: url, cloudKitDatabase: .none)
         } else {

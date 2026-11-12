@@ -47,6 +47,9 @@ public final class Preferences {
     public var supplements: [String]?
     /// Heure d'entraînement habituelle, en minutes depuis minuit ; nil = non précisée.
     public var trainingTimeMinutes: Int?
+    // Spec 005 (SchemaV5).
+    /// Ville ou secteur des courses (ex. « Toulouse ») ; nil = France.
+    public var city: String?
 
     public init() {
         mealsPerDay = 4
@@ -109,12 +112,18 @@ public final class Preferences {
         return store == .other ? GroceryStore.generic.displayName : store.displayName
     }
 
+    /// Secteur transmis à l'IA pour les prix.
+    public var priceArea: String {
+        let trimmed = city?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return trimmed.isEmpty ? "France" : "\(trimmed), France"
+    }
+
     public var promptPreferences: PromptPreferences {
         PromptPreferences(
             mealsPerDay: mealsPerDay, maxPrepMinutes: maxPrepMinutes, weeklyBudgetEur: weeklyBudget,
             budgetTolerance: tolerance, allergies: allergyList, dislikedFoods: excludedFoods, likedFoods: likedFoods,
             equipment: equipment, batchCooking: batchCooking, ingredientAvailability: availability, store: storeName,
-            ownedSupplements: supplementList, trainingTime: trainingTimeLabel
+            ownedSupplements: supplementList, trainingTime: trainingTimeLabel, location: priceArea
         )
     }
 

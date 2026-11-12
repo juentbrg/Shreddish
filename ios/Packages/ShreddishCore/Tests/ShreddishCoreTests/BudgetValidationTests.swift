@@ -73,6 +73,33 @@ struct BudgetValidationTests {
         #expect((sanitized.time != nil) == valid)
     }
 
+    @Test func costComesFromUnitPrices() throws {
+        // Spec 005 : 150 g de poulet à 11,90 €/kg + 2 œufs à 0,30 € = 1,79 + 0,60 = 2,39 €.
+        let dish = meal(name: "Poulet œufs", cost: 9, ingredients: [
+            IngredientDTO(name: "Blanc de poulet", quantity: 150, unit: "g", aisle: .viandePoisson, costEur: 5, unitPriceEur: 11.9),
+            IngredientDTO(name: "Œufs", quantity: 2, unit: "piece", aisle: .cremerie, costEur: 4, unitPriceEur: 0.3),
+        ])
+        let sanitized = try #require(AIOutputValidator.validate(meal: dish, constraints: constraints()).sanitized)
+        #expect(sanitized.ingredients.map(\.costEur) == [1.79, 0.6])
+        #expect(sanitized.costEur == 2.39)
+    }
+
+    @Test func kilogramsUseThePricePerKilogram() throws {
+        let dish = meal(ingredients: [
+            IngredientDTO(name: "Riz", quantity: 0.5, unit: "kg", aisle: .epicerie, costEur: 0, unitPriceEur: 1.8),
+        ])
+        let sanitized = try #require(AIOutputValidator.validate(meal: dish, constraints: constraints()).sanitized)
+        #expect(sanitized.costEur == 0.9)
+    }
+
+    @Test func priceAreaDefaultsToFrance() {
+        let preferences = Preferences()
+        #expect(preferences.priceArea == "France")
+        preferences.city = "  Bagnères-de-Luchon "
+        #expect(preferences.priceArea == "Bagnères-de-Luchon, France")
+        #expect(preferences.promptPreferences.location == "Bagnères-de-Luchon, France")
+    }
+
     @Test func overBudgetFeedbackNamesCostAndCeiling() {
         let text = PromptBuilder.overBudgetFeedback(costEur: 95.123, ceilingEur: 92)
         #expect(text.contains("95.12"))

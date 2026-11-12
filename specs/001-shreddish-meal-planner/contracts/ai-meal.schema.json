@@ -4,10 +4,11 @@
     "ingredient": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["name", "quantity", "unit", "aisle", "cost_eur"],
+      "required": ["name", "quantity", "unit", "aisle", "unit_price_eur", "cost_eur"],
       "properties": {
         "name": { "type": "string" },
         "quantity": { "type": "number" },
+        "unit_price_eur": { "type": "number" },
         "unit": { "type": "string", "enum": ["g", "ml", "piece"] },
         "aisle": {
           "type": "string",

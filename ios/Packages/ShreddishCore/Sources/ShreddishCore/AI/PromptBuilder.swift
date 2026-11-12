@@ -20,12 +20,15 @@ public struct PromptPreferences: Codable, Sendable, Equatable {
     public var trainingTime: String?
     /// Séances par semaine, depuis le profil.
     public var trainingSessionsPerWeek: Int?
+    /// Secteur des courses (spec 005) : « Toulouse, France » ou « France ».
+    public var location: String
 
     public init(
         mealsPerDay: Int, maxPrepMinutes: Int, weeklyBudgetEur: Double, budgetTolerance: Double,
         allergies: [String], dislikedFoods: [String], likedFoods: [String], equipment: [String],
         batchCooking: Bool, ingredientAvailability: IngredientAvailability, store: String,
-        ownedSupplements: [String] = [], trainingTime: String? = nil, trainingSessionsPerWeek: Int? = nil
+        ownedSupplements: [String] = [], trainingTime: String? = nil, trainingSessionsPerWeek: Int? = nil,
+        location: String = "France"
     ) {
         self.mealsPerDay = mealsPerDay
         self.maxPrepMinutes = maxPrepMinutes
@@ -41,6 +44,7 @@ public struct PromptPreferences: Codable, Sendable, Equatable {
         self.ownedSupplements = ownedSupplements
         self.trainingTime = trainingTime
         self.trainingSessionsPerWeek = trainingSessionsPerWeek
+        self.location = location
     }
 }
 
@@ -162,8 +166,13 @@ public enum PromptBuilder {
         flocons d'avoine) plutôt que les produits premium (skyr, saumon, avocat, fruits secs, portions individuelles). \
         Ne remplis jamais infeasible pour le budget seul : propose le planning le moins cher possible.
         - previous_attempt_feedback : si présent, corrige ce qui y est signalé.
-        - store : n'utilise que des produits vendus dans cette enseigne et estime cost_eur avec les prix \
-        pratiqués par cette enseigne en France, marque distributeur en priorité.
+        - Prix (store, location) : n'utilise que des produits vendus dans l'enseigne store, marque distributeur \
+        en priorité. Pour chaque ingrédient, unit_price_eur = prix réaliste en rayon cette année dans cette \
+        enseigne autour de location, en € par kg (unit "g"), par litre (unit "ml") ou par pièce (unit "piece"), \
+        pour le format le plus économique couramment vendu. Tiens compte du positionnement de l'enseigne \
+        (hard discount et hypermarché moins chers, proximité et centre-ville plus chers) et du secteur \
+        (grande ville concurrentielle moins chère ; petite ville, montagne ou zone touristique plus chère, \
+        souvent +10 à +25 % en supérette). cost_eur = quantity × unit_price_eur (÷ 1000 pour g et ml).
         - ingredient_availability : "everywhere" = uniquement des ingrédients basiques trouvables dans tout \
         supermarché et en hard discount (Lidl, Aldi), aucun produit de niche (tempeh, seitan, spiruline, levure \
         maltée, sirop d'agave, farines spéciales, superaliments) ; "supermarket" = rayon d'un grand \
@@ -179,7 +188,8 @@ public enum PromptBuilder {
         l'entraînement ; sans heure connue, suppose une séance en fin de journée.
         - time : heure conseillée « HH:mm » de chaque repas, cohérente sur la journée (petit-déjeuner 7:00-9:00, \
         déjeuner 12:00-13:30, dîner 19:00-21:00, collation selon l'entraînement).
-        - Quantités en g, ml ou piece, pesées crues / non cuites. cost_eur = coût de la quantité utilisée.
+        - Quantités en g, ml ou piece, pesées crues / non cuites. cost_eur = coût de la quantité utilisée, \
+        recalculé par l'application depuis unit_price_eur.
         - aisle parmi : fruits_legumes, viande_poisson, cremerie, epicerie, surgeles, boulangerie, autre.
         - Étapes détaillées pour cuisiner sans expérience : 4 à 12 étapes selon le plat (2 à 3 pour une \
         collation sans cuisson). Chaque étape précise quantités, ustensile, intensité du feu ou température, \
