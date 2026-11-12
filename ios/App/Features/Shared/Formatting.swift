@@ -223,6 +223,22 @@ struct TargetGauge: View {
     }
 }
 
+/// Bouton de suppression visible sur une ligne (en plus du balayage).
+struct DeleteRowButton: View {
+    let label: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: "minus.circle.fill")
+                .font(.title3)
+                .foregroundStyle(.red)
+        }
+        .buttonStyle(.borderless)
+        .accessibilityLabel("Supprimer \(label)")
+    }
+}
+
 // MARK: - Clavier
 
 extension View {

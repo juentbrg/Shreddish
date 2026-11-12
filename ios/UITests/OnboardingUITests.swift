@@ -86,4 +86,27 @@ final class OnboardingUITests: XCTestCase {
         app.tabBars.buttons["Courses"].tap()
         XCTAssertTrue(app.staticTexts["Courses estimées"].waitForExistence(timeout: 5))
     }
+
+    /// Spec 003 : suggestion d'équipement ajoutée puis supprimée, budget au montant rapide.
+    func testEquipmentSuggestionAndBudgetPreset() {
+        let app = launch()
+        onboard(app)
+        XCTAssertTrue(app.buttons["settings"].waitForExistence(timeout: 5))
+        app.buttons["settings"].tap()
+        app.buttons["preferencesSettings"].tap()
+
+        let preset = app.buttons["budgetPreset-80"]
+        reveal(preset, in: app)
+        preset.tap()
+        XCTAssertEqual(app.textFields["weeklyBudget"].value as? String, "80")
+
+        let suggestion = app.buttons["suggestion-Airfryer"]
+        reveal(suggestion, in: app)
+        suggestion.tap()
+        let remove = app.buttons["Supprimer Airfryer"]
+        XCTAssertTrue(remove.waitForExistence(timeout: 3))
+        remove.tap()
+        XCTAssertFalse(app.buttons["Supprimer Airfryer"].exists)
+        XCTAssertTrue(app.buttons["suggestion-Airfryer"].exists)
+    }
 }

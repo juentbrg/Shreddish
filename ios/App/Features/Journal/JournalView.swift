@@ -131,6 +131,10 @@ struct JournalDayView: View {
                         }
                         Spacer()
                         Text(Format.kcal(extra.kcal)).foregroundStyle(.secondary)
+                        DeleteRowButton(label: extra.name) {
+                            context.delete(extra)
+                            try? context.save()
+                        }
                     }
                 }
                 .onDelete { offsets in

@@ -32,7 +32,9 @@ struct PrepSessionView: View {
 /// Plannings précédents, consultables hors ligne (FR-013).
 struct PlanHistoryView: View {
     @Environment(AppModel.self) private var model
+    @Environment(\.modelContext) private var context
     @Query(sort: \WeeklyPlan.createdAt, order: .reverse) var plans: [WeeklyPlan]
+    @State private var pendingDeletion: WeeklyPlan?
 
     var body: some View {
         List {
@@ -48,7 +50,26 @@ struct PlanHistoryView: View {
                         }
                     }
                 }
+                .swipeActions {
+                    Button("Supprimer", systemImage: "trash", role: .destructive) { pendingDeletion = plan }
+                }
+                .contextMenu {
+                    Button("Supprimer ce planning", systemImage: "trash", role: .destructive) { pendingDeletion = plan }
+                }
             }
+        }
+        .confirmationDialog(
+            "Supprimer ce planning ?",
+            isPresented: Binding(get: { pendingDeletion != nil }, set: { if !$0 { pendingDeletion = nil } }),
+            titleVisibility: .visible
+        ) {
+            Button("Supprimer", role: .destructive) {
+                if let plan = pendingDeletion { context.delete(plan) }
+                try? context.save()
+                pendingDeletion = nil
+            }
+        } message: {
+            Text("Repas, journal et liste de courses de cette semaine sont supprimés. Action irréversible.")
         }
         .overlay {
             if plans.isEmpty {

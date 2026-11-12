@@ -55,13 +55,43 @@ private struct BudgetSection: View {
     @Bindable var preferences: Preferences
 
     var body: some View {
+        let budget = Binding(
+            get: { preferences.weeklyBudget },
+            set: { value in
+                let range = Preferences.weeklyBudgetRange
+                preferences.weeklyBudget = min(max(value, range.lowerBound), range.upperBound)
+            }
+        )
         Section {
-            Stepper(
-                "\(Format.euros(preferences.weeklyBudget)) par semaine",
-                value: Binding(get: { preferences.weeklyBudget }, set: { preferences.weeklyBudget = $0 }),
-                in: Preferences.weeklyBudgetRange, step: 5
-            )
-            .accessibilityIdentifier("weeklyBudget")
+            HStack {
+                Text("Par semaine")
+                Spacer()
+                TextField("56", value: budget, format: .number.precision(.fractionLength(0...2)).locale(Format.locale))
+                    .keyboardType(.decimalPad)
+                    .multilineTextAlignment(.trailing)
+                    .frame(maxWidth: 90)
+                    .font(.title3.bold().monospacedDigit())
+                    .accessibilityIdentifier("weeklyBudget")
+                Text("€")
+            }
+            Slider(value: budget, in: Preferences.weeklyBudgetRange, step: 1) {
+                Text("Budget")
+            } minimumValueLabel: {
+                Text("20 €").font(.caption)
+            } maximumValueLabel: {
+                Text("300 €").font(.caption)
+            }
+            .accessibilityValue(Format.euros(preferences.weeklyBudget))
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach([30.0, 40, 50, 60, 70, 80, 100, 120], id: \.self) { preset in
+                        Button(Format.euros(preset).replacingOccurrences(of: ",00", with: "")) { budget.wrappedValue = preset }
+                            .buttonStyle(.bordered)
+                            .tint(preferences.weeklyBudget == preset ? .accentColor : .secondary)
+                            .accessibilityIdentifier("budgetPreset-\(Int(preset))")
+                    }
+                }
+            }
             Picker("Dépassement toléré", selection: Binding(get: { preferences.tolerance }, set: { preferences.tolerance = $0 })) {
                 ForEach(Preferences.toleranceOptions, id: \.self) { option in
                     Text(option == 0 ? "Aucun" : "+\(Format.percent(option))").tag(option)
@@ -117,19 +147,24 @@ private struct FoodsSections: View {
     @Bindable var preferences: Preferences
 
     var body: some View {
-        FoodListSection(
+        EditableListSection(
             title: "Allergies", placeholder: "ex. arachide",
             items: Binding(get: { preferences.allergyList }, set: { preferences.allergyList = $0 }),
-            footer: "Jamais proposés, ni en trace ni en dérivé. Un planning qui en contient est rejeté."
+            footer: "Jamais proposés, ni en trace ni en dérivé. Un planning qui en contient est rejeté.",
+            suggestions: Suggestions.allergens
         )
-        FoodListSection(
+        EditableListSection(
             title: "Aliments que tu n'aimes pas", placeholder: "ex. thon", items: $preferences.excludedFoods,
-            footer: "Jamais proposés. Un planning qui en contient est rejeté."
+            footer: "Jamais proposés. Un planning qui en contient est rejeté.",
+            suggestions: Suggestions.foods
         )
-        FoodListSection(title: "Aliments appréciés", placeholder: "ex. poulet", items: $preferences.likedFoods, footer: nil)
-        FoodListSection(
+        EditableListSection(title: "Aliments appréciés", placeholder: "ex. poulet", items: $preferences.likedFoods, footer: nil,
+            suggestions: Suggestions.foods
+        )
+        EditableListSection(
             title: "Équipement", placeholder: "ex. airfryer", items: $preferences.equipment,
-            footer: "Plaques et four supposés disponibles."
+            footer: "Plaques et four supposés disponibles.",
+            suggestions: Suggestions.equipment
         )
     }
 }
@@ -148,40 +183,6 @@ private struct ModelSection: View {
         } footer: {
             Text("Identifiant de modèle OpenAI compatible avec les sorties JSON structurées.")
         }
-    }
-}
-
-struct FoodListSection: View {
-    let title: String
-    let placeholder: String
-    @Binding var items: [String]
-    let footer: String?
-    @State private var draft = ""
-
-    var body: some View {
-        Section {
-            ForEach(items, id: \.self) { Text($0) }
-                .onDelete { items.remove(atOffsets: $0) }
-            HStack {
-                TextField(placeholder, text: $draft)
-                    .onSubmit(add)
-                Button("Ajouter", action: add)
-                    .disabled(draft.trimmingCharacters(in: .whitespaces).isEmpty)
-            }
-        } header: {
-            Text(title)
-        } footer: {
-            if let footer { Text(footer) }
-        }
-    }
-
-    private func add() {
-        let value = draft.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !value.isEmpty else { return }
-        if !items.contains(where: { TextNormalizer.basic($0) == TextNormalizer.basic(value) }) {
-            items.append(value)
-        }
-        draft = ""
     }
 }
 

@@ -4,6 +4,8 @@ import SwiftUI
 
 struct SettingsView: View {
     @Environment(AppModel.self) private var model
+    @Environment(\.modelContext) private var context
+    @State private var confirmErase = false
 
     var body: some View {
         List {
@@ -21,6 +23,12 @@ struct SettingsView: View {
                 NavigationLink("Mon profil") { ProfileEditView() }
                 NavigationLink("Ajuster les macros") { MacroSettingsView() }
             }
+            Section {
+                Button("Supprimer toutes mes données", role: .destructive) { confirmErase = true }
+                    .accessibilityIdentifier("eraseAll")
+            } footer: {
+                Text("Profil, plannings, journal, courses, pesées et préférences. La clé API se supprime à part.")
+            }
             Section("À propos") {
                 Text("Shreddish est un outil personnel d'aide à l'organisation des repas, pas un avis médical ni diététique.")
                     .font(.footnote)
@@ -33,6 +41,11 @@ struct SettingsView: View {
             }
         }
         .navigationTitle("Réglages")
+        .confirmationDialog("Supprimer toutes tes données ?", isPresented: $confirmErase, titleVisibility: .visible) {
+            Button("Tout supprimer", role: .destructive, action: eraseAll)
+        } message: {
+            Text("Action irréversible. L'app revient à l'écran d'accueil.")
+        }
     }
 }
 
@@ -115,5 +128,23 @@ struct APIKeyView: View {
         } catch {
             status = error.userMessage
         }
+    }
+}
+
+extension SettingsView {
+    /// Efface toutes les données locales (FR-211) ; la clé API reste dans le trousseau.
+    private func eraseAll() {
+        try? context.delete(model: ShoppingItem.self)
+        try? context.delete(model: ExtraEntry.self)
+        try? context.delete(model: Meal.self)
+        try? context.delete(model: DayPlan.self)
+        try? context.delete(model: WeeklyPlan.self)
+        try? context.delete(model: WeightEntry.self)
+        try? context.delete(model: Preferences.self)
+        try? context.delete(model: Profile.self)
+        try? context.save()
+        model.calibrationMessage = nil
+        model.warningMessage = nil
+        model.selectedTab = .week
     }
 }

@@ -115,7 +115,13 @@ struct WeightView: View {
     private var historySection: some View {
         Section("Historique") {
             ForEach(entries.reversed()) { entry in
-                LabeledContent(Format.day(entry.day, calendar: model.clock.calendar), value: "\(Format.number(entry.weightKg)) kg")
+                HStack {
+                    LabeledContent(Format.day(entry.day, calendar: model.clock.calendar), value: "\(Format.number(entry.weightKg)) kg")
+                    DeleteRowButton(label: "la pesée") {
+                        context.delete(entry)
+                        try? context.save()
+                    }
+                }
             }
             .onDelete { offsets in
                 let reversed = Array(entries.reversed())

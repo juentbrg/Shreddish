@@ -54,7 +54,12 @@ vendus dans ce magasin et estime les prix de cette enseigne, marque distributeur
 
 ## Requirements *(mandatory)*
 
-- **FR-201**: Budget hebdo 20 à 300 €, pas de 5 € ; tolérance 0, 5, 10, 15 ou 20 % (défaut 10 %).
+- **FR-201**: Budget hebdo 20 à 300 € : saisie libre au centime, curseur à l'euro, montants rapides
+  (30 à 120 €) ; tolérance 0, 5, 10, 15 ou 20 % (défaut 10 %).
+- **FR-210**: Listes (allergies, n'aime pas, appréciés, équipement) : autocomplétion depuis une liste
+  de suggestions, bouton de suppression visible sur chaque élément.
+- **FR-211**: Tout est supprimable : éléments de liste, extras, pesées, plannings de l'historique,
+  ensemble des données (avec confirmation).
 - **FR-202**: Coût semaine > budget × (1 + tolérance) : rejet (nouvel essai) ; > budget : signalé.
 - **FR-203**: Jour régénéré : plafond = budget × (1 + tolérance) − coût des autres jours ; repas
   remplacé : plafond = plafond du jour − coût des autres repas du jour. Dépassement : rejet.
