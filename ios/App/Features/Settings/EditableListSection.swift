@@ -38,6 +38,10 @@ struct EditableListSection: View {
     @Binding var items: [String]
     let footer: String?
     var suggestions: [String] = []
+    /// Sous-titre d'un élément (ex. protéines par dose).
+    var detail: ((String) -> String?)?
+    /// Écran de détail d'un élément (ex. préciser la dose).
+    var destination: ((String) -> AnyView)?
     @State private var draft = ""
 
     private var matches: [String] {
@@ -54,8 +58,16 @@ struct EditableListSection: View {
         Section {
             ForEach(items, id: \.self) { item in
                 HStack {
-                    Text(item)
-                    Spacer()
+                    if let destination {
+                        NavigationLink {
+                            destination(item)
+                        } label: {
+                            row(item)
+                        }
+                        .accessibilityIdentifier("item-\(item)")
+                    } else {
+                        row(item)
+                    }
                     DeleteRowButton(label: item) { remove(item) }
                 }
             }
@@ -92,6 +104,21 @@ struct EditableListSection: View {
         } footer: {
             if let footer { Text(footer) }
         }
+    }
+
+    private func row(_ item: String) -> some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(item)
+                if let text = detail?(item) {
+                    Text(text)
+                        .font(Theme.text(.caption))
+                        .foregroundStyle(Theme.muted)
+                }
+            }
+            Spacer()
+        }
+        .contentShape(Rectangle())
     }
 
     private func add(_ value: String) {

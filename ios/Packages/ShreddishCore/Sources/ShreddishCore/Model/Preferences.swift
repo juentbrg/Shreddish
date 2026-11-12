@@ -50,6 +50,9 @@ public final class Preferences {
     // Spec 005 (SchemaV5).
     /// Ville ou secteur des courses (ex. « Toulouse ») ; nil = France.
     public var city: String?
+    // Spec 007 (SchemaV6).
+    /// `[clé normalisée: SupplementInfo]` encodé : protéines par dose et taille de dose.
+    public var supplementInfoData: Data?
 
     public init() {
         mealsPerDay = 4
@@ -89,6 +92,28 @@ public final class Preferences {
         set { supplements = newValue }
     }
 
+    /// Détail d'un complément (protéines par dose, dose), vide si non précisé.
+    public func supplementInfo(for name: String) -> SupplementInfo {
+        supplementInfoMap[TextNormalizer.singular(name)] ?? SupplementInfo()
+    }
+
+    public func setSupplementInfo(_ info: SupplementInfo, for name: String) {
+        var map = supplementInfoMap
+        map[TextNormalizer.singular(name)] = info.isEmpty ? nil : info
+        supplementInfoData = map.isEmpty ? nil : try? JSONEncoder().encode(map)
+    }
+
+    private var supplementInfoMap: [String: SupplementInfo] {
+        supplementInfoData.flatMap { try? JSONDecoder().decode([String: SupplementInfo].self, from: $0) } ?? [:]
+    }
+
+    /// Compléments possédés avec leur détail, tels qu'envoyés à l'IA.
+    public var ownedSupplementDetails: [OwnedSupplement] {
+        supplementList.map { name in
+            OwnedSupplement(name: name, info: supplementInfo(for: name))
+        }
+    }
+
     /// « HH:mm » ou nil.
     public var trainingTimeLabel: String? {
         trainingTimeMinutes.map { String(format: "%02d:%02d", $0 / 60 % 24, $0 % 60) }
@@ -123,7 +148,7 @@ public final class Preferences {
             mealsPerDay: mealsPerDay, maxPrepMinutes: maxPrepMinutes, weeklyBudgetEur: weeklyBudget,
             budgetTolerance: tolerance, allergies: allergyList, dislikedFoods: excludedFoods, likedFoods: likedFoods,
             equipment: equipment, batchCooking: batchCooking, ingredientAvailability: availability, store: storeName,
-            ownedSupplements: supplementList, trainingTime: trainingTimeLabel, location: priceArea
+            ownedSupplements: ownedSupplementDetails, trainingTime: trainingTimeLabel, location: priceArea
         )
     }
 
@@ -135,4 +160,61 @@ public final class Preferences {
             ownedSupplements: supplementList
         )
     }
+}
+
+/// Nature d'un complément : il apporte des macros (whey, gainer) ou se prend en dose simple (créatine, vitamines).
+public enum SupplementKind: String, Codable, Sendable, CaseIterable {
+    case macro
+    case dose
+
+    /// Devine la nature depuis le nom ; modifiable par l'utilisateur.
+    public static func infer(from name: String) -> SupplementKind {
+        let key = TextNormalizer.basic(name)
+        let macroWords = ["whey", "protein", "proteine", "caseine", "casein", "gainer", "barre", "isolat", "mass"]
+        return macroWords.contains { key.contains($0) } ? .macro : .dose
+    }
+}
+
+/// Unité d'une dose simple.
+public enum SupplementUnit: String, Codable, Sendable, CaseIterable {
+    case g, mg, µg, ml, gelule, comprime, sachet
+}
+
+/// Détail d'un complément possédé (spec 007).
+public struct SupplementInfo: Codable, Sendable, Equatable {
+    /// Nature choisie ; nil = déduite du nom.
+    public var kind: SupplementKind?
+    // Complément à macros, valeurs par dose.
+    /// Taille d'une dose, en g (ex. 30 g, un scoop).
+    public var servingG: Double?
+    public var kcalPerServing: Double?
+    /// Protéines par dose, en g (ex. 24 g pour une whey).
+    public var proteinPerServingG: Double?
+    public var carbsPerServingG: Double?
+    public var fatPerServingG: Double?
+    // Dose simple.
+    /// Quantité par prise (ex. 5 pour 5 g de créatine).
+    public var doseAmount: Double?
+    public var doseUnit: SupplementUnit?
+    public var dosesPerDay: Int?
+
+    public init(
+        kind: SupplementKind? = nil, servingG: Double? = nil, kcalPerServing: Double? = nil,
+        proteinPerServingG: Double? = nil, carbsPerServingG: Double? = nil, fatPerServingG: Double? = nil,
+        doseAmount: Double? = nil, doseUnit: SupplementUnit? = nil, dosesPerDay: Int? = nil
+    ) {
+        self.kind = kind
+        self.servingG = servingG
+        self.kcalPerServing = kcalPerServing
+        self.proteinPerServingG = proteinPerServingG
+        self.carbsPerServingG = carbsPerServingG
+        self.fatPerServingG = fatPerServingG
+        self.doseAmount = doseAmount
+        self.doseUnit = doseUnit
+        self.dosesPerDay = dosesPerDay
+    }
+
+    public var isEmpty: Bool { self == SupplementInfo() }
+
+    public func resolvedKind(for name: String) -> SupplementKind { kind ?? SupplementKind.infer(from: name) }
 }

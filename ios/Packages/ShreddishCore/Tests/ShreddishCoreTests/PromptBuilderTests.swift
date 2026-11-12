@@ -64,6 +64,8 @@ struct PromptBuilderTests {
             "equipment", "batch_cooking", "day_offset", "existing_day_meals", "meal_type_to_replace",
             "remaining_targets", "avoid_meal_names", "type", "name", "owned_supplements", "training_time",
             "training_sessions_per_week", "previous_attempt_feedback", "location",
+            "protein_g_per_serving", "serving_g", "kind", "kcal_per_serving", "carbs_g_per_serving",
+            "fat_g_per_serving", "dose", "doses_per_day",
         ]
         for text in texts {
             let keys = Self.allKeys(try JSONSerialization.jsonObject(with: Data(text.utf8)))
@@ -123,5 +125,32 @@ struct PromptBuilderTests {
         #expect(text.contains("ingredient_availability"))
         #expect(text.contains("store"))
         #expect(text.contains("français"))
+    }
+
+    @Test func supplementDetailsReachThePromptByKind() throws {
+        let preferences = Preferences()
+        preferences.supplementList = ["Whey", "Créatine"]
+        preferences.setSupplementInfo(
+            SupplementInfo(servingG: 30, kcalPerServing: 118, proteinPerServingG: 24, carbsPerServingG: 2, fatPerServingG: 1.5),
+            for: "whey"
+        )
+        preferences.setSupplementInfo(SupplementInfo(doseAmount: 5, doseUnit: .g, dosesPerDay: 1), for: "Créatine")
+        let text = PromptBuilder.weekInput(targets: referenceTargets, goal: .cut, preferences: preferences.promptPreferences)
+        #expect(text.contains(
+            "{\"carbs_g_per_serving\":2,\"fat_g_per_serving\":1.5,\"kcal_per_serving\":118,\"kind\":\"macro\","
+                + "\"name\":\"Whey\",\"protein_g_per_serving\":24,\"serving_g\":30}"
+        ))
+        #expect(text.contains("{\"dose\":\"5 g\",\"doses_per_day\":1,\"kind\":\"dose\",\"name\":\"Créatine\"}"))
+        preferences.setSupplementInfo(SupplementInfo(), for: "Whey")
+        preferences.setSupplementInfo(SupplementInfo(), for: "Créatine")
+        #expect(preferences.supplementInfoData == nil)
+    }
+
+    @Test(arguments: [
+        ("Whey", SupplementKind.macro), ("Isolat de whey", .macro), ("Caséine", .macro), ("Gainer", .macro),
+        ("Barres protéinées", .macro), ("Créatine", .dose), ("Vitamine D", .dose), ("Oméga-3", .dose),
+    ])
+    func supplementKindIsInferred(name: String, kind: SupplementKind) {
+        #expect(SupplementKind.infer(from: name) == kind)
     }
 }

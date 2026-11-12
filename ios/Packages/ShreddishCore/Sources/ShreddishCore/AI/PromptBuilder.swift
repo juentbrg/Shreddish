@@ -14,8 +14,8 @@ public struct PromptPreferences: Codable, Sendable, Equatable {
     public var ingredientAvailability: IngredientAvailability
     /// Nom de l'enseigne : produits et prix de ce magasin (spec 003).
     public var store: String
-    /// Compléments déjà possédés (spec 004).
-    public var ownedSupplements: [String]
+    /// Compléments déjà possédés (spec 004), avec protéines par dose (spec 007).
+    public var ownedSupplements: [OwnedSupplement]
     /// Heure d'entraînement habituelle « HH:mm ».
     public var trainingTime: String?
     /// Séances par semaine, depuis le profil.
@@ -27,7 +27,7 @@ public struct PromptPreferences: Codable, Sendable, Equatable {
         mealsPerDay: Int, maxPrepMinutes: Int, weeklyBudgetEur: Double, budgetTolerance: Double,
         allergies: [String], dislikedFoods: [String], likedFoods: [String], equipment: [String],
         batchCooking: Bool, ingredientAvailability: IngredientAvailability, store: String,
-        ownedSupplements: [String] = [], trainingTime: String? = nil, trainingSessionsPerWeek: Int? = nil,
+        ownedSupplements: [OwnedSupplement] = [], trainingTime: String? = nil, trainingSessionsPerWeek: Int? = nil,
         location: String = "France"
     ) {
         self.mealsPerDay = mealsPerDay
@@ -45,6 +45,39 @@ public struct PromptPreferences: Codable, Sendable, Equatable {
         self.trainingTime = trainingTime
         self.trainingSessionsPerWeek = trainingSessionsPerWeek
         self.location = location
+    }
+}
+
+/// Complément possédé envoyé à l'IA (spec 007). `kind` "macro" : valeurs par dose ; "dose" : prise simple.
+public struct OwnedSupplement: Codable, Sendable, Equatable {
+    public var name: String
+    public var kind: SupplementKind
+    public var servingG: Double?
+    public var kcalPerServing: Double?
+    public var proteinGPerServing: Double?
+    public var carbsGPerServing: Double?
+    public var fatGPerServing: Double?
+    /// « 5 g », « 1 gelule ».
+    public var dose: String?
+    public var dosesPerDay: Int?
+
+    public init(name: String, info: SupplementInfo = SupplementInfo()) {
+        self.name = name
+        kind = info.resolvedKind(for: name)
+        switch kind {
+        case .macro:
+            servingG = info.servingG
+            kcalPerServing = info.kcalPerServing
+            proteinGPerServing = info.proteinPerServingG
+            carbsGPerServing = info.carbsPerServingG
+            fatGPerServing = info.fatPerServingG
+        case .dose:
+            if let amount = info.doseAmount {
+                let value = amount.rounded() == amount ? String(Int(amount)) : String(amount)
+                dose = "\(value) \((info.doseUnit ?? .g).rawValue)"
+            }
+            dosesPerDay = info.dosesPerDay
+        }
     }
 }
 
@@ -180,9 +213,14 @@ public enum PromptBuilder {
         - Équipement : plaques, casserole, poêle et four toujours disponibles, en plus de equipment. Riz, pâtes, \
         semoule et pommes de terre se cuisent à la casserole : aucun cuiseur nécessaire, varie les féculents \
         (riz au moins 2 fois par semaine sauf si exclu).
-        - owned_supplements : compléments déjà possédés. Utilise-les pour atteindre les protéines quand c'est \
-        pertinent (ex. whey en collation ou après l'entraînement), comme ingrédient du repas avec dose en g, \
-        cost_eur = 0, aisle "autre", macros comptées. Indique le moment de prise dans les étapes \
+        - owned_supplements : compléments déjà possédés, coût 0. kind "macro" (whey, gainer…) : utilise-le pour \
+        atteindre les protéines quand c'est pertinent (collation, après l'entraînement), comme ingrédient en g, \
+        unit_price_eur = 0, cost_eur = 0, aisle "autre". Si serving_g et les valeurs par dose sont présents, \
+        macros du complément = quantité ÷ serving_g × kcal_per_serving, protein_g_per_serving, \
+        carbs_g_per_serving, fat_g_per_serving ; indique la dose en scoops (ex. « 1 scoop de 30 g »). \
+        kind "dose" (créatine, vitamines, oméga-3…) : aucune macro, ni ingrédient ; ajoute la prise dans les \
+        étapes du repas le plus adapté, avec dose × doses_per_day exactement (ex. « Prends 5 g de créatine \
+        avec ce repas »), une fois par jour sauf doses_per_day > 1. Indique le moment de prise dans les étapes \
         (ex. « dans les 60 min après la séance », « créatine 5 g, à n'importe quel repas »).
         - training_time et training_sessions_per_week : place la collation ou le repas protéiné autour de \
         l'entraînement ; sans heure connue, suppose une séance en fin de journée.

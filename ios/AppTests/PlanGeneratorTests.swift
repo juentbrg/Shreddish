@@ -178,7 +178,7 @@ struct PlanGeneratorTests {
         try await generator(transport).generateWeek(profile: profile, preferences: preferences, in: context)
         let body = try #require(try JSONSerialization.jsonObject(with: transport.requests[0].httpBody ?? Data()) as? [String: Any])
         let input = try #require(body["input"] as? String)
-        #expect(input.contains("\"owned_supplements\":[\"Whey\"]"))
+        #expect(input.contains("\"owned_supplements\":[{\"kind\":\"macro\",\"name\":\"Whey\"}]"))
         #expect(input.contains("\"training_time\":\"18:30\""))
         #expect(input.contains("\"location\":\"France\""))
     }

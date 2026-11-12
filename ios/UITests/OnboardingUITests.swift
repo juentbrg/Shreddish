@@ -90,6 +90,51 @@ final class OnboardingUITests: XCTestCase {
         XCTAssertTrue(app.descendants(matching: .any)["weekCost"].waitForExistence(timeout: 5))
     }
 
+    /// Spec 007 : valeurs d'un complément selon sa nature (whey à macros, créatine en dose).
+    func testSupplementProteinPerServing() {
+        let app = launch()
+        onboard(app)
+        XCTAssertTrue(app.buttons["settings"].waitForExistence(timeout: 5))
+        app.buttons["settings"].tap()
+        app.buttons["preferencesSettings"].tap()
+        let whey = app.buttons["suggestion-Whey"]
+        reveal(whey, in: app)
+        whey.tap()
+        let item = app.buttons["item-Whey"]
+        reveal(item, in: app)
+        item.tap()
+        let serving = app.textFields["servingSize"]
+        XCTAssertTrue(serving.waitForExistence(timeout: 3))
+        serving.tap()
+        serving.typeText("30")
+        for (field, value) in [("kcalPerServing", "118"), ("proteinPerServing", "24"), ("carbsPerServing", "2"), ("fatPerServing", "2")] {
+            app.textFields[field].tap()
+            app.textFields[field].typeText(value)
+        }
+        app.buttons["keyboardDone"].tap()
+        app.navigationBars.buttons.firstMatch.tap()
+        let summary = app.buttons["item-Whey"]
+        XCTAssertTrue(summary.waitForExistence(timeout: 3))
+        XCTAssertTrue(summary.label.contains("Dose de 30 g · 118 kcal · P 24 g · G 2 g · L 2 g"), summary.label)
+
+        // Créatine : dose simple, pas de protéines par dose.
+        let creatine = app.buttons["suggestion-Créatine"]
+        reveal(creatine, in: app)
+        creatine.tap()
+        let creatineItem = app.buttons["item-Créatine"]
+        reveal(creatineItem, in: app)
+        creatineItem.tap()
+        let dose = app.textFields["doseAmount"]
+        XCTAssertTrue(dose.waitForExistence(timeout: 3))
+        XCTAssertFalse(app.textFields["proteinPerServing"].exists)
+        dose.tap()
+        dose.typeText("5")
+        app.buttons["keyboardDone"].tap()
+        app.navigationBars.buttons.firstMatch.tap()
+        XCTAssertTrue(creatineItem.waitForExistence(timeout: 3))
+        XCTAssertTrue(creatineItem.label.contains("5 g par prise, 1 fois par jour"), creatineItem.label)
+    }
+
     /// Spec 006 : une semaine à venir se planifie sans remplacer celle en cours.
     func testPlanUpcomingWeek() {
         let app = launch()

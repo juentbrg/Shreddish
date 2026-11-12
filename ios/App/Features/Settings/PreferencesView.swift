@@ -186,6 +186,123 @@ private struct FoodsSections: View {
     }
 }
 
+extension SupplementsSection {
+    /// Résumé sous le nom du complément.
+    static func summary(_ info: SupplementInfo, name: String) -> String {
+        switch info.resolvedKind(for: name) {
+        case .macro:
+            guard let serving = info.servingG else {
+                return info.proteinPerServingG.map { "\(Format.number($0)) g de protéines par dose" }
+                    ?? "Préciser les valeurs par dose"
+            }
+            var parts = ["Dose de \(Format.number(serving)) g"]
+            if let kcal = info.kcalPerServing { parts.append("\(Format.number(kcal, digits: 0)) kcal") }
+            if let protein = info.proteinPerServingG { parts.append("P \(Format.number(protein)) g") }
+            if let carbs = info.carbsPerServingG { parts.append("G \(Format.number(carbs)) g") }
+            if let fat = info.fatPerServingG { parts.append("L \(Format.number(fat)) g") }
+            return parts.joined(separator: " · ")
+        case .dose:
+            guard let amount = info.doseAmount else { return "Préciser la dose" }
+            let perDay = info.dosesPerDay ?? 1
+            return "\(Format.number(amount)) \((info.doseUnit ?? .g).label) par prise, \(perDay) fois par jour"
+        }
+    }
+}
+
+extension SupplementUnit {
+    var label: String {
+        switch self {
+        case .g: "g"
+        case .mg: "mg"
+        case .µg: "µg"
+        case .ml: "ml"
+        case .gelule: "gélule(s)"
+        case .comprime: "comprimé(s)"
+        case .sachet: "sachet(s)"
+        }
+    }
+}
+
+/// Détail d'un complément selon sa nature (spec 007), enregistré à la saisie.
+private struct SupplementInfoView: View {
+    let name: String
+    let preferences: Preferences
+    @State private var info = SupplementInfo()
+
+    var body: some View {
+        let kind = info.resolvedKind(for: name)
+        Form {
+            Section {
+                Picker("Type", selection: Binding(get: { kind }, set: { info.kind = $0 })) {
+                    Text("Apporte des macros").tag(SupplementKind.macro)
+                    Text("Dose simple").tag(SupplementKind.dose)
+                }
+                .accessibilityIdentifier("supplementKind")
+            } footer: {
+                Text(kind == .macro
+                    ? "Whey, caséine, gainer, barres : l'IA compte ses calories et macros dans tes repas."
+                    : "Créatine, vitamines, oméga-3 : aucune calorie comptée, l'IA place la prise dans un repas.")
+            }
+            if kind == .macro {
+                Section {
+                    field("Taille d'une dose", value: $info.servingG, unit: "g", identifier: "servingSize")
+                    field("Calories", value: $info.kcalPerServing, unit: "kcal", identifier: "kcalPerServing")
+                    field("Protéines", value: $info.proteinPerServingG, unit: "g", identifier: "proteinPerServing")
+                    field("Glucides", value: $info.carbsPerServingG, unit: "g", identifier: "carbsPerServing")
+                    field("Lipides", value: $info.fatPerServingG, unit: "g", identifier: "fatPerServing")
+                } header: {
+                    Text("Par dose")
+                } footer: {
+                    Text("Valeurs de l'étiquette de ton produit, pour une dose (un scoop).")
+                }
+            } else {
+                Section {
+                    HStack {
+                        Text("Par prise")
+                        Spacer()
+                        TextField("0", value: $info.doseAmount, format: .number.precision(.fractionLength(0...2)).locale(Format.locale))
+                            .keyboardType(.decimalPad)
+                            .multilineTextAlignment(.trailing)
+                            .frame(maxWidth: 70)
+                            .accessibilityIdentifier("doseAmount")
+                        Picker("Unité", selection: Binding(get: { info.doseUnit ?? .g }, set: { info.doseUnit = $0 })) {
+                            ForEach(SupplementUnit.allCases, id: \.self) { Text($0.label).tag($0) }
+                        }
+                        .labelsHidden()
+                        .fixedSize()
+                    }
+                    Stepper(
+                        "\(info.dosesPerDay ?? 1) prise(s) par jour",
+                        value: Binding(get: { info.dosesPerDay ?? 1 }, set: { info.dosesPerDay = $0 }),
+                        in: 1...4
+                    )
+                } header: {
+                    Text("Dose")
+                }
+            }
+        }
+        .themedList()
+        .navigationTitle(name)
+        .navigationBarTitleDisplayMode(.inline)
+        .keyboardDoneButton()
+        .onAppear { info = preferences.supplementInfo(for: name) }
+        .onChange(of: info) { _, value in preferences.setSupplementInfo(value, for: name) }
+    }
+
+    private func field(_ title: String, value: Binding<Double?>, unit: String, identifier: String) -> some View {
+        HStack {
+            Text(title)
+            Spacer()
+            TextField("0", value: value, format: .number.precision(.fractionLength(0...1)).locale(Format.locale))
+                .keyboardType(.decimalPad)
+                .multilineTextAlignment(.trailing)
+                .frame(maxWidth: 80)
+                .accessibilityIdentifier(identifier)
+            Text(unit).foregroundStyle(Theme.muted)
+        }
+    }
+}
+
 /// Compléments possédés et heure d'entraînement (spec 004, FR-301).
 private struct SupplementsSection: View {
     @Bindable var preferences: Preferences
@@ -194,9 +311,11 @@ private struct SupplementsSection: View {
         EditableListSection(
             title: "Compléments possédés", placeholder: "ex. whey",
             items: Binding(get: { preferences.supplementList }, set: { preferences.supplementList = $0 }),
-            footer: "Intégrés aux repas pour atteindre tes protéines, avec dose et moment de prise. "
-                + "Comptés à 0 € et absents de la liste de courses.",
-            suggestions: Suggestions.supplements
+            footer: "Touche un complément pour préciser ses valeurs : macros par scoop pour une whey, dose pour la "
+                + "créatine. Intégrés aux repas avec moment de prise, comptés à 0 €, absents de la liste de courses.",
+            suggestions: Suggestions.supplements,
+            detail: { name in Self.summary(preferences.supplementInfo(for: name), name: name) },
+            destination: { name in AnyView(SupplementInfoView(name: name, preferences: preferences)) }
         )
         Section {
             Toggle("Heure fixe", isOn: Binding(
