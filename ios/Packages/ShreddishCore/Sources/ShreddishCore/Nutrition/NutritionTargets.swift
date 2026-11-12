@@ -69,6 +69,13 @@ public struct CalculationBreakdown: Codable, Sendable, Equatable {
     public var floorKcal: Double
     public var proteinPerKg: Double
     public var fatPerKg: Double
+    // Spec 002, optionnels : les cibles enregistrées par la v1 se décodent toujours.
+    /// Facteur d'activité quotidienne hors sport ; `nil` pour l'ancien niveau unique.
+    public var dailyActivityFactor: Double?
+    /// Dépense sport moyenne par jour.
+    public var exerciseKcalPerDay: Double?
+    /// Ajustement de calibration appliqué.
+    public var calibrationKcal: Double?
 }
 
 /// Cibles quotidiennes dérivées du profil, arrondies à l'unité en fin de calcul.

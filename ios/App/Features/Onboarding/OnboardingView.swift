@@ -46,6 +46,8 @@ struct OnboardingView: View {
             sex: input.sex, birthDate: draft.birthDate, heightCm: input.heightCm, weightKg: input.weightKg,
             activity: input.activity, goal: input.goal
         )
+        profile.dailyActivity = input.dailyActivity
+        profile.training = input.training
         profile.disclaimerAcceptedAt = model.clock.now
         context.insert(profile)
         if (try? context.fetchCount(FetchDescriptor<Preferences>())) ?? 0 == 0 {

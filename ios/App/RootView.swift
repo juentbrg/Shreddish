@@ -4,6 +4,8 @@ import SwiftUI
 
 struct RootView: View {
     @Environment(AppModel.self) private var model
+    @Environment(\.modelContext) private var context
+    @Environment(\.scenePhase) private var scenePhase
     @Query var profiles: [Profile]
 
     private var profile: Profile? {
@@ -15,6 +17,10 @@ struct RootView: View {
             OnboardingView()
         } else {
             tabs
+                .task { model.calibrateIfDue(context: context) }
+                .onChange(of: scenePhase) { _, phase in
+                    if phase == .active { model.calibrateIfDue(context: context) }
+                }
         }
     }
 

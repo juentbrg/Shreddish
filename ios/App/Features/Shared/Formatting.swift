@@ -86,6 +86,44 @@ extension ActivityLevel {
     }
 }
 
+extension DailyActivity {
+    var label: String {
+        switch self {
+        case .sedentary: "Sédentaire"
+        case .light: "Peu actif"
+        case .active: "Actif"
+        case .veryActive: "Très actif"
+        }
+    }
+
+    var detail: String {
+        switch self {
+        case .sedentary: "Travail de bureau, moins de 5 000 pas par jour."
+        case .light: "Entre 5 000 et 7 500 pas par jour."
+        case .active: "Entre 7 500 et 10 000 pas par jour, ou debout une bonne partie de la journée."
+        case .veryActive: "Plus de 10 000 pas par jour ou métier physique."
+        }
+    }
+}
+
+extension TrainingIntensity {
+    var label: String {
+        switch self {
+        case .light: "Légère"
+        case .moderate: "Modérée"
+        case .intense: "Intense"
+        }
+    }
+
+    var detail: String {
+        switch self {
+        case .light: "Légère : yoga, mobilité, muscu loin de l'échec."
+        case .moderate: "Modérée : muscu classique, vélo ou course à allure confortable."
+        case .intense: "Intense : muscu à l'échec, escalade, HIIT, sports de combat."
+        }
+    }
+}
+
 extension Goal {
     var label: String {
         switch self {

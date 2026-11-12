@@ -48,6 +48,25 @@ struct TargetsView: View {
                 macroRow("Glucides", grams: targets.carbsG, kcalPerGram: 4, color: .blue)
                 macroRow("Lipides", grams: targets.fatG, kcalPerGram: 9, color: .yellow)
             }
+            if let message = model.calibrationMessage {
+                Section {
+                    Label(message, systemImage: "scalemass.fill")
+                        .foregroundStyle(.tint)
+                        .accessibilityIdentifier("calibrationMessage")
+                }
+            }
+            if profile.dailyActivity == nil {
+                Section {
+                    NavigationLink {
+                        ProfileEditView()
+                    } label: {
+                        Label(
+                            "Précise ton activité (séances, intensité, pas) pour une dépense plus juste.",
+                            systemImage: "figure.strengthtraining.traditional"
+                        )
+                    }
+                }
+            }
             if !targets.warnings.isEmpty {
                 Section {
                     ForEach(targets.warnings, id: \.self) { warning in
@@ -60,6 +79,12 @@ struct TargetsView: View {
             Section {
                 NavigationLink("Modifier mon profil") { ProfileEditView() }
                 NavigationLink("Ajuster les macros") { MacroSettingsView() }
+                NavigationLink {
+                    CalibrationView()
+                } label: {
+                    LabeledContent("Calibration par les pesées", value: profile.isAutoCalibrationOn ? "Auto" : "Manuelle")
+                }
+                .accessibilityIdentifier("calibration")
             }
             Section {
                 Text("Outil personnel, pas un avis médical. Valeurs estimées par des formules standard.")
@@ -88,7 +113,18 @@ struct TargetsView: View {
     private func breakdownSection(_ breakdown: CalculationBreakdown, targets: NutritionTargets, profile: Profile) -> some View {
         Section("Détail du calcul") {
             LabeledContent("Métabolisme de base", value: Format.kcal(breakdown.bmr))
-            LabeledContent("Activité", value: "× \(Format.number(breakdown.activityFactor, digits: 3))")
+            if let daily = breakdown.dailyActivityFactor {
+                LabeledContent("Activité hors sport", value: "× \(Format.number(daily, digits: 2))")
+                LabeledContent("Sport (moyenne par jour)", value: "+ \(Format.kcal(breakdown.exerciseKcalPerDay ?? 0))")
+            } else {
+                LabeledContent("Activité", value: "× \(Format.number(breakdown.activityFactor, digits: 3))")
+            }
+            if let calibration = breakdown.calibrationKcal {
+                LabeledContent(
+                    "Calibration (pesées)",
+                    value: "\(calibration >= 0 ? "+" : "−") \(Format.kcal(abs(calibration)))"
+                )
+            }
             LabeledContent("Dépense estimée", value: Format.kcal(breakdown.tdee))
             LabeledContent(
                 "Ajustement \(profile.goal.label.lowercased())",

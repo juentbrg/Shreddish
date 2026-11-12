@@ -11,10 +11,16 @@ public struct ProfileInput: Sendable, Equatable {
     public var proteinPerKg: Double?
     public var fatPerKg: Double?
     public var calorieAdjustment: Double?
+    /// Activité détaillée (spec 002). Absente : ancien `activity` (FR-104).
+    public var dailyActivity: DailyActivity?
+    public var training: TrainingLoad?
+    /// Ajustement de calibration par les pesées, en kcal (FR-108).
+    public var tdeeAdjustmentKcal: Double
 
     public init(
         sex: Sex, age: Int, heightCm: Double, weightKg: Double, activity: ActivityLevel, goal: Goal,
-        proteinPerKg: Double? = nil, fatPerKg: Double? = nil, calorieAdjustment: Double? = nil
+        proteinPerKg: Double? = nil, fatPerKg: Double? = nil, calorieAdjustment: Double? = nil,
+        dailyActivity: DailyActivity? = nil, training: TrainingLoad? = nil, tdeeAdjustmentKcal: Double = 0
     ) {
         self.sex = sex
         self.age = age
@@ -25,7 +31,13 @@ public struct ProfileInput: Sendable, Equatable {
         self.proteinPerKg = proteinPerKg
         self.fatPerKg = fatPerKg
         self.calorieAdjustment = calorieAdjustment
+        self.dailyActivity = dailyActivity
+        self.training = training
+        self.tdeeAdjustmentKcal = tdeeAdjustmentKcal
     }
+
+    /// Activité détaillée utilisée si renseignée.
+    public var usesDetailedActivity: Bool { dailyActivity != nil }
 }
 
 public enum ProfileValidationError: Error, Equatable, Sendable {
@@ -39,6 +51,7 @@ public enum ProfileValidationError: Error, Equatable, Sendable {
     case heightOutOfRange
     case weightOutOfRange
     case overrideOutOfRange(Field)
+    case trainingOutOfRange
 }
 
 /// Calcul déterministe des cibles (constitution II, research R7). Jamais délégué à l'IA.
@@ -53,6 +66,8 @@ public enum NutritionCalculator {
     /// Lipides par défaut et plancher absolu, en g/kg (FR-003).
     public static let defaultFatPerKg = 0.8
     public static let minimumFatPerKg = 0.6
+    /// Ajustement de calibration cumulé maximal, en kcal (FR-108).
+    public static let maxTdeeAdjustment = 600.0
 
     public static func validate(_ input: ProfileInput) throws(ProfileValidationError) {
         guard ageRange.contains(input.age) else { throw .ageOutOfRange }
@@ -67,6 +82,9 @@ public enum NutritionCalculator {
         if let value = input.calorieAdjustment, !calorieAdjustmentRange.contains(value) {
             throw .overrideOutOfRange(.calorieAdjustment)
         }
+        if let training = input.training, !training.isValid {
+            throw .trainingOutOfRange
+        }
     }
 
     /// Métabolisme de base, Mifflin-St Jeor.
@@ -75,9 +93,29 @@ public enum NutritionCalculator {
         return 10 * input.weightKg + 6.25 * input.heightCm - 5 * Double(input.age) + sexConstant
     }
 
-    /// Dépense journalière totale.
+    /// Dépense sport moyenne par jour ; `nil` sans activité détaillée.
+    public static func exerciseKcalPerDay(_ input: ProfileInput) -> Double? {
+        guard input.usesDetailedActivity else { return nil }
+        return input.training?.kcalPerDay(weightKg: input.weightKg) ?? 0
+    }
+
+    /// Dépense selon la formule seule, sans calibration : BMR × facteur quotidien + sport (FR-103),
+    /// ou BMR × ancien niveau d'activité (FR-104).
+    public static func formulaTdee(_ input: ProfileInput) -> Double {
+        if let daily = input.dailyActivity {
+            return bmr(input) * daily.factor + (exerciseKcalPerDay(input) ?? 0)
+        }
+        return bmr(input) * input.activity.factor
+    }
+
+    /// Ajustement de calibration borné à ±600 kcal.
+    public static func clampedAdjustment(_ input: ProfileInput) -> Double {
+        min(max(input.tdeeAdjustmentKcal, -maxTdeeAdjustment), maxTdeeAdjustment)
+    }
+
+    /// Dépense journalière totale, calibration incluse.
     public static func tdee(_ input: ProfileInput) -> Double {
-        bmr(input) * input.activity.factor
+        formulaTdee(input) + clampedAdjustment(input)
     }
 
     /// Plancher calorique : 1500 kcal homme, 1200 kcal femme ; en sèche, jamais sous le BMR.
@@ -132,13 +170,16 @@ public enum NutritionCalculator {
             warnings: warnings,
             breakdown: CalculationBreakdown(
                 bmr: bmr,
-                activityFactor: input.activity.factor,
+                activityFactor: input.dailyActivity?.factor ?? input.activity.factor,
                 tdee: tdee,
                 calorieAdjustment: adjustment,
                 adjustedKcal: kcal,
                 floorKcal: floor,
                 proteinPerKg: proteinPerKg,
-                fatPerKg: fat / input.weightKg
+                fatPerKg: fat / input.weightKg,
+                dailyActivityFactor: input.dailyActivity?.factor,
+                exerciseKcalPerDay: exerciseKcalPerDay(input),
+                calibrationKcal: clampedAdjustment(input) == 0 ? nil : clampedAdjustment(input)
             )
         )
     }

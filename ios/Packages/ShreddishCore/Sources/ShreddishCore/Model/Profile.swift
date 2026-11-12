@@ -16,6 +16,17 @@ public final class Profile {
     public var fatPerKg: Double?
     public var calorieAdjustment: Double?
     public var disclaimerAcceptedAt: Date?
+    // Spec 002 (SchemaV2), optionnels pour la migration légère depuis V1.
+    /// `DailyActivity` ; `nil` : ancien `activity` utilisé (FR-104).
+    public var dailyActivityRaw: String?
+    public var trainingSessionsPerWeek: Int?
+    public var trainingMinutes: Int?
+    public var trainingIntensityRaw: String?
+    /// Ajustement de calibration par les pesées, en kcal.
+    public var tdeeAdjustmentKcal: Double?
+    public var lastCalibrationAt: Date?
+    /// `nil` = actif (FR-109).
+    public var autoCalibrate: Bool?
 
     public init(
         sex: Sex, birthDate: Date, heightCm: Double, weightKg: Double, activity: ActivityLevel, goal: Goal
@@ -43,6 +54,29 @@ public final class Profile {
         set { goalRaw = newValue.rawValue }
     }
 
+    public var dailyActivity: DailyActivity? {
+        get { dailyActivityRaw.flatMap(DailyActivity.init(rawValue:)) }
+        set { dailyActivityRaw = newValue?.rawValue }
+    }
+
+    public var training: TrainingLoad? {
+        get {
+            guard let sessions = trainingSessionsPerWeek, let minutes = trainingMinutes,
+                  let intensity = trainingIntensityRaw.flatMap(TrainingIntensity.init(rawValue:)) else { return nil }
+            return TrainingLoad(sessionsPerWeek: sessions, minutesPerSession: minutes, intensity: intensity)
+        }
+        set {
+            trainingSessionsPerWeek = newValue?.sessionsPerWeek
+            trainingMinutes = newValue?.minutesPerSession
+            trainingIntensityRaw = newValue?.intensity.rawValue
+        }
+    }
+
+    public var isAutoCalibrationOn: Bool {
+        get { autoCalibrate ?? true }
+        set { autoCalibrate = newValue }
+    }
+
     public func age(on date: Date, calendar: Calendar) -> Int {
         calendar.dateComponents([.year], from: birthDate, to: date).year ?? 0
     }
@@ -51,7 +85,8 @@ public final class Profile {
         ProfileInput(
             sex: sex, age: age(on: clock.now, calendar: clock.calendar), heightCm: heightCm, weightKg: weightKg,
             activity: activity, goal: goal, proteinPerKg: proteinPerKg, fatPerKg: fatPerKg,
-            calorieAdjustment: calorieAdjustment
+            calorieAdjustment: calorieAdjustment, dailyActivity: dailyActivity, training: training,
+            tdeeAdjustmentKcal: tdeeAdjustmentKcal ?? 0
         )
     }
 

@@ -13,6 +13,16 @@ final class OnboardingUITests: XCTestCase {
         return app
     }
 
+    /// Ferme le clavier puis fait défiler jusqu'à l'élément (formulaire plus long que l'écran).
+    private func reveal(_ element: XCUIElement, in app: XCUIApplication) {
+        if app.buttons["keyboardDone"].exists { app.buttons["keyboardDone"].tap() }
+        var attempts = 0
+        while !(element.exists && element.isHittable) && attempts < 8 {
+            app.swipeUp()
+            attempts += 1
+        }
+    }
+
     private func onboard(_ app: XCUIApplication) {
         app.buttons["acceptDisclaimer"].tap()
         let height = app.textFields["height"]
@@ -22,18 +32,20 @@ final class OnboardingUITests: XCTestCase {
         let weight = app.textFields["weight"]
         weight.tap()
         weight.typeText("80")
-        app.buttons["computeTargets"].tap()
+        let compute = app.buttons["computeTargets"]
+        reveal(compute, in: app)
+        compute.tap()
     }
 
-    /// US1 : disclaimer → profil → cibles 2207 kcal (homme 30 ans, 180 cm, 80 kg, modéré, sèche).
+    /// US1 : disclaimer → profil → cibles 1819 kcal (homme 30 ans, 180 cm, 80 kg, sèche ; défauts
+    /// spec 002 : bureau, 3 séances de 60 min modérées).
     func testOnboardingShowsReferenceTargets() {
         let app = launch()
         onboard(app)
         let target = app.staticTexts["targetKcal"]
         XCTAssertTrue(target.waitForExistence(timeout: 5))
-        XCTAssertTrue(target.label.contains("2"), "Cible affichée : \(target.label)")
-        XCTAssertTrue(target.label.replacingOccurrences(of: "\u{202F}", with: "").replacingOccurrences(of: " ", with: "")
-            .contains("2207"))
+        let digits = target.label.filter(\.isNumber)
+        XCTAssertTrue(digits.hasPrefix("1819"), "Cible affichée : \(target.label)")
     }
 
     /// US1 : taille hors bornes refusée.
@@ -47,9 +59,11 @@ final class OnboardingUITests: XCTestCase {
         let weight = app.textFields["weight"]
         weight.tap()
         weight.typeText("80")
+        let compute = app.buttons["computeTargets"]
+        reveal(compute, in: app)
         XCTAssertTrue(app.staticTexts["validationError"].waitForExistence(timeout: 3)
             || app.otherElements["validationError"].exists)
-        XCTAssertFalse(app.buttons["computeTargets"].isEnabled)
+        XCTAssertFalse(compute.isEnabled)
     }
 
     /// US2 sans clé : invitation à saisir la clé.

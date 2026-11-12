@@ -22,6 +22,8 @@ final class AppModel {
     var busyMessage: String?
     var errorMessage: String?
     var warningMessage: String?
+    /// Dernier ajustement de calibration appliqué (spec 002).
+    var calibrationMessage: String?
     /// Incrémenté quand la clé change, pour rafraîchir les vues qui l'affichent.
     var keyRevision = 0
 
