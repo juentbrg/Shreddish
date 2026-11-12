@@ -31,7 +31,7 @@ struct OpenAIClient: Sendable {
                 ] as [String: Any],
             ],
         ]
-        if model.hasPrefix("gpt-5") {
+        if model.hasPrefix("gpt-5") || model.hasPrefix("gpt-6") {
             // Raisonnement court : génération plus rapide (SC-003).
             body["reasoning"] = ["effort": "low"]
         }

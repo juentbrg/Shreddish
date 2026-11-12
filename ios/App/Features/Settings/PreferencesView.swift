@@ -102,8 +102,8 @@ private struct BudgetSection: View {
             Text("Budget courses")
         } footer: {
             Text(
-                "Plafond : \(Format.euros(preferences.budgetCeiling)). Au-delà, le planning est refusé et regénéré ; "
-                    + "entre budget et plafond, il est accepté et signalé. Prix estimés par l'IA, pas de prix réels."
+                "Plafond : \(Format.euros(preferences.budgetCeiling)). Au-delà, l'IA refait un essai moins cher ; "
+                    + "si ça dépasse encore, le planning est gardé et signalé. Prix estimés par l'IA, pas de prix réels."
             )
         }
     }
@@ -163,9 +163,45 @@ private struct FoodsSections: View {
         )
         EditableListSection(
             title: "Équipement", placeholder: "ex. airfryer", items: $preferences.equipment,
-            footer: "Plaques et four supposés disponibles.",
+            footer: "Plaques, casserole, poêle et four toujours supposés disponibles : riz et pâtes à la casserole.",
             suggestions: Suggestions.equipment
         )
+        SupplementsSection(preferences: preferences)
+    }
+}
+
+/// Compléments possédés et heure d'entraînement (spec 004, FR-301).
+private struct SupplementsSection: View {
+    @Bindable var preferences: Preferences
+
+    var body: some View {
+        EditableListSection(
+            title: "Compléments possédés", placeholder: "ex. whey",
+            items: Binding(get: { preferences.supplementList }, set: { preferences.supplementList = $0 }),
+            footer: "Intégrés aux repas pour atteindre tes protéines, avec dose et moment de prise. "
+                + "Comptés à 0 € et absents de la liste de courses.",
+            suggestions: Suggestions.supplements
+        )
+        Section {
+            Toggle("Heure fixe", isOn: Binding(
+                get: { preferences.trainingTimeMinutes != nil },
+                set: { preferences.trainingTimeMinutes = $0 ? 18 * 60 : nil }
+            ))
+            .accessibilityIdentifier("trainingTimeToggle")
+            if let minutes = preferences.trainingTimeMinutes {
+                DatePicker("Séance vers", selection: Binding(
+                    get: { Calendar.current.date(bySettingHour: minutes / 60, minute: minutes % 60, second: 0, of: .now) ?? .now },
+                    set: {
+                        let parts = Calendar.current.dateComponents([.hour, .minute], from: $0)
+                        preferences.trainingTimeMinutes = (parts.hour ?? 18) * 60 + (parts.minute ?? 0)
+                    }
+                ), displayedComponents: .hourAndMinute)
+            }
+        } header: {
+            Text("Entraînement")
+        } footer: {
+            Text("Sert à placer la collation protéinée et la whey autour de ta séance. Sinon : fin de journée.")
+        }
     }
 }
 

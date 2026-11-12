@@ -45,7 +45,7 @@ SwiftLint tourne en pré-build (`ios/.swiftlint.yml`).
 - En développement : copier `ios/Config/Secrets.example.xcconfig` en `ios/Config/Secrets.xcconfig`
   (git-ignoré) et remplir `OPENAI_DEV_KEY`. Les builds Debug la copient dans le trousseau au
   premier lancement si celui-ci est vide. Les builds Release ne la lisent jamais.
-- Modèle par défaut : `gpt-5-mini`, modifiable dans Réglages → Préférences repas.
+- Modèle par défaut : `gpt-6-luna`, modifiable dans Réglages → Préférences repas.
 
 ## Installer sur l'iPhone
 

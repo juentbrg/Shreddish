@@ -34,10 +34,13 @@ public struct MealDTO: Codable, Sendable, Equatable {
     public var carbsG: Double
     public var fatG: Double
     public var prepSessionRef: Int?
+    /// Heure conseillée « HH:mm » ; null si non fournie (spec 004).
+    public var time: String?
 
     public init(
         type: MealType, name: String, ingredients: [IngredientDTO], steps: [String], prepMinutes: Int,
-        costEur: Double, kcal: Double, proteinG: Double, carbsG: Double, fatG: Double, prepSessionRef: Int?
+        costEur: Double, kcal: Double, proteinG: Double, carbsG: Double, fatG: Double, prepSessionRef: Int?,
+        time: String? = nil
     ) {
         self.type = type
         self.name = name
@@ -50,6 +53,7 @@ public struct MealDTO: Codable, Sendable, Equatable {
         self.carbsG = carbsG
         self.fatG = fatG
         self.prepSessionRef = prepSessionRef
+        self.time = time
     }
 
     public var macros: MacroTotals {
@@ -148,6 +152,8 @@ public enum AIResponseDecoder {
     }
 
     private static func decode<T: Decodable>(_ data: Data) throws(AIError) -> T {
+        // Tirets cadratins jamais structurels en JSON : retirés de tout le texte généré.
+        let data = String(data: data, encoding: .utf8).map { Data(TextNormalizer.withoutDashes($0).utf8) } ?? data
         if let probe = try? decoder.decode(InfeasibleProbe.self, from: data),
            let reason = probe.infeasible?.trimmingCharacters(in: .whitespacesAndNewlines), !reason.isEmpty {
             throw .infeasible(reason)

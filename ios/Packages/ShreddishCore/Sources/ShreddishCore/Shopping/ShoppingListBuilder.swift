@@ -20,15 +20,16 @@ public enum ShoppingListBuilder {
         "\(normalize(name))|\(unit.rawValue)"
     }
 
-    public static func build(from days: [DayPlanDTO]) -> [ShoppingLine] {
-        build(from: days.flatMap { $0.meals.flatMap(\.ingredients) })
+    public static func build(from days: [DayPlanDTO], owned: [String] = []) -> [ShoppingLine] {
+        build(from: days.flatMap { $0.meals.flatMap(\.ingredients) }, owned: owned)
     }
 
-    /// Fusion par (nom normalisé, unité), tri par rayon puis nom. Unités invalides ignorées.
-    public static func build(from ingredients: [IngredientDTO]) -> [ShoppingLine] {
+    /// Fusion par (nom normalisé, unité), tri par rayon puis nom. Unités invalides et compléments
+    /// possédés (spec 004) ignorés.
+    public static func build(from ingredients: [IngredientDTO], owned: [String] = []) -> [ShoppingLine] {
         var lines: [String: ShoppingLine] = [:]
         var order: [String] = []
-        for ingredient in ingredients {
+        for ingredient in ingredients where !AIOutputValidator.isOwnedSupplement(ingredient.name, owned: owned) {
             guard let unit = ingredient.measureUnit else { continue }
             let key = key(name: ingredient.name, unit: unit)
             if var line = lines[key] {

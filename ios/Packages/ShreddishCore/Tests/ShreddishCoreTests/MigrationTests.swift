@@ -62,5 +62,63 @@ struct MigrationTests {
         #expect(preferences.allergyList.isEmpty)
         #expect(preferences.availability == .everywhere)
         #expect(preferences.store == .generic)
+        #expect(preferences.aiModel == "gpt-5-mini")
+        PlanStore.cleanUpStoredData(in: container.mainContext)
+        #expect(preferences.aiModel == Preferences.defaultAIModel)
+    }
+
+    @Test func customModelIsKept() {
+        let preferences = Preferences()
+        preferences.aiModel = "gpt-5.1"
+        #expect(!preferences.upgradeLegacyDefaultModel())
+        #expect(preferences.aiModel == "gpt-5.1")
+    }
+
+    @Test func v3PlanMigratesToV4WithoutDataLoss() throws {
+        let directory = FileManager.default.temporaryDirectory.appending(path: "shreddish-migration-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let url = directory.appending(path: "store.sqlite")
+
+        do {
+            let schema = Schema(versionedSchema: SchemaV3.self)
+            let container = try ModelContainer(for: schema, configurations: [ModelConfiguration(schema: schema, url: url)])
+            let context = container.mainContext
+            let preferences = SchemaV3.Preferences()
+            preferences.weeklyBudgetEUR = 80
+            context.insert(preferences)
+            let plan = SchemaV1.WeeklyPlan(startDayKey: 20_261_112, createdAt: .now)
+            context.insert(plan)
+            let day = SchemaV1.DayPlan(dayKey: 20_261_112, offset: 0)
+            plan.days.append(day)
+            day.meals.append(SchemaV1.Meal(name: "Poulet riz", order: 0))
+            day.extras.append(SchemaV1.ExtraEntry(name: "Carré de chocolat", loggedAt: .now))
+            plan.shoppingItems.append(SchemaV1.ShoppingItem(name: "Riz"))
+            try context.save()
+        }
+
+        let container = try ShreddishStore.makeContainer(url: url)
+        let context = container.mainContext
+        let meal = try #require(try context.fetch(FetchDescriptor<Meal>()).first)
+        #expect(meal.name == "Poulet riz")
+        #expect(meal.time == nil)
+        #expect(meal.day?.extras.first?.name == "Carré de chocolat")
+        #expect(try context.fetchCount(FetchDescriptor<ShoppingItem>()) == 1)
+        let preferences = try #require(try context.fetch(FetchDescriptor<Preferences>()).first)
+        #expect(preferences.weeklyBudget == 80)
+        #expect(preferences.supplementList.isEmpty)
+        #expect(preferences.trainingTimeMinutes == nil)
+    }
+
+    @Test func deletingPlanRemovesItsDays() throws {
+        let (container, context, targets) = try PlanStoreTests.setup()
+        _ = container
+        let plan = try PlanStore.saveWeek(
+            try Fixture.week(), startDay: PlanStoreTests.start, targets: targets, createdAt: .now, in: context
+        )
+        try PlanStore.deletePlan(plan, in: context)
+        #expect(try context.fetchCount(FetchDescriptor<WeeklyPlan>()) == 0)
+        #expect(try context.fetchCount(FetchDescriptor<Meal>()) == 0)
+        #expect(try context.fetchCount(FetchDescriptor<ShoppingItem>()) == 0)
     }
 }

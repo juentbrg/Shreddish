@@ -21,6 +21,7 @@ struct MealDetailView: View {
                     Text(meal.name)
                         .font(.title2.bold())
                     HStack(spacing: 14) {
+                        if let time = meal.time { Label(time, systemImage: "clock") }
                         Label("\(meal.prepMinutes) min", systemImage: "timer")
                         Label(Format.euros(meal.costEUR), systemImage: "basket")
                     }
@@ -44,6 +45,12 @@ struct MealDetailView: View {
                 ForEach(Array(meal.ingredients.enumerated()), id: \.offset) { _, ingredient in
                     HStack {
                         Text(ingredient.name)
+                        if AIOutputValidator.isOwnedSupplement(ingredient.name, owned: allPreferences.first?.supplementList ?? []) {
+                            Text("possédé")
+                                .font(.caption2.weight(.semibold))
+                                .padding(.horizontal, 6).padding(.vertical, 2)
+                                .background(.tint.opacity(0.15), in: Capsule())
+                        }
                         Spacer()
                         Text(Format.quantity(ingredient.quantity, unit: ingredient.measureUnit ?? .g))
                             .foregroundStyle(.secondary)

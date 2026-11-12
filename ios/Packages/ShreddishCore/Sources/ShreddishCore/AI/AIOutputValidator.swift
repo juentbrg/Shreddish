@@ -14,10 +14,13 @@ public struct GenerationConstraints: Sendable, Equatable {
     public var excludedFoods: [String]
     /// Plafond de coût d'un jour régénéré ou d'un repas remplacé (FR-203).
     public var costLimitEur: Double?
+    /// Compléments possédés : coût ramené à 0 (spec 004).
+    public var ownedSupplements: [String]
 
     public init(
         targets: MacroTotals, mealsPerDay: Int, maxPrepMinutes: Int, weeklyBudgetEur: Double, budgetTolerance: Double,
-        batchCooking: Bool, allergies: [String], excludedFoods: [String], costLimitEur: Double? = nil
+        batchCooking: Bool, allergies: [String], excludedFoods: [String], costLimitEur: Double? = nil,
+        ownedSupplements: [String] = []
     ) {
         self.targets = targets
         self.mealsPerDay = mealsPerDay
@@ -28,6 +31,7 @@ public struct GenerationConstraints: Sendable, Equatable {
         self.allergies = allergies
         self.excludedFoods = excludedFoods
         self.costLimitEur = costLimitEur
+        self.ownedSupplements = ownedSupplements
     }
 
     /// Budget × (1 + tolérance).
@@ -59,8 +63,6 @@ public enum ValidationIssue: Equatable, Sendable {
     case prepTooLong(meal: String, minutes: Int)
     case excludedFood(meal: String, food: String)
     case allergen(meal: String, food: String)
-    case weekOverBudget(costEur: Double, ceilingEur: Double)
-    case overCostLimit(costEur: Double, limitEur: Double)
     case prepSessionCount(Int)
     case orphanPrepSessionRef(meal: String, ref: Int)
     // Corrections appliquées.
@@ -68,9 +70,21 @@ public enum ValidationIssue: Equatable, Sendable {
     case unitConverted(ingredient: String)
     case prepSessionRefCleared(meal: String)
     case mealTypeCorrected(meal: String)
-    // Avertissements affichés.
+    case supplementCostCleared(meal: String)
+    case invalidTimeCleared(meal: String)
+    // Avertissements affichés. Budget : nouvel essai avec retour de coût, puis accepté (spec 004).
     case dayOffTarget(dayOffset: Int, deviation: Double)
     case weekOverBudgetWithinTolerance(costEur: Double, budgetEur: Double)
+    case weekOverBudget(costEur: Double, ceilingEur: Double)
+    case overCostLimit(costEur: Double, limitEur: Double)
+
+    /// Coût au-dessus du plafond : justifie un nouvel essai avec retour de coût.
+    public var isOverCeiling: Bool {
+        switch self {
+        case .weekOverBudget, .overCostLimit: true
+        default: false
+        }
+    }
 }
 
 public struct ValidationResult<Value: Sendable>: Sendable {
@@ -83,6 +97,18 @@ public struct ValidationResult<Value: Sendable>: Sendable {
     public init() {}
 
     public var isValid: Bool { fatal.isEmpty }
+
+    /// Premier dépassement de plafond (coût, plafond), le plus global en dernier.
+    public var overCeiling: (costEur: Double, limitEur: Double)? {
+        for issue in warnings.reversed() {
+            switch issue {
+            case let .weekOverBudget(cost, ceiling): return (cost, ceiling)
+            case let .overCostLimit(cost, limit): return (cost, limit)
+            default: continue
+            }
+        }
+        return nil
+    }
 }
 
 public enum AIOutputValidator {
@@ -123,7 +149,7 @@ public enum AIOutputValidator {
         if result.fatal.isEmpty {
             let cost = BudgetMath.cents(days.flatMap(\.meals).reduce(0) { $0 + $1.costEur })
             if cost > constraints.budgetCeilingEur + costEpsilon {
-                result.fatal.append(.weekOverBudget(costEur: cost, ceilingEur: BudgetMath.cents(constraints.budgetCeilingEur)))
+                result.warnings.append(.weekOverBudget(costEur: cost, ceilingEur: BudgetMath.cents(constraints.budgetCeilingEur)))
             } else if cost > constraints.weeklyBudgetEur + costEpsilon {
                 result.warnings.append(.weekOverBudgetWithinTolerance(costEur: cost, budgetEur: constraints.weeklyBudgetEur))
             }
@@ -170,7 +196,7 @@ public enum AIOutputValidator {
         }
         let cost = BudgetMath.cents(meals.reduce(0) { $0 + $1.costEur })
         if result.fatal.isEmpty, let limit = constraints.costLimitEur, cost > limit + costEpsilon {
-            result.fatal.append(.overCostLimit(costEur: cost, limitEur: BudgetMath.cents(limit)))
+            result.warnings.append(.overCostLimit(costEur: cost, limitEur: BudgetMath.cents(limit)))
         }
 
         result.sanitized = result.fatal.isEmpty ? DayPlanDTO(dayOffset: expectedOffset, meals: meals) : nil
@@ -209,8 +235,10 @@ public enum AIOutputValidator {
         if let food = excludedFood(in: meal, excluded: constraints.excludedFoods) {
             result.fatal.append(.excludedFood(meal: name, food: food))
         }
-        if let limit = constraints.costLimitEur, meal.costEur > limit + costEpsilon {
-            result.fatal.append(.overCostLimit(costEur: BudgetMath.cents(meal.costEur), limitEur: BudgetMath.cents(limit)))
+        clearSupplementCosts(&meal, owned: constraints.ownedSupplements, name: name, result: &result)
+        if let time = meal.time, !isValidTime(time) {
+            meal.time = nil
+            result.corrected.append(.invalidTimeCleared(meal: name))
         }
 
         let computed = meal.macros.kcalFromMacros
@@ -225,6 +253,40 @@ public enum AIOutputValidator {
     }
 
     // MARK: Helpers
+
+    /// Ingrédients issus d'un complément possédé : coût 0, retiré du coût du repas (FR-303).
+    private static func clearSupplementCosts<T>(
+        _ meal: inout MealDTO, owned: [String], name: String, result: inout ValidationResult<T>
+    ) {
+        var removed = 0.0
+        meal.ingredients = meal.ingredients.map { ingredient in
+            guard ingredient.costEur > 0, isOwnedSupplement(ingredient.name, owned: owned) else { return ingredient }
+            var ingredient = ingredient
+            removed += ingredient.costEur
+            ingredient.costEur = 0
+            return ingredient
+        }
+        if removed > 0 {
+            meal.costEur = max(0, meal.costEur - removed)
+            result.corrected.append(.supplementCostCleared(meal: name))
+        }
+    }
+
+    public static func isOwnedSupplement(_ ingredient: String, owned: [String]) -> Bool {
+        let haystack = TextNormalizer.singular(ingredient)
+        return owned.contains { item in
+            let needle = TextNormalizer.singular(item)
+            return !needle.isEmpty && haystack.contains(needle)
+        }
+    }
+
+    /// « HH:mm » 00:00 à 23:59 (« 7:30 » accepté).
+    static func isValidTime(_ text: String) -> Bool {
+        let parts = text.split(separator: ":")
+        guard parts.count == 2, parts[1].count == 2, (1...2).contains(parts[0].count),
+              let hours = Int(parts[0]), let minutes = Int(parts[1]) else { return false }
+        return (0...23).contains(hours) && (0...59).contains(minutes)
+    }
 
     // swiftlint:disable:next cyclomatic_complexity
     private static func normalizeUnit<T>(_ ingredient: IngredientDTO, result: inout ValidationResult<T>) -> IngredientDTO {

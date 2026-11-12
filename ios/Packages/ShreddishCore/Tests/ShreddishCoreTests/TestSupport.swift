@@ -18,12 +18,14 @@ let referenceTargets = MacroTotals(kcal: 2207, proteinG: 160, carbsG: 248, fatG:
 
 func constraints(
     mealsPerDay: Int = 4, maxPrepMinutes: Int = 20, weeklyBudgetEur: Double = 70, budgetTolerance: Double = 0.1,
-    batchCooking: Bool = false, allergies: [String] = [], excludedFoods: [String] = [], costLimitEur: Double? = nil
+    batchCooking: Bool = false, allergies: [String] = [], excludedFoods: [String] = [], costLimitEur: Double? = nil,
+    ownedSupplements: [String] = []
 ) -> GenerationConstraints {
     GenerationConstraints(
         targets: referenceTargets, mealsPerDay: mealsPerDay, maxPrepMinutes: maxPrepMinutes,
         weeklyBudgetEur: weeklyBudgetEur, budgetTolerance: budgetTolerance, batchCooking: batchCooking,
-        allergies: allergies, excludedFoods: excludedFoods, costLimitEur: costLimitEur
+        allergies: allergies, excludedFoods: excludedFoods, costLimitEur: costLimitEur,
+        ownedSupplements: ownedSupplements
     )
 }
 
@@ -36,11 +38,13 @@ func ingredient(
 func meal(
     _ type: MealType = .lunch, name: String = "Repas", kcal: Double = 500,
     protein: Double = 40, carbs: Double = 50, fat: Double = 15.5,
-    prep: Int = 15, cost: Double = 2, ingredients: [IngredientDTO]? = nil, prepSessionRef: Int? = nil
+    prep: Int = 15, cost: Double = 2, ingredients: [IngredientDTO]? = nil, prepSessionRef: Int? = nil,
+    time: String? = nil
 ) -> MealDTO {
     MealDTO(
         type: type, name: name, ingredients: ingredients ?? [ingredient("Riz", 80)],
         steps: ["Cuire."], prepMinutes: prep, costEur: cost,
-        kcal: kcal, proteinG: protein, carbsG: carbs, fatG: fat, prepSessionRef: prepSessionRef
+        kcal: kcal, proteinG: protein, carbsG: carbs, fatG: fat, prepSessionRef: prepSessionRef,
+        time: time
     )
 }

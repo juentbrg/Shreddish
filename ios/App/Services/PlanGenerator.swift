@@ -29,8 +29,10 @@ final class PlanGenerator {
         guard let key = keyStore.read() else { throw .missingKey }
         guard let targets = profile.targets(clock: clock) else { throw .unexpected("Profil invalide") }
         let model = preferences.aiModel.trimmingCharacters(in: .whitespaces)
+        var promptPreferences = preferences.promptPreferences
+        promptPreferences.trainingSessionsPerWeek = profile.training?.sessionsPerWeek
         return Context(
-            apiKey: key, targets: targets, goal: profile.goal, preferences: preferences.promptPreferences,
+            apiKey: key, targets: targets, goal: profile.goal, preferences: promptPreferences,
             constraints: preferences.constraints(targets: targets.macros),
             model: model.isEmpty ? AIConfig.defaultModel : model
         )
@@ -60,9 +62,11 @@ final class PlanGenerator {
     }
 
     private func requestWeek(_ ctx: Context) async throws(AIError) -> ValidationResult<WeekPlanDTO> {
-        let input = PromptBuilder.weekInput(targets: ctx.targets.macros, goal: ctx.goal, preferences: ctx.preferences)
         let client = client
-        return try await withRetry {
+        return try await withBudgetRetry { feedback in
+            let input = PromptBuilder.weekInput(
+                targets: ctx.targets.macros, goal: ctx.goal, preferences: ctx.preferences, feedback: feedback
+            )
             let data = try await client.generate(
                 kind: .week, instructions: PromptBuilder.systemInstructions(), input: input,
                 model: ctx.model, apiKey: ctx.apiKey
@@ -105,15 +109,15 @@ final class PlanGenerator {
     private func requestDay(
         _ ctx: Context, offset: Int, avoid: [String], prepSessions: Set<Int> = [], costLimit: Double
     ) async throws(AIError) -> ValidationResult<DayPlanDTO> {
-        let input = PromptBuilder.dayInput(
-            targets: ctx.targets.macros, goal: ctx.goal, preferences: ctx.preferences, dayOffset: offset,
-            avoidMealNames: avoid, costLimitEur: costLimit
-        )
         var dayConstraints = ctx.constraints
         dayConstraints.costLimitEur = costLimit
         let constraints = dayConstraints
         let client = client
-        return try await withRetry {
+        return try await withBudgetRetry { feedback in
+            let input = PromptBuilder.dayInput(
+                targets: ctx.targets.macros, goal: ctx.goal, preferences: ctx.preferences, dayOffset: offset,
+                avoidMealNames: avoid, costLimitEur: costLimit, feedback: feedback
+            )
             let data = try await client.generate(
                 kind: .day, instructions: PromptBuilder.systemInstructions(), input: input,
                 model: ctx.model, apiKey: ctx.apiKey
@@ -151,8 +155,11 @@ final class PlanGenerator {
         return result.warnings
     }
 
-    /// Remplace un seul repas par une alternative proche en kcal (US3).
-    func replaceMeal(_ meal: Meal, profile: Profile, preferences: Preferences, in store: ModelContext) async throws(AIError) {
+    /// Remplace un seul repas par une alternative proche en kcal (US3). Renvoie les avertissements.
+    @discardableResult
+    func replaceMeal(
+        _ meal: Meal, profile: Profile, preferences: Preferences, in store: ModelContext
+    ) async throws(AIError) -> [ValidationIssue] {
         guard let day = meal.day, let plan = day.plan else { throw .unexpected("Repas sans planning") }
         let base = try context(profile: profile, preferences: preferences)
         let targets = plan.targets ?? base.targets
@@ -162,16 +169,18 @@ final class PlanGenerator {
             weeklyBudget: preferences.weeklyBudget, tolerance: preferences.tolerance, otherDaysCost: otherDaysCost
         )
         let mealLimit = BudgetMath.mealLimit(dayLimit: dayLimit, otherMealsCost: others.reduce(0) { $0 + $1.costEur })
-        let input = PromptBuilder.replaceMealInput(
-            targets: targets.macros, goal: base.goal, preferences: base.preferences, dayOffset: day.offset,
-            existingDayMeals: others, mealTypeToReplace: meal.type,
-            avoidMealNames: plan.days.flatMap(\.meals).map(\.name), costLimitEur: mealLimit
-        )
+        let avoid = plan.days.flatMap(\.meals).map(\.name)
         let constraints = preferences.constraints(targets: targets.macros, costLimitEur: mealLimit)
         let sessionIndexes = Set(plan.prepSessions.map(\.index))
         let type = meal.type
+        let dayOffset = day.offset
         let client = client
-        let replacement: MealDTO = try await withRetry {
+        let result: ValidationResult<MealDTO> = try await withBudgetRetry { feedback in
+            let input = PromptBuilder.replaceMealInput(
+                targets: targets.macros, goal: base.goal, preferences: base.preferences, dayOffset: dayOffset,
+                existingDayMeals: others, mealTypeToReplace: type, avoidMealNames: avoid, costLimitEur: mealLimit,
+                feedback: feedback
+            )
             let data = try await client.generate(
                 kind: .meal, instructions: PromptBuilder.systemInstructions(), input: input,
                 model: base.model, apiKey: base.apiKey
@@ -181,12 +190,33 @@ final class PlanGenerator {
             )
             guard var sanitized = result.sanitized else { throw AIError.invalidOutput(String(describing: result.fatal)) }
             if let ref = sanitized.prepSessionRef, !sessionIndexes.contains(ref) { sanitized.prepSessionRef = nil }
-            return sanitized
+            var checked = result
+            checked.sanitized = sanitized
+            return checked
         }
+        guard let replacement = result.sanitized else { throw .invalidOutput("Repas invalide") }
         do { try PlanStore.replaceMeal(meal, with: replacement, in: store) } catch { throw .unexpected("Enregistrement impossible") }
+        return result.warnings
     }
 
     // MARK: Retry
+
+    /// Budget souple (spec 004, FR-304) : au-dessus du plafond, un nouvel essai avec le coût obtenu ;
+    /// la proposition la moins chère est gardée, avec son avertissement.
+    private func withBudgetRetry<T: Sendable>(
+        _ operation: @escaping @Sendable (String?) async throws -> ValidationResult<T>
+    ) async throws(AIError) -> ValidationResult<T> {
+        let first = try await withRetry { try await operation(nil) }
+        guard let over = first.overCeiling else { return first }
+        let feedback = PromptBuilder.overBudgetFeedback(costEur: over.costEur, ceilingEur: over.limitEur)
+        let second: ValidationResult<T>
+        do {
+            second = try await withRetry { try await operation(feedback) }
+        } catch {
+            return first
+        }
+        return (second.overCeiling?.costEur ?? 0) <= over.costEur ? second : first
+    }
 
     /// Un essai + un nouvel essai si l'erreur s'y prête (research R6).
     private func withRetry<T: Sendable>(_ operation: @Sendable () async throws -> T) async throws(AIError) -> T {

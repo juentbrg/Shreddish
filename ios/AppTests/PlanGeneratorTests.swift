@@ -139,6 +139,34 @@ struct PlanGeneratorTests {
         #expect(transport.requestCount == 2)
         let plan = try #require(PlanStore.currentPlan(in: context))
         #expect(plan.sortedDays.reduce(0) { $0 + $1.plannedCostEUR } <= preferences.budgetCeiling)
+        // Le second essai reçoit le coût obtenu (spec 004).
+        let body = try #require(try JSONSerialization.jsonObject(with: transport.requests[1].httpBody ?? Data()) as? [String: Any])
+        let input = try #require(body["input"] as? String)
+        #expect(input.contains("previous_attempt_feedback"))
+        #expect(input.contains("140"))
+    }
+
+    @Test func weekStillAboveCeilingIsKeptWithWarning() async throws {
+        // Spec 004 : deux essais au-dessus du plafond → le moins cher est gardé et signalé, pas d'échec.
+        let expensive = try weekText().replacingOccurrences(of: "\"cost_eur\":1.45", with: "\"cost_eur\":5")
+        let lessExpensive = try weekText().replacingOccurrences(of: "\"cost_eur\":1.45", with: "\"cost_eur\":3")
+        let transport = ScriptedTransport([.output(expensive), .output(lessExpensive)])
+        let warnings = try await generator(transport).generateWeek(profile: profile, preferences: preferences, in: context)
+        #expect(transport.requestCount == 2)
+        #expect(warnings.contains { if case .weekOverBudget = $0 { true } else { false } })
+        let plan = try #require(PlanStore.currentPlan(in: context))
+        #expect(plan.sortedDays.reduce(0) { $0 + $1.plannedCostEUR } < 100)
+    }
+
+    @Test func ownedSupplementsAndTrainingReachThePrompt() async throws {
+        preferences.supplementList = ["Whey"]
+        preferences.trainingTimeMinutes = 18 * 60 + 30
+        let transport = ScriptedTransport([.output(try weekText())])
+        try await generator(transport).generateWeek(profile: profile, preferences: preferences, in: context)
+        let body = try #require(try JSONSerialization.jsonObject(with: transport.requests[0].httpBody ?? Data()) as? [String: Any])
+        let input = try #require(body["input"] as? String)
+        #expect(input.contains("\"owned_supplements\":[\"Whey\"]"))
+        #expect(input.contains("\"training_time\":\"18:30\""))
     }
 
     @Test func storeAndAllergiesReachThePrompt() async throws {

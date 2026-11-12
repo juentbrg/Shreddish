@@ -91,7 +91,6 @@ enum MealReplacement {
         Task {
             await model.run("Recherche d'une alternative…") { () async throws(AIError) -> [ValidationIssue] in
                 try await generator.replaceMeal(meal, profile: profile, preferences: preferences, in: context)
-                return []
             }
         }
     }
@@ -107,7 +106,7 @@ struct MealRow: View {
                 .frame(width: 24)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 3) {
-                Text(meal.type.label.uppercased())
+                Text(meal.time.map { "\(meal.type.label.uppercased()) · \($0)" } ?? meal.type.label.uppercased())
                     .font(.caption2.weight(.semibold))
                     .foregroundStyle(.secondary)
                 Text(meal.name)

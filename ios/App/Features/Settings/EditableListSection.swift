@@ -10,6 +10,11 @@ enum Suggestions {
         "Mandoline", "Hachoir", "Boîtes de conservation",
     ]
 
+    static let supplements = [
+        "Whey", "Isolat de whey", "Caséine", "Protéine végétale", "Créatine", "Gainer", "Barres protéinées",
+        "Oméga-3", "Vitamine D", "Multivitamines", "Magnésium", "Zinc", "BCAA", "Électrolytes", "Caféine",
+    ]
+
     /// Les 14 allergènes à déclaration obligatoire dans l'UE.
     static let allergens = [
         "Gluten", "Crustacés", "Œufs", "Poisson", "Arachide", "Soja", "Lait", "Fruits à coque", "Céleri",

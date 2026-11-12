@@ -4,12 +4,15 @@ import Testing
 struct BudgetValidationTests {
     // Coût fixture : 8,20 € / jour, 57,40 € / semaine.
 
-    @Test func weekAboveCeilingIsFatal() throws {
+    @Test func weekAboveCeilingIsAcceptedWithWarning() throws {
+        // Spec 004 : plus bloquant, le générateur refait un essai puis accepte.
         let result = AIOutputValidator.validate(
             week: try Fixture.week(), constraints: constraints(weeklyBudgetEur: 56, budgetTolerance: 0)
         )
-        #expect(result.sanitized == nil)
-        #expect(result.fatal.contains { if case .weekOverBudget = $0 { true } else { false } })
+        #expect(result.isValid)
+        #expect(result.sanitized != nil)
+        #expect(result.warnings.contains(.weekOverBudget(costEur: 57.4, ceilingEur: 56)))
+        #expect(result.overCeiling?.costEur == 57.4)
     }
 
     @Test func weekWithinToleranceIsAcceptedAndFlagged() throws {
@@ -39,10 +42,11 @@ struct BudgetValidationTests {
         #expect(result.fatal.contains(.excludedFood(meal: "Pâtes au thon", food: "thon")))
     }
 
-    @Test func dayAboveCostLimitIsFatal() throws {
+    @Test func dayAboveCostLimitIsWarning() throws {
         let day = try Fixture.week().days[0]
         let result = AIOutputValidator.validate(day: day, constraints: constraints(costLimitEur: 8), expectedOffset: 0)
-        #expect(result.fatal.contains(.overCostLimit(costEur: 8.2, limitEur: 8)))
+        #expect(result.isValid)
+        #expect(result.warnings.contains(.overCostLimit(costEur: 8.2, limitEur: 8)))
     }
 
     @Test func dayWithinCostLimitPasses() throws {
@@ -50,9 +54,30 @@ struct BudgetValidationTests {
         #expect(AIOutputValidator.validate(day: day, constraints: constraints(costLimitEur: 8.2), expectedOffset: 0).isValid)
     }
 
-    @Test func mealAboveCostLimitIsFatal() {
-        let result = AIOutputValidator.validate(meal: meal(cost: 3.5), constraints: constraints(costLimitEur: 3))
-        #expect(result.fatal.contains(.overCostLimit(costEur: 3.5, limitEur: 3)))
+    @Test func ownedSupplementCostsNothing() throws {
+        let shake = meal(
+            .snack, name: "Shake whey banane", cost: 1.4,
+            ingredients: [ingredient("Whey protéine", 30, cost: 1.1), ingredient("Banane", 1, "piece", cost: 0.3)]
+        )
+        let result = AIOutputValidator.validate(meal: shake, constraints: constraints(ownedSupplements: ["Whey"]))
+        let sanitized = try #require(result.sanitized)
+        #expect(abs(sanitized.costEur - 0.3) < 0.0001)
+        #expect(sanitized.ingredients[0].costEur == 0)
+        #expect(result.corrected.contains(.supplementCostCleared(meal: "Shake whey banane")))
+    }
+
+    @Test(arguments: [("12:30", true), ("7:05", true), ("23:59", true), ("24:00", false), ("midi", false), ("12h30", false)])
+    func mealTime(time: String, valid: Bool) throws {
+        let result = AIOutputValidator.validate(meal: meal(time: time), constraints: constraints())
+        let sanitized = try #require(result.sanitized)
+        #expect((sanitized.time != nil) == valid)
+    }
+
+    @Test func overBudgetFeedbackNamesCostAndCeiling() {
+        let text = PromptBuilder.overBudgetFeedback(costEur: 95.123, ceilingEur: 92)
+        #expect(text.contains("95.12"))
+        #expect(text.contains("92"))
+        #expect(text.contains("yaourt nature 0 %"))
     }
 
     @Test func dayLimitUsesCeilingMinusOtherDays() {

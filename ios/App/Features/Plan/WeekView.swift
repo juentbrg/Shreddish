@@ -11,6 +11,7 @@ struct WeekView: View {
     @Query var profiles: [Profile]
     @Query var allPreferences: [Preferences]
     @State private var confirmNewWeek = false
+    @State private var confirmDelete = false
 
     var body: some View {
         NavigationStack {
@@ -30,6 +31,15 @@ struct WeekView: View {
             } message: {
                 Text("Le planning actuel reste consultable dans l'historique.")
             }
+            .confirmationDialog(
+                "Supprimer ce planning ?", isPresented: $confirmDelete, titleVisibility: .visible
+            ) {
+                Button("Supprimer le planning", role: .destructive) {
+                    if let plan = plans.first { try? PlanStore.deletePlan(plan, in: context) }
+                }
+            } message: {
+                Text("Repas, liste de courses et extras du journal de ces 7 jours seront supprimés. Tes pesées sont conservées.")
+            }
         }
     }
 
@@ -40,6 +50,9 @@ struct WeekView: View {
                 if !plans.isEmpty {
                     Button("Nouvelle semaine", systemImage: "arrow.clockwise") { confirmNewWeek = true }
                         .disabled(model.isBusy)
+                    Button("Supprimer ce planning", systemImage: "trash", role: .destructive) { confirmDelete = true }
+                        .disabled(model.isBusy)
+                        .accessibilityIdentifier("deletePlan")
                 }
                 NavigationLink {
                     PlanHistoryView()
@@ -152,7 +165,7 @@ struct DaySummaryRow: View {
                 }
             }
             ForEach(day.sortedMeals) { meal in
-                Text("\(meal.type.label) · \(meal.name)")
+                Text([meal.time, meal.type.label, meal.name].compactMap(\.self).joined(separator: " · "))
                     .font(.subheadline)
                     .lineLimit(1)
             }
@@ -169,9 +182,16 @@ struct DayBadges: View {
     let targets: NutritionTargets?
 
     var body: some View {
-        let deviation = Totals.deviation(day.plannedTotals, targetKcal: Double(targets?.targetKcal ?? 0))
+        let totals = day.plannedTotals
+        let deviation = Totals.deviation(totals, targetKcal: Double(targets?.targetKcal ?? 0))
+        let carbsTarget = targets?.macros.carbsG ?? 0
+        let carbsDeviation = carbsTarget > 0 ? totals.carbsG / carbsTarget - 1 : 0
         if Totals.isOffTarget(deviation) {
             WarningBadge(text: "Hors cible \(Format.percent(deviation, signed: true))")
+        }
+        // Spec 004 : glucides nettement au-dessus de la cible.
+        if carbsDeviation > 0.15 {
+            WarningBadge(text: "Glucides \(Format.percent(carbsDeviation, signed: true))", systemImage: "leaf.fill")
         }
     }
 }

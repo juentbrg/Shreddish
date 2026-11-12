@@ -17,7 +17,10 @@ struct RootView: View {
             OnboardingView()
         } else {
             tabs
-                .task { model.calibrateIfDue(context: context) }
+                .task {
+                    PlanStore.cleanUpStoredData(in: context)
+                    model.calibrateIfDue(context: context)
+                }
                 .onChange(of: scenePhase) { _, phase in
                     if phase == .active { model.calibrateIfDue(context: context) }
                 }

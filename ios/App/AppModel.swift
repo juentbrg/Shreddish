@@ -72,16 +72,22 @@ final class AppModel {
     static func describe(_ warnings: [ValidationIssue]) -> String? {
         var offTarget = 0
         var overBudget: (cost: Double, budget: Double)?
+        var overCeiling: (cost: Double, limit: Double)?
         for warning in warnings {
             switch warning {
             case .dayOffTarget: offTarget += 1
             case let .weekOverBudgetWithinTolerance(cost, budget): overBudget = (cost, budget)
+            case let .weekOverBudget(cost, ceiling): overCeiling = (cost, ceiling)
+            case let .overCostLimit(cost, limit): overCeiling = overCeiling ?? (cost, limit)
             default: break
             }
         }
         var parts: [String] = []
         if offTarget > 0 { parts.append("\(offTarget) jour(s) à plus de 10 % de ta cible") }
-        if let overBudget {
+        if let overCeiling {
+            let cost = Format.euros(overCeiling.cost)
+            parts.append("courses estimées à \(cost), au-dessus du plafond de \(Format.euros(overCeiling.limit))")
+        } else if let overBudget {
             let cost = Format.euros(overBudget.cost)
             parts.append("courses estimées à \(cost) pour \(Format.euros(overBudget.budget)) de budget (dans la tolérance)")
         }

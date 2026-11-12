@@ -19,7 +19,7 @@
     "meal": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["type", "name", "ingredients", "steps", "prep_minutes", "cost_eur", "kcal", "protein_g", "carbs_g", "fat_g", "prep_session_ref"],
+      "required": ["type", "name", "ingredients", "steps", "prep_minutes", "cost_eur", "kcal", "protein_g", "carbs_g", "fat_g", "prep_session_ref", "time"],
       "properties": {
         "type": { "type": "string", "enum": ["breakfast", "lunch", "dinner", "snack"] },
         "name": { "type": "string" },
@@ -31,7 +31,8 @@
         "protein_g": { "type": "number" },
         "carbs_g": { "type": "number" },
         "fat_g": { "type": "number" },
-        "prep_session_ref": { "type": ["integer", "null"] }
+        "prep_session_ref": { "type": ["integer", "null"] },
+        "time": { "type": ["string", "null"], "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$" }
       }
     },
     "day": {

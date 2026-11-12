@@ -69,6 +69,7 @@ struct UITestAITransport: AITransport {
             .breakfast: "Porridge fromage blanc", .lunch: "Poulet riz brocolis",
             .snack: "Skyr et amandes", .dinner: "Omelette pommes de terre",
         ]
+        let times: [MealType: String] = [.breakfast: "08:00", .lunch: "12:30", .snack: "17:00", .dinner: "20:00"]
         return MealDTO(
             type: type, name: "\(names[type] ?? "Repas") \(variant)",
             ingredients: [
@@ -76,7 +77,8 @@ struct UITestAITransport: AITransport {
                 IngredientDTO(name: "Blanc de poulet", quantity: 120, unit: "g", aisle: .viandePoisson, costEur: 1.2),
             ],
             steps: ["Cuire le riz.", "Saisir le poulet.", "Servir."], prepMinutes: 10, costEur: 1.45,
-            kcal: 4 * protein + 4 * carbs + 9 * fat, proteinG: protein, carbsG: carbs, fatG: fat, prepSessionRef: nil
+            kcal: 4 * protein + 4 * carbs + 9 * fat, proteinG: protein, carbsG: carbs, fatG: fat, prepSessionRef: nil,
+            time: times[type]
         )
     }
 

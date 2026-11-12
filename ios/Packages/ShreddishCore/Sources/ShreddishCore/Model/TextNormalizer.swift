@@ -2,6 +2,16 @@ import Foundation
 
 /// Normalisation des noms d'aliments : comparaison d'exclusions et clés de liste de courses.
 public enum TextNormalizer {
+    /// Sans tiret cadratin ni demi-cadratin : incise « a — b » → « a, b », plage « 2–3 » → « 2-3 ».
+    public static func withoutDashes(_ text: String) -> String {
+        guard text.contains("\u{2014}") || text.contains("\u{2013}") else { return text }
+        return text
+            .replacingOccurrences(of: #"\s*[\x{2014}\x{2013}]\s+"#, with: ", ", options: .regularExpression)
+            .replacingOccurrences(of: #"\s+[\x{2014}\x{2013}]\s*"#, with: ", ", options: .regularExpression)
+            .replacingOccurrences(of: "\u{2014}", with: "-")
+            .replacingOccurrences(of: "\u{2013}", with: "-")
+    }
+
     /// Minuscules, sans accents ni ligatures, trim, espaces multiples réduits.
     public static func basic(_ text: String) -> String {
         text

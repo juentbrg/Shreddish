@@ -10,11 +10,21 @@ public final class Preferences {
     public static let toleranceOptions = [0.0, 0.05, 0.10, 0.15, 0.20]
     public static let defaultTolerance = 0.10
     /// Modèle OpenAI par défaut (research R4), modifiable dans Préférences.
-    public static let defaultAIModel = "gpt-5-mini"
+    public static let defaultAIModel = "gpt-6-luna"
+    /// Anciens défauts remplacés par `defaultAIModel` au lancement (choix explicite conservé sinon).
+    public static let legacyDefaultAIModels: Set<String> = ["gpt-5-mini"]
 
-    /// 2–5, collations incluses. Défaut 4 (3 repas + 1 collation).
+    /// Passe l'ancien modèle par défaut au nouveau. Retourne vrai si modifié.
+    @discardableResult
+    public func upgradeLegacyDefaultModel() -> Bool {
+        guard Self.legacyDefaultAIModels.contains(aiModel) else { return false }
+        aiModel = Self.defaultAIModel
+        return true
+    }
+
+    /// 2-5, collations incluses. Défaut 4 (3 repas + 1 collation).
     public var mealsPerDay: Int
-    /// 5–90 min. Défaut 20.
+    /// 5-90 min. Défaut 20.
     public var maxPrepMinutes: Int
     /// Budget par jour de la v1 ; sert de défaut au budget hebdo (× 7) pour les préférences migrées.
     public var dailyBudgetEUR: Double
@@ -32,6 +42,11 @@ public final class Preferences {
     public var ingredientAvailabilityRaw: String?
     public var storeRaw: String?
     public var customStoreName: String?
+    // Spec 004 (SchemaV4).
+    /// Compléments possédés (whey, créatine…) : intégrés aux repas, coût 0, hors liste de courses.
+    public var supplements: [String]?
+    /// Heure d'entraînement habituelle, en minutes depuis minuit ; nil = non précisée.
+    public var trainingTimeMinutes: Int?
 
     public init() {
         mealsPerDay = 4
@@ -66,6 +81,16 @@ public final class Preferences {
         set { allergies = newValue }
     }
 
+    public var supplementList: [String] {
+        get { supplements ?? [] }
+        set { supplements = newValue }
+    }
+
+    /// « HH:mm » ou nil.
+    public var trainingTimeLabel: String? {
+        trainingTimeMinutes.map { String(format: "%02d:%02d", $0 / 60 % 24, $0 % 60) }
+    }
+
     public var availability: IngredientAvailability {
         get { ingredientAvailabilityRaw.flatMap(IngredientAvailability.init(rawValue:)) ?? .everywhere }
         set { ingredientAvailabilityRaw = newValue.rawValue }
@@ -88,7 +113,8 @@ public final class Preferences {
         PromptPreferences(
             mealsPerDay: mealsPerDay, maxPrepMinutes: maxPrepMinutes, weeklyBudgetEur: weeklyBudget,
             budgetTolerance: tolerance, allergies: allergyList, dislikedFoods: excludedFoods, likedFoods: likedFoods,
-            equipment: equipment, batchCooking: batchCooking, ingredientAvailability: availability, store: storeName
+            equipment: equipment, batchCooking: batchCooking, ingredientAvailability: availability, store: storeName,
+            ownedSupplements: supplementList, trainingTime: trainingTimeLabel
         )
     }
 
@@ -96,7 +122,8 @@ public final class Preferences {
         GenerationConstraints(
             targets: targets, mealsPerDay: mealsPerDay, maxPrepMinutes: maxPrepMinutes,
             weeklyBudgetEur: weeklyBudget, budgetTolerance: tolerance, batchCooking: batchCooking,
-            allergies: allergyList, excludedFoods: excludedFoods, costLimitEur: costLimitEur
+            allergies: allergyList, excludedFoods: excludedFoods, costLimitEur: costLimitEur,
+            ownedSupplements: supplementList
         )
     }
 }

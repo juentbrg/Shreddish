@@ -52,7 +52,7 @@ public final class WeeklyPlan {
 @Model
 public final class DayPlan {
     public var dayKey: Int
-    /// 0–6 depuis le début du planning.
+    /// 0-6 depuis le début du planning.
     public var offset: Int
     public var plan: WeeklyPlan?
     @Relationship(deleteRule: .cascade, inverse: \Meal.day) public var meals: [Meal] = []
@@ -99,6 +99,8 @@ public final class Meal {
     public var carbsG: Double
     public var fatG: Double
     public var prepSessionRef: Int?
+    /// Heure conseillée « HH:mm » (spec 004, SchemaV4).
+    public var time: String?
     public var statusRaw: String
     public var statusChangedAt: Date?
     /// Position dans la journée.
@@ -117,6 +119,7 @@ public final class Meal {
         carbsG = dto.carbsG
         fatG = dto.fatG
         prepSessionRef = dto.prepSessionRef
+        time = dto.time
         statusRaw = MealStatus.planned.rawValue
         self.order = order
     }
@@ -139,7 +142,8 @@ public final class Meal {
     public var dto: MealDTO {
         MealDTO(
             type: type, name: name, ingredients: ingredients, steps: steps, prepMinutes: prepMinutes,
-            costEur: costEUR, kcal: kcal, proteinG: proteinG, carbsG: carbsG, fatG: fatG, prepSessionRef: prepSessionRef
+            costEur: costEUR, kcal: kcal, proteinG: proteinG, carbsG: carbsG, fatG: fatG, prepSessionRef: prepSessionRef,
+            time: time
         )
     }
 

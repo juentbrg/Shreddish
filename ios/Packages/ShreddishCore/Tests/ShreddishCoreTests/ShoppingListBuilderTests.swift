@@ -58,4 +58,12 @@ struct ShoppingListBuilderTests {
         let lines = ShoppingListBuilder.build(from: [ingredient("Sel", 1, "pincée")])
         #expect(lines.isEmpty)
     }
+
+    @Test func ownedSupplementsAreNotBought() {
+        let lines = ShoppingListBuilder.build(
+            from: [ingredient("Whey protéine", 30), ingredient("Riz", 80), ingredient("Créatine", 5)],
+            owned: ["whey", "Créatine"]
+        )
+        #expect(lines.map(\.name) == ["Riz"])
+    }
 }

@@ -42,6 +42,21 @@ struct AIDecodingTests {
         #expect(meal.type == .lunch)
     }
 
+    @Test func dashesAreRemovedFromGeneratedText() throws {
+        let raw = try #require(String(data: Fixture.data("valid_meal"), encoding: .utf8))
+        let original = try AIResponseDecoder.decodeMeal(Fixture.data("valid_meal"))
+        let dashed = raw.replacingOccurrences(of: "\"\(original.name)\"", with: "\"\(original.name) \u{2014} 2\u{2013}3 min\"")
+        let meal = try AIResponseDecoder.decodeMeal(Data(dashed.utf8))
+        #expect(meal.name == "\(original.name), 2-3 min")
+    }
+
+    @Test(arguments: [
+        ("Poulet — riz", "Poulet, riz"), ("Poulet—riz", "Poulet-riz"), ("2–3 min", "2-3 min"), ("sans tiret", "sans tiret"),
+    ])
+    func withoutDashes(input: String, expected: String) {
+        #expect(TextNormalizer.withoutDashes(input) == expected)
+    }
+
     @Test func mealEncodesSnakeCase() throws {
         let data = try AIResponseDecoder.encoder.encode(meal(prepSessionRef: 1))
         let text = try #require(String(data: data, encoding: .utf8))

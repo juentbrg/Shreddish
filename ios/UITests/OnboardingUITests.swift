@@ -87,6 +87,23 @@ final class OnboardingUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Courses estimées"].waitForExistence(timeout: 5))
     }
 
+    /// Spec 004 : le planning courant se supprime depuis le menu, après confirmation.
+    func testDeleteCurrentPlan() {
+        let app = launch()
+        onboard(app)
+        app.tabBars.buttons["Semaine"].tap()
+        let generate = app.buttons["generateWeek"]
+        XCTAssertTrue(generate.waitForExistence(timeout: 5))
+        generate.tap()
+        XCTAssertTrue(app.buttons["day-0"].waitForExistence(timeout: 10))
+        app.buttons["weekMenu"].tap()
+        app.buttons["deletePlan"].tap()
+        let confirm = app.buttons["Supprimer le planning"]
+        XCTAssertTrue(confirm.waitForExistence(timeout: 3))
+        confirm.tap()
+        XCTAssertTrue(app.buttons["generateWeek"].waitForExistence(timeout: 5))
+    }
+
     /// Spec 003 : suggestion d'équipement ajoutée puis supprimée, budget au montant rapide.
     func testEquipmentSuggestionAndBudgetPreset() {
         let app = launch()
