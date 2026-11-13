@@ -71,7 +71,7 @@ struct PlanHistoryView: View {
                 pendingDeletion = nil
             }
         } message: {
-            Text("Repas, journal et liste de courses de cette semaine sont supprimés. Action irréversible.")
+            Text("Repas, journal et courses supprimés. Irréversible.")
         }
         .overlay {
             if plans.isEmpty {

@@ -73,19 +73,12 @@ struct DisclaimerView: View {
                     .accessibilityHidden(true)
                 Text("Bienvenue sur Shreddish")
                     .font(.largeTitle.bold())
-                Text("Des repas simples, pas chers et rapides, calés sur ton objectif : sèche, prise de masse ou recomposition.")
+                Text("Repas simples, pas chers et rapides, calés sur ton objectif.")
                     .font(.title3)
                 VStack(alignment: .leading, spacing: 12) {
-                    Label("Outil personnel d'aide à l'organisation, pas un avis médical ni diététique.", systemImage: "stethoscope")
-                    Label("Les cibles viennent de formules standard (Mifflin-St Jeor) : ce sont des estimations.", systemImage: "function")
-                    Label(
-                        "Les valeurs nutritionnelles et les prix des repas proposés par l'IA sont approximatifs.",
-                        systemImage: "sparkles"
-                    )
-                    Label(
-                        "En cas de pathologie, de grossesse ou de doute, demande l'avis d'un professionnel de santé.",
-                        systemImage: "heart.text.square"
-                    )
+                    Label("Pas un avis médical.", systemImage: "stethoscope")
+                    Label("Cibles, valeurs et prix : des estimations.", systemImage: "function")
+                    Label("Pathologie, grossesse, doute : vois un professionnel de santé.", systemImage: "heart.text.square")
                 }
                 .font(.body)
                 Button(action: onAccept) {

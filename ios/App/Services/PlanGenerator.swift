@@ -68,9 +68,11 @@ final class PlanGenerator {
 
     private func requestWeek(_ ctx: Context) async throws(AIError) -> ValidationResult<WeekPlanDTO> {
         let client = client
-        return try await withBudgetRetry { feedback in
+        return try await withBudgetRefusalRecovery { budgetScale, feedback in
+            var preferences = ctx.preferences
+            preferences.weeklyBudgetEur *= budgetScale
             let input = PromptBuilder.weekInput(
-                targets: ctx.targets.macros, goal: ctx.goal, preferences: ctx.preferences, feedback: feedback
+                targets: ctx.targets.macros, goal: ctx.goal, preferences: preferences, feedback: feedback
             )
             let data = try await client.generate(
                 kind: .week, instructions: PromptBuilder.systemInstructions(), input: input,
@@ -118,10 +120,12 @@ final class PlanGenerator {
         dayConstraints.costLimitEur = costLimit
         let constraints = dayConstraints
         let client = client
-        return try await withBudgetRetry { feedback in
+        return try await withBudgetRefusalRecovery { budgetScale, feedback in
+            var preferences = ctx.preferences
+            preferences.weeklyBudgetEur *= budgetScale
             let input = PromptBuilder.dayInput(
-                targets: ctx.targets.macros, goal: ctx.goal, preferences: ctx.preferences, dayOffset: offset,
-                avoidMealNames: avoid, costLimitEur: costLimit, feedback: feedback
+                targets: ctx.targets.macros, goal: ctx.goal, preferences: preferences, dayOffset: offset,
+                avoidMealNames: avoid, costLimitEur: costLimit * budgetScale, feedback: feedback
             )
             let data = try await client.generate(
                 kind: .day, instructions: PromptBuilder.systemInstructions(), input: input,
@@ -180,11 +184,13 @@ final class PlanGenerator {
         let type = meal.type
         let dayOffset = day.offset
         let client = client
-        let result: ValidationResult<MealDTO> = try await withBudgetRetry { feedback in
+        let result: ValidationResult<MealDTO> = try await withBudgetRefusalRecovery { budgetScale, feedback in
+            var preferences = base.preferences
+            preferences.weeklyBudgetEur *= budgetScale
             let input = PromptBuilder.replaceMealInput(
-                targets: targets.macros, goal: base.goal, preferences: base.preferences, dayOffset: dayOffset,
-                existingDayMeals: others, mealTypeToReplace: type, avoidMealNames: avoid, costLimitEur: mealLimit,
-                feedback: feedback
+                targets: targets.macros, goal: base.goal, preferences: preferences, dayOffset: dayOffset,
+                existingDayMeals: others, mealTypeToReplace: type, avoidMealNames: avoid,
+                costLimitEur: mealLimit * budgetScale, feedback: feedback
             )
             let data = try await client.generate(
                 kind: .meal, instructions: PromptBuilder.systemInstructions(), input: input,
@@ -205,6 +211,27 @@ final class PlanGenerator {
     }
 
     // MARK: Retry
+
+    /// Refus « budget trop bas » de l'IA (spec 008) : nouvel essai avec la raison, puis avec un budget annoncé
+    /// doublé. Le coût obtenu reste contrôlé avec le vrai budget : avertissement s'il dépasse, jamais de blocage.
+    private func withBudgetRefusalRecovery<T: Sendable>(
+        _ operation: @escaping @Sendable (_ budgetScale: Double, _ feedback: String?) async throws -> ValidationResult<T>
+    ) async throws(AIError) -> ValidationResult<T> {
+        let reason: String
+        do throws(AIError) {
+            return try await withBudgetRetry { try await operation(1, $0) }
+        } catch {
+            guard error.isBudgetRefusal, case let .infeasible(text) = error else { throw error }
+            reason = text
+        }
+        let refusal = PromptBuilder.budgetRefusalFeedback(reason: reason)
+        do throws(AIError) {
+            return try await withBudgetRetry { try await operation(1, $0 ?? refusal) }
+        } catch {
+            guard error.isBudgetRefusal else { throw error }
+        }
+        return try await withBudgetRetry { try await operation(2, $0 ?? refusal) }
+    }
 
     /// Budget souple (spec 004, FR-304) : au-dessus du plafond, un nouvel essai avec le coût obtenu ;
     /// la proposition la moins chère est gardée, avec son avertissement.

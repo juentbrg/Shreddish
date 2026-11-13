@@ -170,10 +170,7 @@ struct TrainingSection: View {
                     Text(training.intensity.detail)
                 }
                 if let weightKg, training.sessionsPerWeek > 0 {
-                    Text(
-                        "≈ \(Format.kcal(training.kcalPerSession(weightKg: weightKg))) par séance, "
-                            + "\(Format.kcal(training.kcalPerDay(weightKg: weightKg))) par jour en moyenne."
-                    )
+                    Text("≈ \(Format.kcal(training.kcalPerSession(weightKg: weightKg))) par séance.")
                 }
             }
         }

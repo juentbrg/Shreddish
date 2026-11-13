@@ -44,8 +44,7 @@ private struct MealsSection: View {
             Text("Repas")
         } footer: {
             Text(
-                "Collations incluses dans le nombre de repas : 4 = 3 repas + 1 collation. Batch cooking : "
-                    + "1 à 2 sessions de préparation par semaine, réutilisées sur plusieurs repas."
+                "Collations incluses : 4 = 3 repas + 1 collation."
             )
         }
     }
@@ -105,8 +104,7 @@ private struct BudgetSection: View {
             Text("Budget courses")
         } footer: {
             Text(
-                "Plafond : \(Format.euros(preferences.budgetCeiling)). Au-delà, l'IA refait un essai moins cher ; "
-                    + "si ça dépasse encore, le planning est gardé et signalé. Prix estimés par l'IA, pas de prix réels."
+                "Plafond \(Format.euros(preferences.budgetCeiling)). Prix estimés par l'IA."
             )
         }
     }
@@ -151,9 +149,7 @@ private struct StoreSection: View {
             Text("Où tu fais tes courses")
         } footer: {
             Text(
-                "\(preferences.availability.detail) L'IA choisit des produits vendus \(storePlace) \(area) "
-                    + "et estime leur prix au kilo ou à la pièce pour ce secteur ; l'app en déduit le coût. "
-                    + "Estimations, pas de prix relevés : aucune base de prix publique ne couvre les magasins."
+                "\(preferences.availability.detail) Prix estimés \(storePlace) \(area)."
             )
         }
     }
@@ -166,12 +162,12 @@ private struct FoodsSections: View {
         EditableListSection(
             title: "Allergies", placeholder: "ex. arachide",
             items: Binding(get: { preferences.allergyList }, set: { preferences.allergyList = $0 }),
-            footer: "Jamais proposés, ni en trace ni en dérivé. Un planning qui en contient est rejeté.",
+            footer: "Jamais proposées, même en trace.",
             suggestions: Suggestions.allergens
         )
         EditableListSection(
             title: "Aliments que tu n'aimes pas", placeholder: "ex. thon", items: $preferences.excludedFoods,
-            footer: "Jamais proposés. Un planning qui en contient est rejeté.",
+            footer: nil,
             suggestions: Suggestions.foods
         )
         EditableListSection(title: "Aliments appréciés", placeholder: "ex. poulet", items: $preferences.likedFoods, footer: nil,
@@ -179,7 +175,7 @@ private struct FoodsSections: View {
         )
         EditableListSection(
             title: "Équipement", placeholder: "ex. airfryer", items: $preferences.equipment,
-            footer: "Plaques, casserole, poêle et four toujours supposés disponibles : riz et pâtes à la casserole.",
+            footer: "Plaques, casserole, poêle et four inclus.",
             suggestions: Suggestions.equipment
         )
         SupplementsSection(preferences: preferences)
@@ -240,8 +236,8 @@ private struct SupplementInfoView: View {
                 .accessibilityIdentifier("supplementKind")
             } footer: {
                 Text(kind == .macro
-                    ? "Whey, caséine, gainer, barres : l'IA compte ses calories et macros dans tes repas."
-                    : "Créatine, vitamines, oméga-3 : aucune calorie comptée, l'IA place la prise dans un repas.")
+                    ? "Calories et macros comptées."
+                    : "Aucune calorie, prise placée dans un repas.")
             }
             if kind == .macro {
                 Section {
@@ -253,7 +249,7 @@ private struct SupplementInfoView: View {
                 } header: {
                     Text("Par dose")
                 } footer: {
-                    Text("Valeurs de l'étiquette de ton produit, pour une dose (un scoop).")
+                    Text("Valeurs de l'étiquette.")
                 }
             } else {
                 Section {
@@ -311,8 +307,7 @@ private struct SupplementsSection: View {
         EditableListSection(
             title: "Compléments possédés", placeholder: "ex. whey",
             items: Binding(get: { preferences.supplementList }, set: { preferences.supplementList = $0 }),
-            footer: "Touche un complément pour préciser ses valeurs : macros par scoop pour une whey, dose pour la "
-                + "créatine. Intégrés aux repas avec moment de prise, comptés à 0 €, absents de la liste de courses.",
+            footer: "Touche pour préciser. Comptés à 0 €, hors liste de courses.",
             suggestions: Suggestions.supplements,
             detail: { name in Self.summary(preferences.supplementInfo(for: name), name: name) },
             destination: { name in AnyView(SupplementInfoView(name: name, preferences: preferences)) }
@@ -335,7 +330,7 @@ private struct SupplementsSection: View {
         } header: {
             Text("Entraînement")
         } footer: {
-            Text("Sert à placer la collation protéinée et la whey autour de ta séance. Sinon : fin de journée.")
+            Text("Pour placer la collation protéinée.")
         }
     }
 }
@@ -351,8 +346,6 @@ private struct ModelSection: View {
             Button("Modèle par défaut") { preferences.aiModel = Preferences.defaultAIModel }
         } header: {
             Text("Modèle IA")
-        } footer: {
-            Text("Identifiant de modèle OpenAI compatible avec les sorties JSON structurées.")
         }
     }
 }
@@ -368,9 +361,9 @@ extension IngredientAvailability {
 
     var detail: String {
         switch self {
-        case .everywhere: "Ingrédients basiques, disponibles même en hard discount : rien de niche."
-        case .supermarket: "Tout le rayon d'un grand supermarché, sans magasin spécialisé."
-        case .specialty: "Produits bio ou spécialisés acceptés (tempeh, spiruline…)."
+        case .everywhere: "Basiques, dispo même en hard discount."
+        case .supermarket: "Rayon d'un grand supermarché."
+        case .specialty: "Bio et spécialisé acceptés."
         }
     }
 }

@@ -129,9 +129,7 @@ public enum PlanStore {
             let sessions = cleanData(plan.prepSessionsData)
             if sessions != plan.prepSessionsData { plan.prepSessionsData = sessions }
         }
-        for item in (try? context.fetch(FetchDescriptor<ShoppingItem>())) ?? [] where clean(item.name) != item.name {
-            item.name = clean(item.name)
-        }
+        for item in (try? context.fetch(FetchDescriptor<ShoppingItem>())) ?? [] { item.cleanUp(with: clean) }
         for extra in (try? context.fetch(FetchDescriptor<ExtraEntry>())) ?? [] where clean(extra.name) != extra.name {
             extra.name = clean(extra.name)
         }

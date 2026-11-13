@@ -108,8 +108,10 @@ final class OnboardingUITests: XCTestCase {
         serving.tap()
         serving.typeText("30")
         for (field, value) in [("kcalPerServing", "118"), ("proteinPerServing", "24"), ("carbsPerServing", "2"), ("fatPerServing", "2")] {
-            app.textFields[field].tap()
-            app.textFields[field].typeText(value)
+            let element = app.textFields[field]
+            reveal(element, in: app)
+            element.tap()
+            element.typeText(value)
         }
         app.buttons["keyboardDone"].tap()
         app.navigationBars.buttons.firstMatch.tap()

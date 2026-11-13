@@ -41,7 +41,7 @@ struct WeightView: View {
                     .accessibilityIdentifier("saveWeight")
             }
         } footer: {
-            Text("Une pesée par jour, idéalement le matin à jeun. Une nouvelle saisie remplace celle du jour.")
+            Text("Une pesée par jour, le matin à jeun.")
         }
     }
 

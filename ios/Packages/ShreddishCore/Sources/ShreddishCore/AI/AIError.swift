@@ -25,6 +25,13 @@ public enum AIError: Error, Equatable, Sendable {
         }
     }
 
+    /// Refus de l'IA motivé par le prix : jamais bloquant, le budget est souple (spec 008).
+    public var isBudgetRefusal: Bool {
+        guard case let .infeasible(reason) = self else { return false }
+        let text = TextNormalizer.basic(reason)
+        return ["budget", "€", "euro", "prix", "cout", "plafond", "cher", "argent"].contains { text.contains($0) }
+    }
+
     /// Message en français pour l'utilisateur.
     public var userMessage: String {
         switch self {

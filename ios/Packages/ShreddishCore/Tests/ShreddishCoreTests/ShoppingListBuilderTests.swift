@@ -15,6 +15,27 @@ struct ShoppingListBuilderTests {
         #expect(ShoppingListBuilder.normalize(input) == expected)
     }
 
+    @Test(arguments: [
+        ("Yaourt nature", Aisle.fruitsLegumes, Aisle.cremerie),
+        ("Œufs", .epicerie, .cremerie),
+        ("Thon en boîte au naturel", .viandePoisson, .epicerie),
+        ("Brocolis surgelés", .fruitsLegumes, .surgeles),
+        ("Lait de coco", .cremerie, .epicerie),
+        ("Beurre de cacahuète", .cremerie, .epicerie),
+        ("Cuisses de poulet", .autre, .viandePoisson),
+        ("Steak haché 5 %", .epicerie, .viandePoisson),
+        ("Bananes", .fruitsLegumes, .fruitsLegumes),
+        ("Pommes de terre", .epicerie, .epicerie),
+    ])
+    func aisleIsCorrectedFromName(name: String, aiAisle: Aisle, expected: Aisle) {
+        #expect(AisleClassifier.corrected(name: name, aisle: aiAisle) == expected)
+    }
+
+    @Test func shoppingLineUsesCorrectedAisle() {
+        let lines = ShoppingListBuilder.build(from: [ingredient("Yaourt nature", 500, aisle: .fruitsLegumes, cost: 1)])
+        #expect(lines.first?.aisle == .cremerie)
+    }
+
     @Test func mergesSameNameAndUnit() {
         let lines = ShoppingListBuilder.build(from: [
             ingredient("Riz basmati", 90, aisle: .epicerie, cost: 0.25),

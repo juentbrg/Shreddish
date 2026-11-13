@@ -27,15 +27,10 @@ struct SettingsView: View {
                 Button("Supprimer toutes mes données", role: .destructive) { confirmErase = true }
                     .accessibilityIdentifier("eraseAll")
             } footer: {
-                Text("Profil, plannings, journal, courses, pesées et préférences. La clé API se supprime à part.")
+                Text("Tout, sauf la clé API.")
             }
             Section("À propos") {
-                Text("Shreddish est un outil personnel d'aide à l'organisation des repas, pas un avis médical ni diététique.")
-                    .font(.footnote)
-                Text(
-                    "Données stockées sur cet iPhone seulement. Seules tes cibles et tes préférences repas "
-                        + "sont envoyées à OpenAI, sans donnée d'identité."
-                )
+                Text("Pas un avis médical. Données sur cet iPhone ; seules cibles et préférences vont à OpenAI.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
@@ -45,7 +40,7 @@ struct SettingsView: View {
         .confirmationDialog("Supprimer toutes tes données ?", isPresented: $confirmErase, titleVisibility: .visible) {
             Button("Tout supprimer", role: .destructive, action: eraseAll)
         } message: {
-            Text("Action irréversible. L'app revient à l'écran d'accueil.")
+            Text("Irréversible.")
         }
     }
 }
@@ -68,7 +63,7 @@ struct APIKeyView: View {
                         .foregroundStyle(.secondary)
                 }
             } footer: {
-                Text("Stockée dans le trousseau de cet iPhone, jamais affichée en clair. Les appels sont facturés sur ton compte OpenAI.")
+                Text("Stockée dans le trousseau. Appels facturés sur ton compte OpenAI.")
             }
             Section(currentKey == nil ? "Ajouter une clé" : "Remplacer la clé") {
                 SecureField("sk-…", text: $newKey)

@@ -40,7 +40,8 @@ public enum ShoppingListBuilder {
                 order.append(key)
                 lines[key] = ShoppingLine(
                     key: key, name: displayName(ingredient.name), totalQuantity: ingredient.quantity,
-                    unit: unit, aisle: ingredient.aisle, costEur: ingredient.costEur
+                    unit: unit,
+                    aisle: AisleClassifier.corrected(name: ingredient.name, aisle: ingredient.aisle), costEur: ingredient.costEur
                 )
             }
         }

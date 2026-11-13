@@ -17,7 +17,7 @@ struct WeeklySummaryView: View {
                         .accessibilityIdentifier("adherence")
                     LabeledContent("Repas mangés", value: "\(summary.eatenCount) / \(summary.plannedCount)")
                 } else {
-                    Text("Aucun jour terminé pour l'instant. Le jour en cours compte à partir de 21 h.")
+                    Text("Aucun jour terminé. Le jour compte à partir de 21 h.")
                         .foregroundStyle(.secondary)
                 }
                 LabeledContent("Jours comptés", value: "\(summary.elapsedDays)")

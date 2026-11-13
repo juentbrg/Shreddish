@@ -46,7 +46,7 @@ struct DayContent: View {
         .confirmationDialog("Régénérer cette journée ?", isPresented: $confirmRegenerate, titleVisibility: .visible) {
             Button("Régénérer la journée") { regenerate() }
         } message: {
-            Text("Seule cette journée change. Les autres jours restent identiques.")
+            Text("Seule cette journée change.")
         }
     }
 

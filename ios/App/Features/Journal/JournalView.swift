@@ -20,7 +20,7 @@ struct JournalView: View {
                 } else {
                     ContentUnavailableView(
                         "Pas de planning", systemImage: "checklist",
-                        description: Text("Génère ta semaine dans l'onglet Semaine pour suivre tes repas.")
+                        description: Text("Génère ta semaine pour suivre tes repas.")
                     )
                 }
             }
@@ -151,7 +151,7 @@ struct JournalDayView: View {
             } header: {
                 Text("Extras")
             } footer: {
-                Text("Écart, collation imprévue : tout ce qui n'était pas au planning.")
+                Text("Tout ce qui n'était pas prévu.")
             }
         }
         .sheet(isPresented: $showAddExtra) {

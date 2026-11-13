@@ -57,13 +57,12 @@ struct CalibrationView: View {
             } header: {
                 Text("Pas encore assez de données")
             } footer: {
-                Text("Coche tous les repas du jour (mangé ou sauté) et pèse-toi au moins 2 fois par semaine.")
+                Text("Coche tous tes repas et pèse-toi 2 fois par semaine.")
             }
         case let .implausible(observed):
             Section("Estimation écartée") {
                 Label(
-                    "Dépense calculée de \(Format.kcal(observed)), trop loin de la formule : journal probablement incomplet "
-                        + "(extras oubliés ?).",
+                    "Dépense de \(Format.kcal(observed)), trop loin de la formule : extras oubliés ?",
                     systemImage: "exclamationmark.triangle.fill"
                 )
                 .foregroundStyle(.orange)

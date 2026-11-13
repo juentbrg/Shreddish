@@ -88,7 +88,7 @@ struct TargetsView: View {
                 .accessibilityIdentifier("calibration")
             }
             Section {
-                Text("Outil personnel, pas un avis médical. Valeurs estimées par des formules standard.")
+                Text("Estimations, pas un avis médical.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }

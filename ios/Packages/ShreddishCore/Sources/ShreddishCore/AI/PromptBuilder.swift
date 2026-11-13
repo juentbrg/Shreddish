@@ -149,6 +149,14 @@ public enum PromptBuilder {
             + "poulet entier ou cuisses, légumes surgelés) en gardant les macros."
     }
 
+    /// Message envoyé au nouvel essai quand l'IA a refusé à cause du budget (spec 008).
+    public static func budgetRefusalFeedback(reason: String) -> String {
+        "Ta réponse précédente refusait la génération : « \(reason) ». Le budget n'est jamais un motif de refus : "
+            + "infeasible = null, et propose le planning le moins cher possible (œufs, yaourt nature 0 %, "
+            + "fromage blanc 0 %, légumineuses, riz, pâtes, flocons d'avoine, légumes surgelés, poulet entier "
+            + "ou cuisses), même s'il dépasse le budget. L'application recalcule le coût."
+    }
+
     public static func replaceMealInput(
         targets: MacroTotals, goal: Goal, preferences: PromptPreferences, dayOffset: Int,
         existingDayMeals: [MealDTO], mealTypeToReplace: MealType, avoidMealNames: [String], costLimitEur: Double,
@@ -192,12 +200,13 @@ public enum PromptBuilder {
         - Macros par jour : kcal à ±5 % de targets.kcal, protéines ≥ targets.protein_g, glucides et lipides \
         à ±10 % de targets.carbs_g et targets.fat_g. Ne compense jamais un manque de protéines par des glucides.
         - Valeurs cohérentes : kcal ≈ 4 × protein_g + 4 × carbs_g + 9 × fat_g.
-        - Budget : coût total de la semaine ≤ weekly_budget_eur ; dépassement au plus de budget_tolerance \
+        - Budget : objectif, jamais bloquant. Coût total de la semaine ≤ weekly_budget_eur ; dépassement au plus de budget_tolerance \
         (0,1 = 10 %), à éviter. task "day" ou "replace_meal" : coût total ≤ cost_limit_eur. Budget serré : \
         choisis les produits les moins chers par gramme de protéine (œufs, yaourt nature 0 %, fromage blanc 0 %, \
         lentilles, pois chiches, thon en boîte, poulet entier ou cuisses, porc, légumes surgelés, riz, pâtes, \
         flocons d'avoine) plutôt que les produits premium (skyr, saumon, avocat, fruits secs, portions individuelles). \
-        Ne remplis jamais infeasible pour le budget seul : propose le planning le moins cher possible.
+        Ne remplis jamais infeasible pour le budget ou le prix : propose le planning le moins cher possible, \
+        l'application recalcule le coût et prévient si besoin.
         - previous_attempt_feedback : si présent, corrige ce qui y est signalé.
         - Prix (store, location) : n'utilise que des produits vendus dans l'enseigne store, marque distributeur \
         en priorité. Pour chaque ingrédient, unit_price_eur = prix réaliste en rayon cette année dans cette \
@@ -242,7 +251,8 @@ public enum PromptBuilder {
         - task "day" : régénère uniquement le jour day_offset, différent de avoid_meal_names.
         - task "replace_meal" : propose un seul repas de type meal_type_to_replace, proche de remaining_targets, \
         différent de avoid_meal_names et de existing_day_meals.
-        - Si les contraintes sont impossibles à respecter ensemble (hors budget) : remplis infeasible avec la \
+        - Si les contraintes sont impossibles à respecter ensemble (allergies, exclusions, temps ; jamais le budget) \
+        : remplis infeasible avec la \
         raison en une phrase, sans jamais ignorer une contrainte ; sinon infeasible = null.
         - Noms de plats, étapes et textes en français.
         """

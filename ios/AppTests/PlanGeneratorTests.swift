@@ -223,11 +223,33 @@ struct PlanGeneratorTests {
     }
 
     @Test func infeasibleReasonIsSurfaced() async throws {
-        let text = #"{"infeasible":"Budget trop bas.","prep_sessions":[],"days":[]}"#
-        await #expect(throws: AIError.infeasible("Budget trop bas.")) {
+        let reason = "Allergies et temps de préparation incompatibles."
+        let text = #"{"infeasible":"\#(reason)","prep_sessions":[],"days":[]}"#
+        await #expect(throws: AIError.infeasible(reason)) {
             try await generator(ScriptedTransport([.output(text)]))
                 .generateWeek(profile: profile, preferences: preferences, in: context)
         }
+    }
+
+    /// Spec 008 : un refus pour budget n'est jamais bloquant.
+    @Test func budgetRefusalIsRetriedWithFeedback() async throws {
+        let refusal = #"{"infeasible":"Budget de 60 € insuffisant.","prep_sessions":[],"days":[]}"#
+        let transport = ScriptedTransport([.output(refusal), .output(try weekText())])
+        try await generator(transport).generateWeek(profile: profile, preferences: preferences, in: context)
+        #expect(PlanStore.currentPlan(in: context) != nil)
+        #expect(transport.requestCount == 2)
+        let body = String(bytes: transport.requests[1].httpBody ?? Data(), encoding: .utf8) ?? ""
+        #expect(body.contains("jamais un motif de refus"))
+    }
+
+    @Test func repeatedBudgetRefusalAnnouncesLargerBudget() async throws {
+        let refusal = #"{"infeasible":"Prix trop élevés pour ce budget.","prep_sessions":[],"days":[]}"#
+        let transport = ScriptedTransport([.output(refusal), .output(refusal), .output(try weekText())])
+        try await generator(transport).generateWeek(profile: profile, preferences: preferences, in: context)
+        #expect(PlanStore.currentPlan(in: context) != nil)
+        #expect(transport.requestCount == 3)
+        let body = String(bytes: transport.requests[2].httpBody ?? Data(), encoding: .utf8) ?? ""
+        #expect(body.contains(#"weekly_budget_eur\":112"#))
     }
 
     @Test func replaceMealChangesOnlyThatMeal() async throws {

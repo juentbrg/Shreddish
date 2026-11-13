@@ -57,7 +57,7 @@ struct WeekView: View {
                     }
                 }
             } message: {
-                Text("Repas, liste de courses et extras du journal de ces jours seront supprimés. Tes pesées sont conservées.")
+                Text("Repas, courses et journal de ces jours supprimés. Pesées conservées.")
             }
         }
     }
@@ -91,9 +91,9 @@ struct WeekView: View {
             Label("Pas encore de planning", systemImage: "fork.knife")
         } description: {
             if model.hasAPIKey {
-                Text("Génère 7 jours de repas simples, pas chers et rapides, calés sur tes cibles.")
+                Text("7 jours de repas simples, calés sur tes cibles.")
             } else {
-                Text("Ajoute ta clé API OpenAI pour générer tes repas. Tes cibles restent consultables dans l'onglet Cibles.")
+                Text("Ajoute ta clé API OpenAI pour générer tes repas.")
             }
         } actions: {
             if model.hasAPIKey {
@@ -178,11 +178,11 @@ struct NewWeekSheet: View {
 
     private var effect: String {
         if chosen <= today {
-            return "Le planning actuel passe dans l'historique, ton journal est conservé."
+            return "Planning actuel archivé, journal conservé."
         }
         let overlapped = activePlans.filter { $0.contains(chosen) || $0.startDay > chosen }
-        guard !overlapped.isEmpty else { return "Le planning en cours reste tel quel jusqu'à cette date." }
-        return "Les jours prévus à partir du \(Format.weekdayLong(chosen)) sont remplacés ; les jours d'avant restent."
+        guard !overlapped.isEmpty else { return "Planning en cours inchangé." }
+        return "Jours prévus à partir de cette date remplacés."
     }
 
     var body: some View {
@@ -226,15 +226,18 @@ struct NewWeekSheet: View {
                     Text("Du \(Format.weekdayLong(chosen)) au \(Format.weekdayLong(chosen.adding(days: 6))). \(effect)")
                         .font(Theme.text(.footnote))
                         .foregroundStyle(Theme.muted)
-                    Button("Générer la semaine") { start(chosen) }
-                        .buttonStyle(PillButtonStyle())
-                        .accessibilityIdentifier("startGeneration")
                 }
                 .padding(20)
             }
             .paperBackground()
             .navigationTitle("Planifier")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Générer") { start(chosen) }
+                        .accessibilityIdentifier("startGeneration")
+                }
+            }
         }
     }
 }

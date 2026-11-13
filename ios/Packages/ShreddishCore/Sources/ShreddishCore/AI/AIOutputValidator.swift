@@ -227,7 +227,11 @@ public enum AIOutputValidator {
             result.fatal.append(.prepTooLong(meal: name, minutes: meal.prepMinutes))
         }
 
-        meal.ingredients = meal.ingredients.map { normalizeUnit($0, result: &result) }
+        meal.ingredients = meal.ingredients.map { ingredient in
+            var ingredient = normalizeUnit(ingredient, result: &result)
+            ingredient.aisle = AisleClassifier.corrected(name: ingredient.name, aisle: ingredient.aisle)
+            return ingredient
+        }
         applyUnitPrices(&meal)
 
         if let food = excludedFood(in: meal, excluded: constraints.allergies) {

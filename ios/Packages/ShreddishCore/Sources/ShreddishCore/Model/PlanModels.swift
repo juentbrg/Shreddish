@@ -208,6 +208,13 @@ public final class ShoppingItem {
 
     public var unit: MeasureUnit { MeasureUnit(rawValue: unitRaw) ?? .g }
     public var aisle: Aisle { Aisle(rawValue: aisleRaw) ?? .autre }
+
+    /// Nom sans tirets et rayon corrigé d'après le nom (spec 008), pour les listes déjà enregistrées.
+    func cleanUp(with clean: (String) -> String) {
+        if clean(name) != name { name = clean(name) }
+        let corrected = AisleClassifier.corrected(name: name, aisle: aisle)
+        if corrected != aisle { aisleRaw = corrected.rawValue }
+    }
 }
 
 /// Pesée, une par jour (US6).
