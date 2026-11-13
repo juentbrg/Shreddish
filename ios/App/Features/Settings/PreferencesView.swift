@@ -104,53 +104,26 @@ private struct BudgetSection: View {
             Text("Budget courses")
         } footer: {
             Text(
-                "Plafond \(Format.euros(preferences.budgetCeiling)). Prix estimés par l'IA."
+                "Plafond \(Format.euros(preferences.budgetCeiling)). Prix moyens relevés en France (Open Prices)."
             )
         }
     }
 }
 
-/// Magasin et disponibilité des ingrédients (FR-205, FR-206).
+/// Disponibilité des ingrédients (FR-205).
 private struct StoreSection: View {
     @Bindable var preferences: Preferences
 
-    private var storePlace: String {
-        preferences.store == .generic ? "dans un supermarché classique" : "chez \(preferences.storeName)"
-    }
-
-    private var area: String {
-        let city = preferences.city?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        return city.isEmpty ? "en France" : "autour de \(city)"
-    }
-
     var body: some View {
         Section {
-            Picker("Magasin", selection: Binding(get: { preferences.store }, set: { preferences.store = $0 })) {
-                ForEach(GroceryStore.allCases, id: \.self) { Text($0.displayName).tag($0) }
-            }
-            .accessibilityIdentifier("store")
-            if preferences.store == .other {
-                TextField("Nom du magasin", text: Binding(
-                    get: { preferences.customStoreName ?? "" }, set: { preferences.customStoreName = $0 }
-                ))
-            }
-            HStack {
-                Text("Ville")
-                TextField("ex. Toulouse", text: Binding(get: { preferences.city ?? "" }, set: { preferences.city = $0 }))
-                    .multilineTextAlignment(.trailing)
-                    .textContentType(.addressCity)
-                    .accessibilityIdentifier("city")
-            }
             Picker("Ingrédients", selection: Binding(get: { preferences.availability }, set: { preferences.availability = $0 })) {
                 ForEach(IngredientAvailability.allCases, id: \.self) { Text($0.label).tag($0) }
             }
             .accessibilityIdentifier("availability")
         } header: {
-            Text("Où tu fais tes courses")
+            Text("Ingrédients")
         } footer: {
-            Text(
-                "\(preferences.availability.detail) Prix estimés \(storePlace) \(area)."
-            )
+            Text(preferences.availability.detail)
         }
     }
 }

@@ -112,7 +112,8 @@ struct NutritionPipelineTests {
         let meals = [resolver.resolve(meal(ingredients: [chicken(100), rice(50)])).meal]
         let adjusted = PortionAdjuster.adjust(meals, to: referenceTargets, resolver: resolver)
         let chickenLine = adjusted[0].ingredients[0]
-        #expect(abs(chickenLine.costEur - BudgetMath.cents(chickenLine.quantity * 12 / 1000)) < 0.001)
+        let price = chickenLine.unitPriceEur ?? 0
+        #expect(abs(chickenLine.costEur - BudgetMath.cents(chickenLine.quantity * price / 1000)) < 0.001)
     }
 
     // MARK: Garde-fous
@@ -201,5 +202,53 @@ extension NutritionPipelineTests {
         }
         #expect(VarietyCheck.signature(days[0].meals[0]) == ["pate", "thon"])
         #expect(Set(VarietyCheck.repeatedDays(days).keys) == [2, 3])
+    }
+}
+
+/// Spec 011 : prix France de la table Open Prices.
+extension NutritionPipelineTests {
+    @Test func pricesComeFromTheTable() throws {
+        let (resolved, _) = resolver.resolve(meal(ingredients: [chicken(150)]))
+        let line = try #require(resolved.ingredients.first)
+        let code = try #require(line.foodCode)
+        let reference = try #require(PriceCatalog.shared.price(code: code))
+        #expect(line.unitPriceEur == BudgetMath.cents(reference.eurPerEdibleKg))
+        #expect(line.unitPriceEur != 12, "prix de l'IA remplacé")
+        #expect(resolved.costEur == line.costEur)
+        #expect((8...20).contains(reference.eurPerKg), "filet de poulet au prix réaliste")
+    }
+
+    @Test func inedibleWeightIsPaid() throws {
+        let avocado = IngredientDTO(
+            name: "Avocat", quantity: 180, unit: "g", aisle: .fruitsLegumes, costEur: 0.82, unitPriceEur: 4.55, foodCode: 13004
+        )
+        let line = resolver.priced(avocado)
+        let reference = try #require(PriceCatalog.shared.price(code: 13004))
+        #expect(reference.edibleYield < 1)
+        #expect(abs(line.costEur - 180 / reference.edibleYield * reference.eurPerKg / 1000) < 0.02)
+        #expect(line.costEur > 0.82)
+    }
+
+    @Test func cookedWeightIsPricedFromDryWeight() throws {
+        let dry = try #require(PriceCatalog.shared.price(code: 9100))
+        let cooked = try #require(PriceCatalog.shared.price(code: 9104))
+        #expect(cooked.eurPerEdibleKg < dry.eurPerEdibleKg / 2)
+    }
+
+    @Test func unknownPriceIsClampedToItsGroup() {
+        let prices = PriceCatalog(prices: [:], groupRanges: [4: 6...19])
+        let resolver = NutritionResolver(prices: prices, cache: cache)
+        var cheap = chicken(100)
+        cheap.unitPriceEur = 3
+        cheap.foodCode = 36017
+        #expect(resolver.priced(cheap).unitPriceEur == 6)
+        cheap.foodCode = nil
+        #expect(resolver.priced(cheap).unitPriceEur == 3, "sans code Ciqual : prix de l'IA")
+    }
+
+    @Test func piecesArePricedByWeight() throws {
+        let line = resolver.priced({ var egg = eggs(2); egg.foodCode = 22000; return egg }())
+        let reference = try #require(PriceCatalog.shared.price(code: 22000))
+        #expect(line.unitPriceEur == BudgetMath.cents(reference.eurPerKg * 60 / 1000))
     }
 }

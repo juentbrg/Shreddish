@@ -61,7 +61,7 @@ struct MigrationTests {
         #expect(preferences.excludedFoods == ["thon"])
         #expect(preferences.allergyList.isEmpty)
         #expect(preferences.availability == .everywhere)
-        #expect(preferences.store == .generic)
+        #expect(preferences.storeRaw == nil)
         #expect(preferences.aiModel == "gpt-5-mini")
         PlanStore.cleanUpStoredData(in: container.mainContext)
         #expect(preferences.aiModel == Preferences.defaultAIModel)

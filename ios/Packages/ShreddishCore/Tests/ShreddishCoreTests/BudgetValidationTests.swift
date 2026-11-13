@@ -92,14 +92,6 @@ struct BudgetValidationTests {
         #expect(sanitized.costEur == 0.9)
     }
 
-    @Test func priceAreaDefaultsToFrance() {
-        let preferences = Preferences()
-        #expect(preferences.priceArea == "France")
-        preferences.city = "  Bagnères-de-Luchon "
-        #expect(preferences.priceArea == "Bagnères-de-Luchon, France")
-        #expect(preferences.promptPreferences.location == "Bagnères-de-Luchon, France")
-    }
-
     @Test func overBudgetFeedbackNamesCostAndCeiling() {
         let text = PromptBuilder.overBudgetFeedback(costEur: 95.123, ceilingEur: 92)
         #expect(text.contains("95.12"))

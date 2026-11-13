@@ -186,6 +186,8 @@ struct PlanGeneratorTests {
 
     @Test func weekStillAboveCeilingIsKeptWithWarning() async throws {
         // Spec 004 : deux essais au-dessus du plafond → le moins cher est gardé et signalé, pas d'échec.
+        // Spec 011 : coût final recalculé avec la table de prix, d'où un budget bas pour rester au-dessus.
+        preferences.weeklyBudgetEUR = 40
         let expensive = try weekText().replacingOccurrences(of: "\"unit_price_eur\":7}", with: "\"unit_price_eur\":30}")
             .replacingOccurrences(of: "\"unit_price_eur\":9}", with: "\"unit_price_eur\":30}")
         let lessExpensive = try weekText().replacingOccurrences(of: "\"unit_price_eur\":7}", with: "\"unit_price_eur\":20}")
@@ -195,7 +197,8 @@ struct PlanGeneratorTests {
         #expect(transport.requestCount == 2)
         #expect(warnings.contains { if case .weekOverBudget = $0 { true } else { false } })
         let plan = try #require(PlanStore.currentPlan(in: context))
-        #expect(plan.sortedDays.reduce(0) { $0 + $1.plannedCostEUR } < 100)
+        let finalCost = plan.sortedDays.reduce(0) { $0 + $1.plannedCostEUR }
+        #expect(finalCost < 100)
     }
 
     @Test func upcomingWeekStartsOnChosenDayAndKeepsCurrentWeek() async throws {
@@ -220,17 +223,18 @@ struct PlanGeneratorTests {
         let input = try #require(body["input"] as? String)
         #expect(input.contains("\"owned_supplements\":[{\"kind\":\"macro\",\"name\":\"Whey\"}]"))
         #expect(input.contains("\"training_time\":\"18:30\""))
-        #expect(input.contains("\"location\":\"France\""))
+        #expect(!input.contains("\"location\""))
+        #expect(input.contains("\"reference_prices_eur_per_kg\":\"poulet filet"))
     }
 
-    @Test func storeAndAllergiesReachThePrompt() async throws {
-        preferences.store = .lidl
+    @Test func allergiesReachThePromptWithoutStore() async throws {
+        preferences.storeRaw = "lidl"
         preferences.allergyList = ["arachide"]
         let transport = ScriptedTransport([.output(try weekText())])
         try await generator(transport).generateWeek(profile: profile, preferences: preferences, in: context)
         let body = try #require(try JSONSerialization.jsonObject(with: transport.requests[0].httpBody ?? Data()) as? [String: Any])
         let input = try #require(body["input"] as? String)
-        #expect(input.contains("\"store\":\"Lidl\""))
+        #expect(!input.contains("Lidl"))
         #expect(input.contains("arachide"))
         #expect(input.contains("\"weekly_budget_eur\":56"))
     }

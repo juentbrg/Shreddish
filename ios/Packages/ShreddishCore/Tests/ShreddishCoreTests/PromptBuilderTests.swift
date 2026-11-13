@@ -6,7 +6,7 @@ struct PromptBuilderTests {
     static let preferences = PromptPreferences(
         mealsPerDay: 4, maxPrepMinutes: 20, weeklyBudgetEur: 56, budgetTolerance: 0.1,
         allergies: ["arachide"], dislikedFoods: ["thon"], likedFoods: ["poulet"], equipment: ["micro-ondes"],
-        batchCooking: false, ingredientAvailability: .everywhere, store: "Lidl"
+        batchCooking: false, ingredientAvailability: .everywhere
     )
 
     static func json(_ text: String) throws -> [String: Any] {
@@ -39,7 +39,8 @@ struct PromptBuilderTests {
         #expect(preferences["allergies"] as? [String] == ["arachide"])
         #expect(preferences["disliked_foods"] as? [String] == ["thon"])
         #expect(preferences["ingredient_availability"] as? String == "everywhere")
-        #expect(preferences["store"] as? String == "Lidl")
+        #expect(preferences["store"] == nil)
+        #expect((input["reference_prices_eur_per_kg"] as? String)?.contains("graines de chia") == true)
         #expect(input["cost_limit_eur"] == nil)
         #expect(preferences["batch_cooking"] as? Bool == false)
         #expect(input["day_offset"] == nil)
@@ -60,10 +61,10 @@ struct PromptBuilderTests {
         let allowed: Set<String> = [
             "task", "targets", "kcal", "protein_g", "carbs_g", "fat_g", "goal", "preferences",
             "meals_per_day", "max_prep_minutes", "weekly_budget_eur", "budget_tolerance", "allergies",
-            "disliked_foods", "ingredient_availability", "store", "cost_limit_eur", "liked_foods",
+            "disliked_foods", "ingredient_availability", "cost_limit_eur", "liked_foods",
             "equipment", "batch_cooking", "day_offset", "existing_day_meals", "meal_type_to_replace",
             "remaining_targets", "avoid_meal_names", "type", "name", "owned_supplements", "training_time",
-            "training_sessions_per_week", "previous_attempt_feedback", "location",
+            "training_sessions_per_week", "previous_attempt_feedback", "reference_prices_eur_per_kg",
             "protein_g_per_serving", "serving_g", "kind", "kcal_per_serving", "carbs_g_per_serving",
             "fat_g_per_serving", "dose", "doses_per_day",
         ]
@@ -123,7 +124,7 @@ struct PromptBuilderTests {
         #expect(text.contains("weekly_budget_eur"))
         #expect(text.contains("cost_limit_eur"))
         #expect(text.contains("ingredient_availability"))
-        #expect(text.contains("store"))
+        #expect(text.contains("reference_prices_eur_per_kg"))
         #expect(text.contains("français"))
     }
 

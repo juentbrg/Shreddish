@@ -33,15 +33,20 @@ public struct FoodQuestion: Codable, Sendable, Equatable {
     public var candidates: [Candidate]
 }
 
-/// Macros des repas calculées depuis Ciqual (spec 010).
+/// Macros des repas calculées depuis Ciqual (spec 010), prix depuis la table de prix (spec 011).
 public struct NutritionResolver: Sendable {
     public let catalog: FoodCatalog
+    public let prices: PriceCatalog
     public let cache: any FoodMatchCache
     /// Compléments possédés : macros saisies par l'utilisateur, jamais Ciqual.
     public let supplements: [OwnedSupplement]
 
-    public init(catalog: FoodCatalog = .shared, cache: any FoodMatchCache, supplements: [OwnedSupplement] = []) {
+    public init(
+        catalog: FoodCatalog = .shared, prices: PriceCatalog = .shared, cache: any FoodMatchCache,
+        supplements: [OwnedSupplement] = []
+    ) {
         self.catalog = catalog
+        self.prices = prices
         self.cache = cache
         self.supplements = supplements
     }
@@ -79,8 +84,8 @@ public struct NutritionResolver: Sendable {
         }
     }
 
-    /// Repas avec codes Ciqual et macros recalculées. Repas incomplet (ingrédient non trouvé ou pièce
-    /// sans poids) : macros de l'IA conservées, renvoyé dans `unverified`.
+    /// Repas avec codes Ciqual, macros et prix recalculés. Repas incomplet (ingrédient non trouvé ou pièce
+    /// sans poids) : macros de l'IA conservées, renvoyé dans `unverified` ; prix recalculés quand même.
     public func resolve(_ meal: MealDTO) -> (meal: MealDTO, verified: Bool) {
         var meal = meal
         var total = MacroTotals.zero
@@ -101,6 +106,7 @@ public struct NutritionResolver: Sendable {
                 }
             }()
             ingredient.foodCode = code
+            ingredient = priced(ingredient)
             guard let code, let food = catalog.food(code: code), let grams = ingredient.grams else {
                 verified = false
                 return ingredient
@@ -109,7 +115,19 @@ public struct NutritionResolver: Sendable {
             return ingredient
         }
         if verified { meal.macros = total.rounded }
+        meal.costEur = BudgetMath.cents(meal.ingredients.reduce(0) { $0 + $1.costEur })
         return (meal, verified)
+    }
+
+    /// Ingrédient au prix de la table (ou au prix de l'IA borné), coût recalculé ; complément possédé inchangé.
+    public func priced(_ ingredient: IngredientDTO) -> IngredientDTO {
+        guard supplement(for: ingredient.name) == nil else { return ingredient }
+        var ingredient = ingredient
+        let group = ingredient.foodCode.flatMap { catalog.food(code: $0)?.group }
+        guard let price = prices.unitPrice(for: ingredient, group: group) else { return ingredient }
+        ingredient.unitPriceEur = price
+        AIOutputValidator.applyUnitPrice(&ingredient)
+        return ingredient
     }
 
     func supplement(for name: String) -> OwnedSupplement? {

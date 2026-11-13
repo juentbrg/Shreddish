@@ -40,7 +40,9 @@ public final class Preferences {
     public var budgetTolerance: Double?
     public var allergies: [String]?
     public var ingredientAvailabilityRaw: String?
+    /// Obsolète (spec 011, prix France sans magasin) : conservé pour la migration.
     public var storeRaw: String?
+    /// Obsolète (spec 011).
     public var customStoreName: String?
     // Spec 004 (SchemaV4).
     /// Compléments possédés (whey, créatine…) : intégrés aux repas, coût 0, hors liste de courses.
@@ -48,7 +50,7 @@ public final class Preferences {
     /// Heure d'entraînement habituelle, en minutes depuis minuit ; nil = non précisée.
     public var trainingTimeMinutes: Int?
     // Spec 005 (SchemaV5).
-    /// Ville ou secteur des courses (ex. « Toulouse ») ; nil = France.
+    /// Obsolète (spec 011, prix France sans ville) : conservé pour la migration.
     public var city: String?
     // Spec 007 (SchemaV6).
     /// `[clé normalisée: SupplementInfo]` encodé : protéines par dose et taille de dose.
@@ -124,31 +126,12 @@ public final class Preferences {
         set { ingredientAvailabilityRaw = newValue.rawValue }
     }
 
-    public var store: GroceryStore {
-        get { storeRaw.flatMap(GroceryStore.init(rawValue:)) ?? .generic }
-        set { storeRaw = newValue.rawValue }
-    }
-
-    /// Nom du magasin transmis à l'IA ; « Autre » → nom saisi.
-    public var storeName: String {
-        if store == .other, let name = customStoreName?.trimmingCharacters(in: .whitespacesAndNewlines), !name.isEmpty {
-            return name
-        }
-        return store == .other ? GroceryStore.generic.displayName : store.displayName
-    }
-
-    /// Secteur transmis à l'IA pour les prix.
-    public var priceArea: String {
-        let trimmed = city?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        return trimmed.isEmpty ? "France" : "\(trimmed), France"
-    }
-
     public var promptPreferences: PromptPreferences {
         PromptPreferences(
             mealsPerDay: mealsPerDay, maxPrepMinutes: maxPrepMinutes, weeklyBudgetEur: weeklyBudget,
             budgetTolerance: tolerance, allergies: allergyList, dislikedFoods: excludedFoods, likedFoods: likedFoods,
-            equipment: equipment, batchCooking: batchCooking, ingredientAvailability: availability, store: storeName,
-            ownedSupplements: ownedSupplementDetails, trainingTime: trainingTimeLabel, location: priceArea
+            equipment: equipment, batchCooking: batchCooking, ingredientAvailability: availability,
+            ownedSupplements: ownedSupplementDetails, trainingTime: trainingTimeLabel
         )
     }
 

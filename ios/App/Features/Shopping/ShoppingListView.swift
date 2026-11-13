@@ -46,11 +46,9 @@ struct ShoppingListView: View {
                 if activePlans.count > 1 {
                     PlanSwitcher(plans: activePlans, selected: plan, today: model.clock.today) { selectedPlanID = $0 }
                 }
-                if let preferences = allPreferences.first {
-                    Text("\(preferences.storeName) · \(preferences.priceArea.replacingOccurrences(of: ", France", with: ""))")
-                        .font(Theme.text(.subheadline))
-                        .foregroundStyle(Theme.muted)
-                }
+                Text("Prix moyens en France")
+                    .font(Theme.text(.subheadline))
+                    .foregroundStyle(Theme.muted)
                 VStack(alignment: .leading, spacing: 12) {
                     if let preferences = allPreferences.first {
                         WeekCostRow(cost: cost, preferences: preferences)

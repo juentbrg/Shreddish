@@ -23,7 +23,7 @@ struct SettingsView: View {
             }
             Section("À propos") {
                 Text("Pas un avis médical. Données sur cet iPhone ; seules cibles et préférences vont à OpenAI. "
-                    + FoodCatalog.attribution)
+                    + FoodCatalog.attribution + " " + PriceCatalog.attribution)
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }

@@ -5,7 +5,7 @@ Cibles caloriques calculées par formule, planning de 7 jours généré par l'IA
 chers, rapides), journal alimentaire, liste de courses, suivi du poids.
 
 - iOS 26+, iPhone, SwiftUI + SwiftData, aucune dépendance tierce.
-- Données sur l'appareil seulement ; clé OpenAI dans le trousseau iOS.
+- Données sur l'appareil seulement ; clé OpenAI fournie au build (spec 009).
 - Spec Kit : constitution `.specify/memory/constitution.md`, feature `specs/001-shreddish-meal-planner/`.
 
 ## Structure
@@ -47,6 +47,21 @@ SwiftLint tourne en pré-build (`ios/.swiftlint.yml`).
   intermédiaire qui garde la clé.
 - Génération réelle (facturée) : `TEST_RUNNER_SHREDDISH_LIVE=1 xcodebuild test ... -only-testing:AppTests/LiveGenerationTests`.
 - Modèle par défaut : `gpt-6-luna`, modifiable dans Réglages → Préférences repas.
+
+## Macros et prix embarqués
+
+- Macros : table Ciqual 2025 (ANSES, Licence Ouverte), `python3 tools/ciqual/build_catalog.py`.
+- Prix : relevés Open Prices (Open Food Facts, ODbL), prix France au quartile bas, sans magasin
+  (spec 011). Export : `prices.parquet` du dépôt Hugging Face `openfoodfacts/open-prices`.
+
+```bash
+pip install duckdb
+python3 tools/prices/build_prices.py prices.parquet \
+  ios/Packages/ShreddishCore/Sources/ShreddishCore/Resources/ciqual.json \
+  tools/prices/foods.json ios/Packages/ShreddishCore/Sources/ShreddishCore/Resources/prices.json
+```
+
+Correspondance aliments Ciqual ↔ catégories Open Prices : `tools/prices/foods.json`.
 
 ## Installer sur l'iPhone
 

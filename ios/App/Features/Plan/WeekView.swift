@@ -363,7 +363,7 @@ struct WeekCostRow: View {
             let budget = Format.euros(preferences.weeklyBudget)
             ProgressView(value: min(cost, preferences.budgetCeiling), total: max(preferences.budgetCeiling, 1))
                 .tint(cost > preferences.weeklyBudget + 0.005 ? Theme.tomato : Theme.green)
-            Text("Budget \(budget) · tolérance \(Format.percent(preferences.tolerance)) · \(preferences.storeName)")
+            Text("Budget \(budget) · tolérance \(Format.percent(preferences.tolerance))")
                 .font(Theme.text(.caption))
                 .foregroundStyle(Theme.muted)
             if cost > preferences.weeklyBudget + 0.005 {

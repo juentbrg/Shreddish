@@ -41,8 +41,6 @@ struct LiveGenerationTests {
         let preferences = Preferences()
         preferences.mealsPerDay = 4
         preferences.weeklyBudgetEUR = 60
-        preferences.storeRaw = GroceryStore.lidl.rawValue
-        preferences.city = "Toulouse"
         preferences.supplementList = ["Whey", "Créatine"]
         preferences.setSupplementInfo(
             SupplementInfo(servingG: 30, kcalPerServing: 118, proteinPerServingG: 24, carbsPerServingG: 2, fatPerServingG: 1.5),
@@ -112,6 +110,9 @@ struct LiveReport {
         lines.append("LIVE plats distincts \(Set(meals.map(\.name)).count) / \(meals.count), "
             + "whey \(meals.filter { $0.ingredients.contains { $0.name.localizedCaseInsensitiveContains("whey") } }.count), "
             + "créatine \(meals.filter { $0.steps.contains { $0.localizedCaseInsensitiveContains("créatine") } }.count)")
+        let lines011 = meals.flatMap(\.ingredients).filter { ($0.unitPriceEur ?? 0) > 0 }
+        let fromTable = lines011.filter { $0.foodCode.flatMap(PriceCatalog.shared.price(code:)) != nil }
+        lines.append("LIVE prix table \(fromTable.count) / \(lines011.count) lignes payantes")
         lines.append("LIVE avertissements : \(warnings.isEmpty ? "aucun" : warnings.joined(separator: " ; "))")
         return lines.joined(separator: "\n")
     }

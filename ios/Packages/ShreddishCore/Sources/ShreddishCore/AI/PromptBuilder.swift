@@ -12,23 +12,18 @@ public struct PromptPreferences: Codable, Sendable, Equatable {
     public var equipment: [String]
     public var batchCooking: Bool
     public var ingredientAvailability: IngredientAvailability
-    /// Nom de l'enseigne : produits et prix de ce magasin (spec 003).
-    public var store: String
     /// Compléments déjà possédés (spec 004), avec protéines par dose (spec 007).
     public var ownedSupplements: [OwnedSupplement]
     /// Heure d'entraînement habituelle « HH:mm ».
     public var trainingTime: String?
     /// Séances par semaine, depuis le profil.
     public var trainingSessionsPerWeek: Int?
-    /// Secteur des courses (spec 005) : « Toulouse, France » ou « France ».
-    public var location: String
 
     public init(
         mealsPerDay: Int, maxPrepMinutes: Int, weeklyBudgetEur: Double, budgetTolerance: Double,
         allergies: [String], dislikedFoods: [String], likedFoods: [String], equipment: [String],
-        batchCooking: Bool, ingredientAvailability: IngredientAvailability, store: String,
-        ownedSupplements: [OwnedSupplement] = [], trainingTime: String? = nil, trainingSessionsPerWeek: Int? = nil,
-        location: String = "France"
+        batchCooking: Bool, ingredientAvailability: IngredientAvailability,
+        ownedSupplements: [OwnedSupplement] = [], trainingTime: String? = nil, trainingSessionsPerWeek: Int? = nil
     ) {
         self.mealsPerDay = mealsPerDay
         self.maxPrepMinutes = maxPrepMinutes
@@ -40,11 +35,9 @@ public struct PromptPreferences: Codable, Sendable, Equatable {
         self.equipment = equipment
         self.batchCooking = batchCooking
         self.ingredientAvailability = ingredientAvailability
-        self.store = store
         self.ownedSupplements = ownedSupplements
         self.trainingTime = trainingTime
         self.trainingSessionsPerWeek = trainingSessionsPerWeek
-        self.location = location
     }
 }
 
@@ -119,7 +112,28 @@ public enum PromptBuilder {
         var costLimitEur: Double?
         /// Retour sur l'essai précédent (coût trop élevé), spec 004.
         var previousAttemptFeedback: String?
+        /// Prix de référence en France (spec 011), pour estimer le budget comme l'application.
+        var referencePricesEurPerKg: String? = PromptBuilder.referencePrices
     }
+
+    /// Aliments de base et leur prix au kg mangé (table de prix), envoyés avec les tâches de planification.
+    static let referenceFoods: [(label: String, code: Int)] = [
+        ("poulet filet", 36017), ("poulet cuisse", 36002), ("bœuf haché 5 %", 6250), ("porc filet", 28204),
+        ("thon au naturel égoutté", 26039), ("œuf", 22000), ("fromage blanc 0 %", 19644), ("lait demi-écrémé", 19041),
+        ("emmental", 12115), ("riz", 9100), ("pâtes", 9810), ("semoule", 9610), ("flocons d'avoine", 32140),
+        ("lentilles", 20585), ("pois chiches égouttés", 20532), ("pomme de terre", 4008), ("haricots verts", 20061),
+        ("banane", 13005), ("pomme", 13039), ("avocat", 13004), ("huile de colza", 17130), ("huile d'olive", 17270),
+        ("amandes", 15000), ("graines de chia", 15047), ("beurre de cacahuète", 15202), ("pain complet", 7110),
+        ("tofu", 20904),
+    ]
+
+    static let referencePrices: String? = {
+        let catalog = PriceCatalog.shared
+        let items = referenceFoods.compactMap { item in
+            catalog.price(code: item.code).map { "\(item.label) \(String(format: "%.1f", $0.eurPerEdibleKg))" }
+        }
+        return items.isEmpty ? nil : items.joined(separator: " ; ")
+    }()
 
     public static func weekInput(
         targets: MacroTotals, goal: Goal, preferences: PromptPreferences, feedback: String? = nil
@@ -230,13 +244,10 @@ public enum PromptBuilder {
         Ne remplis jamais infeasible pour le budget ou le prix : propose le planning le moins cher possible, \
         l'application recalcule le coût et prévient si besoin.
         - previous_attempt_feedback : si présent, corrige ce qui y est signalé.
-        - Prix (store, location) : n'utilise que des produits vendus dans l'enseigne store, marque distributeur \
-        en priorité. Pour chaque ingrédient, unit_price_eur = prix réaliste en rayon cette année dans cette \
-        enseigne autour de location, en € par kg (unit "g"), par litre (unit "ml") ou par pièce (unit "piece"), \
-        pour le format le plus économique couramment vendu. Tiens compte du positionnement de l'enseigne \
-        (hard discount et hypermarché moins chers, proximité et centre-ville plus chers) et du secteur \
-        (grande ville concurrentielle moins chère ; petite ville, montagne ou zone touristique plus chère, \
-        souvent +10 à +25 % en supérette). cost_eur = quantity × unit_price_eur (÷ 1000 pour g et ml).
+        - Prix : prix moyens en supermarché en France, marque distributeur. reference_prices_eur_per_kg donne \
+        le prix au kg mangé des aliments courants : base-toi dessus pour le budget. Pour chaque ingrédient, \
+        unit_price_eur en € par kg (unit "g"), par litre (unit "ml") ou par pièce (unit "piece"). \
+        cost_eur = quantity × unit_price_eur (÷ 1000 pour g et ml). L'application recalcule les prix.
         - ingredient_availability : "everywhere" = uniquement des ingrédients basiques trouvables dans tout \
         supermarché et en hard discount (Lidl, Aldi), aucun produit de niche (tempeh, seitan, spiruline, levure \
         maltée, sirop d'agave, farines spéciales, superaliments) ; "supermarket" = rayon d'un grand \

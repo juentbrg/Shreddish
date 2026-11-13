@@ -104,36 +104,3 @@ public enum IngredientAvailability: String, Codable, Sendable, CaseIterable {
     case specialty
 }
 
-/// Magasin habituel : produits et prix de l'enseigne (spec 003, FR-206).
-public enum GroceryStore: String, Codable, Sendable, CaseIterable {
-    case generic = "supermarche"
-    case lidl
-    case aldi
-    case leclerc
-    case intermarche
-    case carrefour
-    case carrefourMarket = "carrefour_market"
-    case auchan
-    case superU = "super_u"
-    case monoprix
-    case franprix
-    case other
-
-    /// Nom transmis à l'IA et affiché.
-    public var displayName: String {
-        switch self {
-        case .generic: "Supermarché classique"
-        case .lidl: "Lidl"
-        case .aldi: "Aldi"
-        case .leclerc: "E.Leclerc"
-        case .intermarche: "Intermarché"
-        case .carrefour: "Carrefour"
-        case .carrefourMarket: "Carrefour Market"
-        case .auchan: "Auchan"
-        case .superU: "Super U"
-        case .monoprix: "Monoprix"
-        case .franprix: "Franprix"
-        case .other: "Autre"
-        }
-    }
-}

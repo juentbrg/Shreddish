@@ -69,8 +69,7 @@ public enum PortionAdjuster {
             } else {
                 var line = oil
                 line.quantity = quantity
-                AIOutputValidator.applyUnitPrice(&line)
-                meal.ingredients.append(line)
+                meal.ingredients.append(resolver.priced(line))
             }
             let added = perMl * quantity
             meal.macros = (meal.macros + added).rounded
