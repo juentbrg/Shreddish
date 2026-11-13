@@ -6,14 +6,20 @@ import SwiftData
 /// Déclenché seulement par une action de l'utilisateur, jamais en tâche de fond (FR-020).
 @MainActor
 final class PlanGenerator {
-    private let client: OpenAIClient
+    let client: OpenAIClient
     private let keyStore: any APIKeyStore
     private let clock: any AppClock
+    /// Correspondances ingrédient → Ciqual (spec 010).
+    let matchCache: any FoodMatchCache
 
-    init(client: OpenAIClient, keyStore: any APIKeyStore, clock: any AppClock) {
+    init(
+        client: OpenAIClient, keyStore: any APIKeyStore, clock: any AppClock,
+        matchCache: any FoodMatchCache = InMemoryFoodMatchCache()
+    ) {
         self.client = client
         self.keyStore = keyStore
         self.clock = clock
+        self.matchCache = matchCache
     }
 
     struct Context: Sendable {
@@ -23,6 +29,9 @@ final class PlanGenerator {
         let preferences: PromptPreferences
         let constraints: GenerationConstraints
         let model: String
+        let resolver: NutritionResolver
+        /// Huile ajoutée si les lipides manquent ; `nil` si exclue (allergie ou aliment non aimé).
+        let oil: IngredientDTO?
     }
 
     private func context(profile: Profile, preferences: Preferences) throws(AIError) -> Context {
@@ -34,7 +43,9 @@ final class PlanGenerator {
         return Context(
             apiKey: key, targets: targets, goal: profile.goal, preferences: promptPreferences,
             constraints: preferences.constraints(targets: targets.macros),
-            model: model.isEmpty ? AIConfig.defaultModel : model
+            model: model.isEmpty ? AIConfig.defaultModel : model,
+            resolver: NutritionResolver(cache: matchCache, supplements: preferences.ownedSupplementDetails),
+            oil: Self.allowedOil(preferences.constraints(targets: targets.macros))
         )
     }
 
@@ -57,14 +68,17 @@ final class PlanGenerator {
             week = try await requestWeekByDays(ctx)
         }
         guard let sanitized = week.sanitized else { throw .invalidOutput("Semaine invalide") }
+        let finished = await finish(sanitized.days, ctx: ctx)
+        let days = await retryOffTargetDays(finished.days, ctx: ctx)
+        let plan = WeekPlanDTO(prepSessions: sanitized.prepSessions, days: days)
         do {
             try PlanStore.saveWeek(
-                sanitized, startDay: startDay, targets: ctx.targets, createdAt: clock.now, today: clock.today, in: store
+                plan, startDay: startDay, targets: ctx.targets, createdAt: clock.now, today: clock.today, in: store
             )
         } catch {
             throw .unexpected("Enregistrement impossible")
         }
-        return week.warnings
+        return Self.finalWarnings(week.warnings, days: days, constraints: ctx.constraints, unverified: finished.unverified)
     }
 
     private func requestWeek(_ ctx: Context) async throws(AIError) -> ValidationResult<WeekPlanDTO> {
@@ -106,6 +120,7 @@ final class PlanGenerator {
         // Semaine reconstituée : contrôle global (7 jours, budget) sans batch cooking.
         var constraints = ctx.constraints
         constraints.batchCooking = false
+        constraints.enforceVariety = false
         var result = AIOutputValidator.validate(week: WeekPlanDTO(prepSessions: [], days: days), constraints: constraints)
         guard result.isValid else { throw .invalidOutput(String(describing: result.fatal)) }
         result.warnings = warnings + result.warnings
@@ -114,8 +129,9 @@ final class PlanGenerator {
 
     // MARK: Jour et repas
 
-    private func requestDay(
-        _ ctx: Context, offset: Int, avoid: [String], prepSessions: Set<Int> = [], costLimit: Double
+    func requestDay(
+        _ ctx: Context, offset: Int, avoid: [String], prepSessions: Set<Int> = [], costLimit: Double,
+        correction: String? = nil
     ) async throws(AIError) -> ValidationResult<DayPlanDTO> {
         var dayConstraints = ctx.constraints
         dayConstraints.costLimitEur = costLimit
@@ -126,7 +142,8 @@ final class PlanGenerator {
             preferences.weeklyBudgetEur *= budgetScale
             let input = PromptBuilder.dayInput(
                 targets: ctx.targets.macros, goal: ctx.goal, preferences: preferences, dayOffset: offset,
-                avoidMealNames: avoid, costLimitEur: costLimit * budgetScale, feedback: feedback
+                avoidMealNames: avoid, costLimitEur: costLimit * budgetScale,
+                feedback: [correction, feedback].compactMap(\.self).joined(separator: " ").nilIfEmpty
             )
             let data = try await client.generate(
                 kind: .day, instructions: PromptBuilder.systemInstructions(), input: input,
@@ -150,7 +167,8 @@ final class PlanGenerator {
         var ctx = try context(profile: profile, preferences: preferences)
         ctx = Context(
             apiKey: ctx.apiKey, targets: plan.targets ?? ctx.targets, goal: ctx.goal, preferences: ctx.preferences,
-            constraints: preferences.constraints(targets: (plan.targets ?? ctx.targets).macros), model: ctx.model
+            constraints: preferences.constraints(targets: (plan.targets ?? ctx.targets).macros), model: ctx.model,
+            resolver: ctx.resolver, oil: ctx.oil
         )
         let avoid = plan.days.flatMap(\.meals).map(\.name)
         let otherDaysCost = plan.days.filter { $0.persistentModelID != day.persistentModelID }.reduce(0) { $0 + $1.plannedCostEUR }
@@ -161,8 +179,12 @@ final class PlanGenerator {
             ctx, offset: day.offset, avoid: avoid, prepSessions: Set(plan.prepSessions.map(\.index)), costLimit: limit
         )
         guard let sanitized = result.sanitized else { throw .invalidOutput("Jour invalide") }
-        do { try PlanStore.replaceDay(day, with: sanitized, in: store) } catch { throw .unexpected("Enregistrement impossible") }
-        return result.warnings
+        let finished = await finish([sanitized], ctx: ctx)
+        guard let newDay = finished.days.first else { throw .invalidOutput("Jour invalide") }
+        do { try PlanStore.replaceDay(day, with: newDay, in: store) } catch { throw .unexpected("Enregistrement impossible") }
+        return Self.finalWarnings(
+            result.warnings, days: [newDay], constraints: ctx.constraints, unverified: finished.unverified, includeBudget: false
+        )
     }
 
     /// Remplace un seul repas par une alternative proche en kcal (US3). Renvoie les avertissements.
@@ -206,9 +228,14 @@ final class PlanGenerator {
             checked.sanitized = sanitized
             return checked
         }
-        guard let replacement = result.sanitized else { throw .invalidOutput("Repas invalide") }
+        guard let draft = result.sanitized else { throw .invalidOutput("Repas invalide") }
+        // Spec 010 : macros Ciqual, portions ajustées aux macros restantes du jour.
+        await answerFoodQuestions(for: [draft], ctx: base)
+        let (resolved, verified) = base.resolver.resolve(draft)
+        let remaining = targets.macros - Totals.planned(others)
+        let replacement = PortionAdjuster.adjust([resolved], to: remaining, resolver: base.resolver, oil: base.oil)[0]
         do { try PlanStore.replaceMeal(meal, with: replacement, in: store) } catch { throw .unexpected("Enregistrement impossible") }
-        return result.warnings
+        return result.warnings.filter { !$0.isRecomputed } + (verified ? [] : [.unverifiedMeals(count: 1)])
     }
 
     // MARK: Retry

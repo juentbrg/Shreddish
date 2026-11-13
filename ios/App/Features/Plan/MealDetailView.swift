@@ -101,6 +101,36 @@ struct MealDetailView: View {
     }
 
     @ViewBuilder private var steps: some View {
+        if meal.needsRecipe {
+            pendingRecipe
+        } else {
+            recipeSteps
+        }
+    }
+
+    /// Recette pas encore rédigée : demandée en priorité (spec 010).
+    private var pendingRecipe: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            SectionTitle(title: "Préparation")
+            HStack(spacing: 12) {
+                if model.recipes.isPreparing(meal) { ProgressView() }
+                Text(model.recipes.isPreparing(meal) ? "Recette en préparation…" : "Recette indisponible pour l'instant.")
+                    .font(Theme.text(.body))
+                    .foregroundStyle(Theme.muted)
+                if !model.recipes.isPreparing(meal) {
+                    Spacer()
+                    Button("Réessayer") { model.recipes.prioritize(meal, in: context) }
+                        .font(Theme.text(.subheadline, .semibold))
+                }
+            }
+            .card()
+            .accessibilityIdentifier("pendingRecipe")
+        }
+        .padding(.horizontal, 20)
+        .task { model.recipes.prioritize(meal, in: context) }
+    }
+
+    @ViewBuilder private var recipeSteps: some View {
         let all = meal.steps
         VStack(alignment: .leading, spacing: 12) {
             HStack {

@@ -12,8 +12,15 @@ final class CountingTransport: AITransport, @unchecked Sendable {
 
     var requestCount: Int { lock.withLock { count } }
 
+    private(set) var kinds: [String: Int] = [:]
+
     func send(_ request: URLRequest) async throws -> (Data, HTTPURLResponse) {
-        lock.withLock { count += 1 }
+        let body = request.httpBody.flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: Any] }
+        let kind = ((body?["text"] as? [String: Any])?["format"] as? [String: Any])?["name"] as? String ?? "?"
+        lock.withLock {
+            count += 1
+            kinds[kind, default: 0] += 1
+        }
         return try await base.send(request)
     }
 }
@@ -51,6 +58,12 @@ struct LiveGenerationTests {
         let started = Date()
         let warnings = try await generator.generateWeek(profile: profile, preferences: preferences, in: context)
         let seconds = Date().timeIntervalSince(started)
+        let recipes = RecipeGenerator(client: OpenAIClient(transport: transport), keyStore: BundledKeyStore())
+        let recipesStarted = Date()
+        recipes.fillMissing(in: context)
+        await recipes.waitUntilIdle()
+        print("LIVE requêtes par type \(transport.kinds.sorted { $0.key < $1.key })")
+        print("LIVE recettes \(Int(Date().timeIntervalSince(recipesStarted))) s")
 
         let plan = try #require(PlanStore.currentPlan(in: context))
         let targets = try #require(plan.targets).macros

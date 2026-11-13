@@ -35,11 +35,26 @@ struct UITestAITransport: AITransport {
 
         func day(_ offset: Int, variant: String) -> DayPlanDTO {
             let share = 1 / Double(types.count)
-            return DayPlanDTO(dayOffset: offset, meals: types.map { meal(type: $0, share: share, target: target, variant: variant) })
+            return DayPlanDTO(
+                dayOffset: offset,
+                meals: types.enumerated().map { index, type in
+                    meal(type: type, share: share, target: target, variant: variant, draft: true, combo: offset * types.count + index)
+                }
+            )
         }
 
         let object: Encodable
         switch task {
+        case "recipe":
+            object = RecipeEnvelope(steps: [
+                "Pèse les ingrédients.", "Cuis le riz 12 min à feu doux.", "Saisis le poulet 6 min.", "Sers chaud.",
+            ])
+        case "food_match":
+            let items = input["items"] as? [[String: Any]] ?? []
+            object = FoodMatchEnvelope(matches: items.map { item in
+                let first = (item["candidates"] as? [[String: Any]])?.first?["code"] as? Int
+                return FoodChoice(index: item["index"] as? Int ?? 0, code: first)
+            })
         case "day":
             let offset = input["day_offset"] as? Int ?? 0
             object = DayEnvelope(day: day(offset, variant: "bis"))
@@ -61,10 +76,40 @@ struct UITestAITransport: AITransport {
         }
     }
 
-    static func meal(type: MealType, share: Double, target: MacroTotals, variant: String) -> MealDTO {
+    /// Protéine et féculent simulés, valeurs Ciqual pour 100 g (protéines, glucides, lipides).
+    struct StubFood {
+        let name: String
+        let protein: Double
+        let carbs: Double
+        let fat: Double
+        let price: Double
+        let aisle: Aisle
+    }
+
+    static let proteins = [
+        StubFood(name: "Poulet, filet sans peau cru", protein: 23.4, carbs: 0, fat: 1.5, price: 7, aisle: .viandePoisson),
+        StubFood(name: "Thon, au naturel, appertisé, égoutté", protein: 26.8, carbs: 0, fat: 3.9, price: 9, aisle: .epicerie),
+        StubFood(name: "Boeuf, steak haché 5% MG cru", protein: 21.9, carbs: 0.3, fat: 4.6, price: 9, aisle: .viandePoisson),
+    ]
+    static let starches = [
+        StubFood(name: "Riz thaï ou basmati cru", protein: 7.1, carbs: 78.4, fat: 0.6, price: 2.5, aisle: .epicerie),
+        StubFood(name: "Pâtes sèches, standard, crues", protein: 12, carbs: 72.7, fat: 1.6, price: 1.5, aisle: .epicerie),
+        StubFood(name: "Semoule de blé dur, crue", protein: 11.8, carbs: 69.8, fat: 1.3, price: 1.8, aisle: .epicerie),
+    ]
+
+    /// Repas simulé : protéine, féculent et huile dosés avec les valeurs Ciqual pour tomber sur la part de cible ;
+    /// `combo` varie protéine et féculent d'un repas à l'autre (au plus 2 fois la même association).
+    static func meal(
+        type: MealType, share: Double, target: MacroTotals, variant: String, draft: Bool = false, combo: Int = 0
+    ) -> MealDTO {
         let protein = (target.proteinG * share).rounded()
         let carbs = (target.carbsG * share).rounded()
         let fat = (target.fatG * share).rounded()
+        let meat = proteins[combo % proteins.count]
+        let starch = starches[(combo / proteins.count) % starches.count]
+        let starchG = (carbs / (starch.carbs / 100)).rounded()
+        let meatG = max(0, ((protein - starchG * starch.protein / 100) / (meat.protein / 100)).rounded())
+        let oil = max(0, (fat - meatG * meat.fat / 100 - starchG * starch.fat / 100).rounded())
         let names: [MealType: String] = [
             .breakfast: "Porridge fromage blanc", .lunch: "Poulet riz brocolis",
             .snack: "Skyr et amandes", .dinner: "Omelette pommes de terre",
@@ -73,12 +118,13 @@ struct UITestAITransport: AITransport {
         return MealDTO(
             type: type, name: "\(names[type] ?? "Repas") \(variant)",
             ingredients: [
-                IngredientDTO(name: "Riz basmati", quantity: 80, unit: "g", aisle: .epicerie, costEur: 0.25, unitPriceEur: 3.125),
                 IngredientDTO(
-                    name: "Blanc de poulet", quantity: 120, unit: "g", aisle: .viandePoisson, costEur: 1.2, unitPriceEur: 10
+                    name: starch.name, quantity: starchG, unit: "g", aisle: starch.aisle, costEur: 0, unitPriceEur: starch.price
                 ),
+                IngredientDTO(name: meat.name, quantity: meatG, unit: "g", aisle: meat.aisle, costEur: 0, unitPriceEur: meat.price),
+                IngredientDTO(name: "Huile de colza", quantity: oil, unit: "ml", aisle: .epicerie, costEur: 0, unitPriceEur: 3),
             ],
-            steps: ["Cuire le riz.", "Saisir le poulet.", "Servir."], prepMinutes: 10, costEur: 1.45,
+            steps: draft ? [] : ["Cuire le féculent.", "Saisir la protéine.", "Servir."], prepMinutes: 10, costEur: 1.45,
             kcal: 4 * protein + 4 * carbs + 9 * fat, proteinG: protein, carbsG: carbs, fatG: fat, prepSessionRef: nil,
             time: times[type]
         )
@@ -95,6 +141,14 @@ struct UITestAITransport: AITransport {
     private struct DayEnvelope: Encodable {
         var infeasible: String?
         var day: DayPlanDTO
+    }
+
+    private struct RecipeEnvelope: Encodable {
+        var steps: [String]
+    }
+
+    private struct FoodMatchEnvelope: Encodable {
+        var matches: [FoodChoice]
     }
 
     private struct MealEnvelope: Encodable {

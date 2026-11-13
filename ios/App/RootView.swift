@@ -19,6 +19,7 @@ struct RootView: View {
             tabs
                 .task {
                     PlanStore.cleanUpStoredData(in: context)
+                    model.recipes.fillMissing(in: context)
                     model.calibrateIfDue(context: context)
                 }
                 .onChange(of: scenePhase) { _, phase in

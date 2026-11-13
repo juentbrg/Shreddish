@@ -22,7 +22,8 @@ struct SettingsView: View {
                     .accessibilityIdentifier("eraseAll")
             }
             Section("À propos") {
-                Text("Pas un avis médical. Données sur cet iPhone ; seules cibles et préférences vont à OpenAI.")
+                Text("Pas un avis médical. Données sur cet iPhone ; seules cibles et préférences vont à OpenAI. "
+                    + FoodCatalog.attribution)
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
@@ -47,6 +48,7 @@ extension SettingsView {
         try? context.delete(model: WeeklyPlan.self)
         try? context.delete(model: WeightEntry.self)
         try? context.delete(model: Preferences.self)
+        UserDefaultsFoodMatchCache().removeAll()
         try? context.delete(model: Profile.self)
         try? context.save()
         model.calibrationMessage = nil

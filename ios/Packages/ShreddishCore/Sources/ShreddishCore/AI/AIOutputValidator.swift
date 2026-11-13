@@ -16,6 +16,8 @@ public struct GenerationConstraints: Sendable, Equatable {
     public var costLimitEur: Double?
     /// Compléments possédés : coût ramené à 0 (spec 004).
     public var ownedSupplements: [String]
+    /// Même plat principal au plus 2 fois (spec 010) ; désactivé pour une semaine reconstituée jour par jour.
+    public var enforceVariety = true
 
     public init(
         targets: MacroTotals, mealsPerDay: Int, maxPrepMinutes: Int, weeklyBudgetEur: Double, budgetTolerance: Double,
@@ -65,6 +67,11 @@ public enum ValidationIssue: Equatable, Sendable {
     case allergen(meal: String, food: String)
     case prepSessionCount(Int)
     case orphanPrepSessionRef(meal: String, ref: Int)
+    /// Garde-fous (spec 010) : quantité, prix ou coût impossibles, plat trop répété.
+    case implausibleQuantity(ingredient: String)
+    case implausiblePrice(ingredient: String)
+    case absurdCost(costEur: Double)
+    case repetitiveMeal(name: String, count: Int)
     // Corrections appliquées.
     case kcalRecomputed(meal: String)
     case unitConverted(ingredient: String)
@@ -77,6 +84,21 @@ public enum ValidationIssue: Equatable, Sendable {
     case weekOverBudgetWithinTolerance(costEur: Double, budgetEur: Double)
     case weekOverBudget(costEur: Double, ceilingEur: Double)
     case overCostLimit(costEur: Double, limitEur: Double)
+    /// Repas dont un ingrédient n'a pas été trouvé dans Ciqual : macros de l'IA (spec 010).
+    case unverifiedMeals(count: Int)
+
+    /// Écart à la cible : recalculé après les macros Ciqual et l'ajustement des portions (spec 010).
+    public var isRecomputed: Bool {
+        if case .dayOffTarget = self { true } else { false }
+    }
+
+    /// Avertissement de coût de la semaine, recalculé après l'ajustement des portions.
+    public var isBudget: Bool {
+        switch self {
+        case .weekOverBudget, .weekOverBudgetWithinTolerance: true
+        default: false
+        }
+    }
 
     /// Coût au-dessus du plafond : justifie un nouvel essai avec retour de coût.
     public var isOverCeiling: Bool {
@@ -116,6 +138,13 @@ public enum AIOutputValidator {
     static let kcalTolerance = 0.10
     /// Marge d'arrondi sur les coûts, en euros.
     static let costEpsilon = 0.005
+    /// Garde-fous (spec 010).
+    static let maxPiecesPerIngredient = 12.0
+    static let maxGramsPerIngredient = 2000.0
+    static let maxPricePerKg = 80.0
+    static let maxPricePerPiece = 10.0
+    static let absurdCostFactor = 3.0
+    static let maxRepeats = 2
 
     // MARK: Semaine
 
@@ -146,16 +175,48 @@ public enum AIOutputValidator {
             if let sanitized = dayResult.sanitized { days.append(sanitized) }
         }
 
+        if constraints.enforceVariety, let repeated = mostRepeatedMeal(in: days), repeated.count > maxRepeats {
+            result.fatal.append(.repetitiveMeal(name: repeated.name, count: repeated.count))
+        }
         if result.fatal.isEmpty {
             let cost = BudgetMath.cents(days.flatMap(\.meals).reduce(0) { $0 + $1.costEur })
-            if cost > constraints.budgetCeilingEur + costEpsilon {
-                result.warnings.append(.weekOverBudget(costEur: cost, ceilingEur: BudgetMath.cents(constraints.budgetCeilingEur)))
-            } else if cost > constraints.weeklyBudgetEur + costEpsilon {
-                result.warnings.append(.weekOverBudgetWithinTolerance(costEur: cost, budgetEur: constraints.weeklyBudgetEur))
+            if cost > constraints.budgetCeilingEur * absurdCostFactor {
+                result.fatal.append(.absurdCost(costEur: cost))
+            } else {
+                result.warnings += budgetWarnings(cost: cost, constraints: constraints)
             }
         }
         result.sanitized = result.fatal.isEmpty ? WeekPlanDTO(prepSessions: sessions, days: days) : nil
         return result
+    }
+
+    /// Dépassement du budget de la semaine (tolérance comprise ou non).
+    public static func budgetWarnings(cost: Double, constraints: GenerationConstraints) -> [ValidationIssue] {
+        let cost = BudgetMath.cents(cost)
+        if cost > constraints.budgetCeilingEur + costEpsilon {
+            return [.weekOverBudget(costEur: cost, ceilingEur: BudgetMath.cents(constraints.budgetCeilingEur))]
+        }
+        if cost > constraints.weeklyBudgetEur + costEpsilon {
+            return [.weekOverBudgetWithinTolerance(costEur: cost, budgetEur: constraints.weeklyBudgetEur)]
+        }
+        return []
+    }
+
+    /// Jours à plus de 10 % de la cible kcal.
+    public static func offTargetWarnings(days: [DayPlanDTO], targets: MacroTotals) -> [ValidationIssue] {
+        days.compactMap { day in
+            let deviation = Totals.deviation(Totals.planned(day.meals), targetKcal: targets.kcal)
+            return Totals.isOffTarget(deviation) ? .dayOffTarget(dayOffset: day.dayOffset, deviation: deviation) : nil
+        }
+    }
+
+    /// Plat principal le plus répété : déjeuners et dîners hors batch cooking (petit-déjeuner répété : normal).
+    static func mostRepeatedMeal(in days: [DayPlanDTO]) -> (name: String, count: Int)? {
+        let names = days.flatMap(\.meals)
+            .filter { [.lunch, .dinner].contains($0.type) && $0.prepSessionRef == nil }
+            .map { TextNormalizer.singular($0.name) }
+        let counts = Dictionary(names.map { ($0, 1) }, uniquingKeysWith: +)
+        return counts.max { $0.value < $1.value }.map { (name: $0.key, count: $0.value) }
     }
 
     // MARK: Jour
@@ -212,7 +273,8 @@ public enum AIOutputValidator {
         var meal = meal
         let name = meal.name.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        if name.isEmpty || meal.ingredients.isEmpty || meal.steps.isEmpty {
+        // Étapes absentes des brouillons de semaine : rédigées ensuite (spec 010).
+        if name.isEmpty || meal.ingredients.isEmpty {
             result.fatal.append(.incompleteMeal(meal: meal.name))
         }
         if let expectedType, meal.type != expectedType {
@@ -263,15 +325,20 @@ public enum AIOutputValidator {
     static func applyUnitPrices(_ meal: inout MealDTO) {
         guard !meal.ingredients.isEmpty else { return }
         meal.ingredients = meal.ingredients.map { ingredient in
-            guard let price = ingredient.unitPriceEur, price >= 0, let unit = ingredient.measureUnit else { return ingredient }
             var ingredient = ingredient
-            let divisor: Double = unit == .piece ? 1 : 1000
-            ingredient.costEur = BudgetMath.cents(ingredient.quantity * price / divisor)
+            applyUnitPrice(&ingredient)
             return ingredient
         }
         if meal.ingredients.contains(where: { $0.unitPriceEur != nil }) {
             meal.costEur = BudgetMath.cents(meal.ingredients.reduce(0) { $0 + $1.costEur })
         }
+    }
+
+    /// Coût d'un ingrédient depuis son prix unitaire (sans prix : coût de l'IA conservé).
+    static func applyUnitPrice(_ ingredient: inout IngredientDTO) {
+        guard let price = ingredient.unitPriceEur, price >= 0, let unit = ingredient.measureUnit else { return }
+        let divisor: Double = unit == .piece ? 1 : 1000
+        ingredient.costEur = BudgetMath.cents(ingredient.quantity * price / divisor)
     }
 
     /// Ingrédients issus d'un complément possédé : coût 0, retiré du coût du repas (FR-303).
@@ -334,11 +401,19 @@ public enum AIOutputValidator {
             ingredient.quantity *= factor
             ingredient.unit = unit.rawValue
         }
+        let maxQuantity = unit == .piece ? maxPiecesPerIngredient : maxGramsPerIngredient
+        if ingredient.quantity > maxQuantity {
+            result.fatal.append(.implausibleQuantity(ingredient: ingredient.name))
+        }
+        if let price = ingredient.unitPriceEur, price > (unit == .piece ? maxPricePerPiece : maxPricePerKg) {
+            result.fatal.append(.implausiblePrice(ingredient: ingredient.name))
+        }
+        if let piece = ingredient.pieceG, piece <= 0 || piece > 1500 { ingredient.pieceG = nil }
         return ingredient
     }
 
     /// Premier aliment exclu présent dans le nom du repas ou d'un ingrédient (forme d'origine).
-    static func excludedFood(in meal: MealDTO, excluded: [String]) -> String? {
+    public static func excludedFood(in meal: MealDTO, excluded: [String]) -> String? {
         let haystacks = ([meal.name] + meal.ingredients.map(\.name)).map(TextNormalizer.singular)
         return excluded.first { food in
             let needle = TextNormalizer.singular(food)

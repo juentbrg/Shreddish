@@ -7,6 +7,8 @@ public enum ResponseSchemas {
         case week = "WeekPlanResponse"
         case day = "DayPlanResponse"
         case meal = "MealReplacementResponse"
+        case recipe = "RecipeResponse"
+        case foodMatch = "FoodMatchResponse"
     }
 
     /// Schéma prêt pour `JSONSerialization` (dictionnaire).
@@ -29,10 +31,37 @@ public enum ResponseSchemas {
             {"type":"object","additionalProperties":false,"required":["infeasible","meal"],
              "properties":{"infeasible":{"$ref":"#/$defs/infeasible"},"meal":{"$ref":"#/$defs/meal"}}}
             """
+        case .recipe:
+            """
+            {"type":"object","additionalProperties":false,"required":["steps"],
+             "properties":{"steps":{"type":"array","items":{"type":"string"}}}}
+            """
+        case .foodMatch:
+            """
+            {"type":"object","additionalProperties":false,"required":["matches"],
+             "properties":{"matches":{"type":"array","items":{"type":"object","additionalProperties":false,
+              "required":["index","code"],"properties":{"index":{"type":"integer"},"code":{"type":["integer","null"]}}}}}}
+            """
         }
         var object = parse(root)
-        object["$defs"] = parse(definitions)
+        if [.week, .day, .meal].contains(kind) { object["$defs"] = definitionsWithDraft() }
         return object
+    }
+
+    /// Repas de semaine et de jour en brouillon, sans étapes : recettes générées ensuite (spec 010).
+    private static func definitionsWithDraft() -> [String: Any] {
+        var defs = parse(definitions)
+        guard var draft = defs["meal"] as? [String: Any], var properties = draft["properties"] as? [String: Any],
+              let required = draft["required"] as? [String], var day = defs["day"] as? [String: Any],
+              var dayProperties = day["properties"] as? [String: Any] else { return defs }
+        properties["steps"] = nil
+        draft["properties"] = properties
+        draft["required"] = required.filter { $0 != "steps" }
+        defs["meal_draft"] = draft
+        dayProperties["meals"] = ["type": "array", "items": ["$ref": "#/$defs/meal_draft"]]
+        day["properties"] = dayProperties
+        defs["day"] = day
+        return defs
     }
 
     private static func parse(_ json: String) -> [String: Any] {
@@ -42,9 +71,9 @@ public enum ResponseSchemas {
     private static let definitions = """
     {
      "ingredient":{"type":"object","additionalProperties":false,
-      "required":["name","quantity","unit","aisle","unit_price_eur","cost_eur"],
+      "required":["name","quantity","unit","piece_g","aisle","unit_price_eur","cost_eur"],
       "properties":{"name":{"type":"string"},"quantity":{"type":"number"},
-       "unit":{"type":"string","enum":["g","ml","piece"]},
+       "unit":{"type":"string","enum":["g","ml","piece"]},"piece_g":{"type":["number","null"]},
        "aisle":{"type":"string","enum":["fruits_legumes","viande_poisson","cremerie","epicerie","surgeles","boulangerie","autre"]},
        "unit_price_eur":{"type":"number"},"cost_eur":{"type":"number"}}},
      "meal":{"type":"object","additionalProperties":false,

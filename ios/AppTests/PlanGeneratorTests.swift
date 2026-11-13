@@ -142,9 +142,36 @@ struct PlanGeneratorTests {
 
     typealias Step = ScriptedTransport.Step
 
+    /// Spec 010 : semaine sans étapes, recettes rédigées ensuite ; créatine dans le repas d'après séance.
+    @Test func recipesAreWrittenAfterTheWeekWithDoses() async throws {
+        preferences.supplementList = ["Créatine"]
+        preferences.setSupplementInfo(SupplementInfo(doseAmount: 5, doseUnit: .g, dosesPerDay: 1), for: "Créatine")
+        preferences.trainingTimeMinutes = 16 * 60
+        let recipe = Step.output(#"{"steps":["Étape 1.","Étape 2.","Étape 3.","Étape 4."]}"#)
+        let transport = ScriptedTransport([.output(try weekText())] + Array(repeating: recipe, count: 28))
+        try await generator(transport).generateWeek(profile: profile, preferences: preferences, in: context)
+        let plan = try #require(PlanStore.currentPlan(in: context))
+        #expect(plan.sortedDays.flatMap(\.meals).allSatisfy { $0.needsRecipe })
+
+        let recipes = RecipeGenerator(client: OpenAIClient(transport: transport), keyStore: InMemoryKeyStore(key: "sk-test"))
+        recipes.fillMissing(in: context)
+        await recipes.waitUntilIdle()
+        #expect(plan.sortedDays.flatMap(\.meals).allSatisfy { $0.steps.count == 4 })
+        #expect(transport.requestCount == 29)
+        let inputs = transport.requests.dropFirst().compactMap { request -> String? in
+            guard let body = request.httpBody,
+                  let json = try? JSONSerialization.jsonObject(with: body) as? [String: Any] else { return nil }
+            return json["input"] as? String
+        }
+        // Une prise par jour, sur la collation de 17 h (premier repas après 16 h).
+        #expect(inputs.filter { $0.contains("Créatine : 5 g") }.count == 7)
+        #expect(inputs.filter { $0.contains("Créatine : 5 g") }.allSatisfy { $0.contains("\"type\":\"snack\"") })
+    }
+
     @Test func weekAboveBudgetCeilingIsRegenerated() async throws {
-        // 28 repas à 5 € = 140 € pour un plafond de 56 € × 1,10 = 61,60 € : refus, nouvel essai.
-        let expensive = try weekText().replacingOccurrences(of: "\"unit_price_eur\":10", with: "\"unit_price_eur\":39.58")
+        // Viande et poisson à 30 €/kg : plus de 100 € pour un plafond de 56 € × 1,10 = 61,60 € : nouvel essai.
+        let expensive = try weekText().replacingOccurrences(of: "\"unit_price_eur\":7}", with: "\"unit_price_eur\":30}")
+            .replacingOccurrences(of: "\"unit_price_eur\":9}", with: "\"unit_price_eur\":30}")
         let transport = ScriptedTransport([.output(expensive), .output(try weekText())])
         try await generator(transport).generateWeek(profile: profile, preferences: preferences, in: context)
         #expect(transport.requestCount == 2)
@@ -154,13 +181,15 @@ struct PlanGeneratorTests {
         let body = try #require(try JSONSerialization.jsonObject(with: transport.requests[1].httpBody ?? Data()) as? [String: Any])
         let input = try #require(body["input"] as? String)
         #expect(input.contains("previous_attempt_feedback"))
-        #expect(input.contains("140"))
+        #expect(input.contains("plafond de 61.6"))
     }
 
     @Test func weekStillAboveCeilingIsKeptWithWarning() async throws {
         // Spec 004 : deux essais au-dessus du plafond → le moins cher est gardé et signalé, pas d'échec.
-        let expensive = try weekText().replacingOccurrences(of: "\"unit_price_eur\":10", with: "\"unit_price_eur\":39.58")
-        let lessExpensive = try weekText().replacingOccurrences(of: "\"unit_price_eur\":10", with: "\"unit_price_eur\":22.92")
+        let expensive = try weekText().replacingOccurrences(of: "\"unit_price_eur\":7}", with: "\"unit_price_eur\":30}")
+            .replacingOccurrences(of: "\"unit_price_eur\":9}", with: "\"unit_price_eur\":30}")
+        let lessExpensive = try weekText().replacingOccurrences(of: "\"unit_price_eur\":7}", with: "\"unit_price_eur\":20}")
+            .replacingOccurrences(of: "\"unit_price_eur\":9}", with: "\"unit_price_eur\":20}")
         let transport = ScriptedTransport([.output(expensive), .output(lessExpensive)])
         let warnings = try await generator(transport).generateWeek(profile: profile, preferences: preferences, in: context)
         #expect(transport.requestCount == 2)

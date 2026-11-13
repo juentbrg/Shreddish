@@ -56,7 +56,7 @@ struct DayContent: View {
         let context = context
         let day = day
         Task {
-            await model.run("Nouvelle journée en préparation…") { () async throws(AIError) -> [ValidationIssue] in
+            await model.run("Nouvelle journée en préparation…", recipesIn: context) { () async throws(AIError) -> [ValidationIssue] in
                 try await generator.regenerateDay(day, profile: profile, preferences: preferences, in: context)
             }
         }

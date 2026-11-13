@@ -1,0 +1,11 @@
+# Tâches spec 010
+- [x] T1001 `tools/ciqual/build_catalog.py`, `Resources/ciqual.json` (3 347 aliments, 243 Ko)
+- [x] T1002 `FoodCatalog`, `FoodMatcher` : index local ; ambigu dès que des candidats proches ont des macros différentes
+- [x] T1003 `NutritionResolver` : cache des correspondances, appel IA groupé (`foodMatch`), macros des repas, compléments saisis
+- [x] T1004 `PortionAdjuster` : leviers protéines, féculents, matières grasses, facteur 0,6 à 1,6, arrondi 5 g
+- [x] T1005 Garde-fous : 12 pièces, 2 kg, 80 €/kg, 10 €/pièce, 3 × plafond, plat répété plus de 2 fois
+- [x] T1006 Schémas : `meal_draft` sans étapes, `piece_g`, kinds `recipe` et `foodMatch`
+- [x] T1007 `PlanGenerator+Nutrition` (finition, régénération ciblée), `RecipeGenerator` (4 en parallèle, priorité)
+- [x] T1008 UI : recette en préparation, « Réessayer » ; crédit Ciqual dans « À propos » ; cache effacé avec les données
+- [x] T1009 Tests : matcher, résolution, ajustement, garde-fous, recettes et prises de créatine
+- [x] T1010 Essais réels : macros à ±5 % (kcal +1 à +5 %), créatine 7/7, recettes en ~33 s, semaine en 60 à 100 s ; variété par composition (renommages détectés), huile ajoutée si lipides manquants

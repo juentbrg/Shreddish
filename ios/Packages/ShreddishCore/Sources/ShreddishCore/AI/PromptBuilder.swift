@@ -148,6 +148,28 @@ public enum PromptBuilder {
             + "œufs, légumineuses, poulet entier ou cuisses, légumes surgelés), macros identiques."
     }
 
+    /// Retour pour un jour hors cible après ajustement des portions (spec 010), valeurs Ciqual.
+    public static func offTargetFeedback(totals: MacroTotals, targets: MacroTotals) -> String {
+        func gap(_ value: Double, _ target: Double, _ label: String, _ unit: String) -> String? {
+            let difference = Int((value - target).rounded())
+            guard target > 0, abs(Double(difference)) / target > 0.1 else { return nil }
+            return "\(label) \(difference > 0 ? "+" : "")\(difference) \(unit)"
+        }
+        let gaps = [
+            gap(totals.kcal, targets.kcal, "kcal", "kcal"), gap(totals.proteinG, targets.proteinG, "protéines", "g"),
+            gap(totals.carbsG, targets.carbsG, "glucides", "g"), gap(totals.fatG, targets.fatG, "lipides", "g"),
+        ].compactMap(\.self)
+        return "Valeurs réelles (table Ciqual) de ta proposition précédente pour ce jour, écart à la cible : "
+            + gaps.joined(separator: ", ") + ". Change la composition des repas pour corriger ces écarts."
+    }
+
+    /// Retour pour un jour aux déjeuners ou dîners trop répétés (spec 010).
+    public static func varietyFeedback(_ signatures: [[String]]) -> String {
+        let combos = signatures.map { $0.joined(separator: " + ") }.joined(separator: ", ")
+        return "Déjeuner ou dîner trop proche des autres jours (\(combos) déjà 2 fois cette semaine) : "
+            + "change la protéine principale ou le féculent."
+    }
+
     /// Message envoyé au nouvel essai quand l'IA a refusé à cause du budget (spec 008).
     public static func budgetRefusalFeedback(reason: String) -> String {
         "Refus précédent : « \(reason) ». Le budget n'est jamais un motif de refus : infeasible = null, "
@@ -196,7 +218,10 @@ public enum PromptBuilder {
         - Exactement meals_per_day repas par jour, collations incluses (types : breakfast, lunch, dinner, snack).
         - Macros par jour : kcal à ±5 % de targets.kcal, protéines ≥ targets.protein_g, glucides et lipides \
         à ±10 % de targets.carbs_g et targets.fat_g. Ne compense jamais un manque de protéines par des glucides.
-        - Valeurs cohérentes : kcal ≈ 4 × protein_g + 4 × carbs_g + 9 × fat_g.
+        - Valeurs cohérentes : kcal ≈ 4 × protein_g + 4 × carbs_g + 9 × fat_g. L'application recalcule les \
+        macros depuis la table Ciqual et ajuste les portions : nomme chaque ingrédient précisément, tel \
+        qu'acheté (ex. « Riz basmati cru », « Lentilles vertes sèches », « Thon au naturel en boîte \
+        égoutté », « Fromage blanc 0 % »).
         - Budget : objectif, jamais bloquant. Coût total de la semaine ≤ weekly_budget_eur ; dépassement au plus de budget_tolerance \
         (0,1 = 10 %), à éviter. task "day" ou "replace_meal" : coût total ≤ cost_limit_eur. Budget serré : \
         choisis les produits les moins chers par gramme de protéine (œufs, yaourt nature 0 %, fromage blanc 0 %, \
@@ -224,33 +249,114 @@ public enum PromptBuilder {
         unit_price_eur = 0, cost_eur = 0, aisle "autre". Si serving_g et les valeurs par dose sont présents, \
         macros du complément = quantité ÷ serving_g × kcal_per_serving, protein_g_per_serving, \
         carbs_g_per_serving, fat_g_per_serving ; indique la dose en scoops (ex. « 1 scoop de 30 g »). \
-        kind "dose" (créatine, vitamines, oméga-3…) : aucune macro, ni ingrédient ; ajoute la prise dans les \
-        étapes du repas le plus adapté, avec dose × doses_per_day exactement (ex. « Prends 5 g de créatine \
-        avec ce repas »), une fois par jour sauf doses_per_day > 1. Indique le moment de prise dans les étapes \
-        (ex. « dans les 60 min après la séance », « créatine 5 g, à n'importe quel repas »).
+        kind "dose" (créatine, vitamines, oméga-3…) : ni macro ni ingrédient, la prise est ajoutée par \
+        l'application.
         - training_time et training_sessions_per_week : place la collation ou le repas protéiné autour de \
         l'entraînement ; sans heure connue, suppose une séance en fin de journée.
         - time : heure conseillée « HH:mm » de chaque repas, cohérente sur la journée (petit-déjeuner 7:00-9:00, \
         déjeuner 12:00-13:30, dîner 19:00-21:00, collation selon l'entraînement).
-        - Quantités en g, ml ou piece, pesées crues / non cuites. cost_eur = coût de la quantité utilisée, \
-        recalculé par l'application depuis unit_price_eur.
-        - Étapes détaillées pour cuisiner sans expérience : 4 à 12 étapes selon le plat (2 à 3 pour une \
-        collation sans cuisson). Chaque étape précise quantités, ustensile, intensité du feu ou température, \
-        durée et repère visuel (ex. « Rince 80 g de riz à l'eau froide, puis verse-le dans une casserole avec \
-        160 ml d'eau salée. Porte à ébullition à feu vif, couvre, baisse à feu doux 12 min sans soulever le \
-        couvercle, puis laisse reposer 5 min hors du feu. »). Inclus l'assaisonnement.
-        - Variété : un même plat principal au plus 2 fois par semaine, sauf préparation batch cooking.
+        - Quantités en g, ml ou piece, pesées crues / non cuites. unit "piece" seulement pour ce qui se compte \
+        (œufs, fruits, tortillas), avec piece_g = poids d'une pièce en g ; sinon piece_g = null. cost_eur = \
+        coût de la quantité utilisée, recalculé par l'application depuis unit_price_eur.
+        - Semaine et jour : pas d'étapes, les recettes sont rédigées ensuite.
+        - Variété : un même plat principal au plus 2 fois par semaine, sauf préparation batch cooking. Change \
+        vraiment de plat, pas seulement de nom : la même association protéine principale + féculent (ex. \
+        poulet + riz, thon + pâtes) au plus 2 fois par semaine sur les déjeuners et dîners.
         - Privilégie liked_foods.
         - day_offset 0 = jour de génération ; une semaine couvre les jours 0 à 6.
         - batch_cooking vrai : 1 ou 2 prep_sessions (index 0, 1), et les repas issus d'une session ont \
         prep_session_ref = index de la session. batch_cooking faux : prep_sessions vide, prep_session_ref null.
         - task "day" : régénère uniquement le jour day_offset, différent de avoid_meal_names.
         - task "replace_meal" : propose un seul repas de type meal_type_to_replace, proche de remaining_targets, \
-        différent de avoid_meal_names et de existing_day_meals.
+        différent de avoid_meal_names et de existing_day_meals, avec ses étapes. \(recipeRules)
         - Si allergies, exclusions et temps sont impossibles à respecter ensemble : remplis infeasible avec la \
         raison en une phrase, sans jamais ignorer une contrainte ; sinon infeasible = null. Jamais pour le \
         budget, le prix, la longueur ou le format de la réponse : produis tous les jours demandés.
         - Noms de plats, étapes et textes en français.
         """
+    }
+
+    // MARK: Recettes (spec 010)
+
+    static let recipeRules = """
+    Étapes détaillées pour cuisiner sans expérience : 4 à 12 étapes selon le plat (2 à 3 pour une collation \
+    sans cuisson). Chaque étape précise quantités, ustensile, intensité du feu ou température, durée et repère \
+    visuel (ex. « Rince 80 g de riz à l'eau froide, puis verse-le dans une casserole avec 160 ml d'eau salée. \
+    Porte à ébullition à feu vif, couvre, baisse à feu doux 12 min sans soulever le couvercle, puis laisse \
+    reposer 5 min hors du feu. »). Inclus l'assaisonnement. Plaques, casserole, poêle et four disponibles, \
+    en plus de equipment.
+    """
+
+    public static func recipeInstructions() -> String {
+        """
+        Tu rédiges la recette d'un repas déjà composé. Tu reçois un JSON de contexte et tu réponds uniquement \
+        avec le JSON demandé par le schéma, en français.
+        - Utilise exactement les ingrédients et quantités de meal.ingredients, sans en ajouter d'autres que \
+        sel, poivre, épices, herbes et eau.
+        - Respecte meal.prep_minutes.
+        - \(recipeRules)
+        - supplement_doses : ajoute une étape pour chaque prise, avec la dose exacte et le moment \
+        (ex. « Prends 5 g de créatine avec ce repas »).
+        - Complément en poudre (whey…) : dose en scoops dans l'étape (ex. « 1 scoop de 30 g »).
+        """
+    }
+
+    struct RecipeInput: Encodable {
+        struct Item: Encodable {
+            var name: String
+            var quantity: Double
+            var unit: String
+        }
+
+        struct MealPayload: Encodable {
+            var type: MealType
+            var name: String
+            var time: String?
+            var prepMinutes: Int
+            var ingredients: [Item]
+        }
+
+        var task = "recipe"
+        var meal: MealPayload
+        var supplementDoses: [String]
+        var equipment: [String]
+        var trainingTime: String?
+    }
+
+    public static func recipeInput(meal: MealDTO, supplementDoses: [String], preferences: PromptPreferences) -> String {
+        let payload = RecipeInput.MealPayload(
+            type: meal.type, name: meal.name, time: meal.time, prepMinutes: meal.prepMinutes,
+            ingredients: meal.ingredients.map { .init(name: $0.name, quantity: $0.quantity, unit: $0.unit) }
+        )
+        return encodeAny(RecipeInput(
+            meal: payload, supplementDoses: supplementDoses, equipment: preferences.equipment,
+            trainingTime: preferences.trainingTime
+        ))
+    }
+
+    // MARK: Choix Ciqual (spec 010)
+
+    public static func foodMatchInstructions() -> String {
+        """
+        Pour chaque ingrédient de items, choisis dans ses candidates l'aliment de la table Ciqual qui \
+        correspond le mieux à l'ingrédient tel qu'acheté et pesé : cru sauf mention contraire, sec pour les \
+        légumineuses et féculents secs, appertisé égoutté pour une conserve. Réponds uniquement avec le JSON du \
+        schéma : une entrée par ingrédient, index identique, code = code du candidat choisi, ou null si aucun \
+        candidat ne convient.
+        """
+    }
+
+    struct FoodMatchInput: Encodable {
+        var task = "food_match"
+        var items: [FoodQuestion]
+    }
+
+    public static func foodMatchInput(_ questions: [FoodQuestion]) -> String {
+        encodeAny(FoodMatchInput(items: questions))
+    }
+
+    private static func encodeAny(_ value: some Encodable) -> String {
+        guard let data = try? AIResponseDecoder.encoder.encode(value) else { return "{}" }
+        return String(bytes: data, encoding: .utf8) ?? "{}"
     }
 }

@@ -142,6 +142,9 @@ public final class Meal {
         MacroTotals(kcal: kcal, proteinG: proteinG, carbsG: carbsG, fatG: fatG)
     }
 
+    /// Recette pas encore rédigée (spec 010).
+    public var needsRecipe: Bool { steps.isEmpty }
+
     public var dto: MealDTO {
         MealDTO(
             type: type, name: name, ingredients: ingredients, steps: steps, prepMinutes: prepMinutes,

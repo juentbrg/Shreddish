@@ -28,6 +28,13 @@ public struct MacroTotals: Codable, Sendable, Equatable {
         )
     }
 
+    public static func += (lhs: inout MacroTotals, rhs: MacroTotals) {
+        lhs.kcal += rhs.kcal
+        lhs.proteinG += rhs.proteinG
+        lhs.carbsG += rhs.carbsG
+        lhs.fatG += rhs.fatG
+    }
+
     public static func - (lhs: MacroTotals, rhs: MacroTotals) -> MacroTotals {
         MacroTotals(
             kcal: lhs.kcal - rhs.kcal,

@@ -59,6 +59,21 @@ public enum Totals {
         abs(deviation) > offTargetThreshold + 1e-9
     }
 
+    /// Jour à régénérer après ajustement des portions (spec 010) : kcal à plus de 10 %, protéines sous 90 %,
+    /// ou glucides ou lipides à plus de 25 %.
+    public static func needsRegeneration(_ totals: MacroTotals, targets: MacroTotals) -> Bool {
+        func far(_ value: Double, _ target: Double) -> Bool { target > 0 && abs(value - target) / target > 0.25 }
+        return isOffTarget(deviation(totals, targetKcal: targets.kcal)) || totals.proteinG < 0.9 * targets.proteinG
+            || far(totals.carbsG, targets.carbsG) || far(totals.fatG, targets.fatG)
+    }
+
+    /// Écart relatif cumulé (kcal, protéines, glucides, lipides) : comparer deux propositions.
+    public static func targetDistance(_ totals: MacroTotals, targets: MacroTotals) -> Double {
+        let pairs = [(totals.kcal, targets.kcal), (totals.proteinG, targets.proteinG),
+                     (totals.carbsG, targets.carbsG), (totals.fatG, targets.fatG)]
+        return pairs.reduce(0) { $0 + ($1.1 > 0 ? abs($1.0 - $1.1) / $1.1 : 0) }
+    }
+
     public static func weeklySummary(days: [DayLog], clock: any AppClock) -> WeeklySummary {
         let today = clock.today
         let todayClosed = clock.minuteOfDay >= dayClosingMinute

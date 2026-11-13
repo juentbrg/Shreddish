@@ -12,9 +12,14 @@ public struct IngredientDTO: Codable, Sendable, Equatable {
     public var costEur: Double
     /// Prix au kg (g), au litre (ml) ou à la pièce estimé pour l'enseigne et le secteur (spec 005).
     public var unitPriceEur: Double?
+    /// Poids d'une pièce en g, fourni par l'IA pour l'unité `piece` (spec 010).
+    public var pieceG: Double?
+    /// Aliment Ciqual rapproché par l'application ; `nil` si non trouvé ou plan antérieur (spec 010).
+    public var foodCode: Int?
 
     public init(
-        name: String, quantity: Double, unit: String, aisle: Aisle, costEur: Double, unitPriceEur: Double? = nil
+        name: String, quantity: Double, unit: String, aisle: Aisle, costEur: Double, unitPriceEur: Double? = nil,
+        pieceG: Double? = nil, foodCode: Int? = nil
     ) {
         self.name = name
         self.quantity = quantity
@@ -22,9 +27,20 @@ public struct IngredientDTO: Codable, Sendable, Equatable {
         self.aisle = aisle
         self.costEur = costEur
         self.unitPriceEur = unitPriceEur
+        self.pieceG = pieceG
+        self.foodCode = foodCode
     }
 
     public var measureUnit: MeasureUnit? { MeasureUnit(rawValue: unit) }
+
+    /// Poids en g (ml comptés comme g) ; `nil` pour une pièce sans poids connu.
+    public var grams: Double? {
+        switch measureUnit {
+        case .g, .ml: quantity
+        case .piece: pieceG.map { quantity * $0 }
+        case nil: nil
+        }
+    }
 }
 
 public struct MealDTO: Codable, Sendable, Equatable {
@@ -62,7 +78,41 @@ public struct MealDTO: Codable, Sendable, Equatable {
     }
 
     public var macros: MacroTotals {
-        MacroTotals(kcal: kcal, proteinG: proteinG, carbsG: carbsG, fatG: fatG)
+        get { MacroTotals(kcal: kcal, proteinG: proteinG, carbsG: carbsG, fatG: fatG) }
+        set {
+            kcal = newValue.kcal
+            proteinG = newValue.proteinG
+            carbsG = newValue.carbsG
+            fatG = newValue.fatG
+        }
+    }
+
+    /// Recette pas encore générée (semaine en brouillon, spec 010).
+    public var needsRecipe: Bool { steps.isEmpty }
+}
+
+extension MealDTO {
+    private enum CodingKeys: String, CodingKey {
+        case type, name, ingredients, steps, prepMinutes, costEur, kcal, proteinG, carbsG, fatG, prepSessionRef, time
+    }
+
+    /// `steps` absent des brouillons de semaine (spec 010) : liste vide.
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.init(
+            type: try container.decode(MealType.self, forKey: .type),
+            name: try container.decode(String.self, forKey: .name),
+            ingredients: try container.decode([IngredientDTO].self, forKey: .ingredients),
+            steps: try container.decodeIfPresent([String].self, forKey: .steps) ?? [],
+            prepMinutes: try container.decode(Int.self, forKey: .prepMinutes),
+            costEur: try container.decode(Double.self, forKey: .costEur),
+            kcal: try container.decode(Double.self, forKey: .kcal),
+            proteinG: try container.decode(Double.self, forKey: .proteinG),
+            carbsG: try container.decode(Double.self, forKey: .carbsG),
+            fatG: try container.decode(Double.self, forKey: .fatG),
+            prepSessionRef: try container.decodeIfPresent(Int.self, forKey: .prepSessionRef),
+            time: try container.decodeIfPresent(String.self, forKey: .time)
+        )
     }
 }
 
@@ -121,6 +171,26 @@ struct MealReplacementResponse: Decodable {
     var meal: MealDTO
 }
 
+struct RecipeResponse: Decodable {
+    var steps: [String]
+}
+
+/// Choix d'aliments Ciqual pour les ingrédients ambigus (spec 010).
+public struct FoodChoice: Codable, Sendable, Equatable {
+    /// Position de l'ingrédient dans `items`.
+    public var index: Int
+    public var code: Int?
+
+    public init(index: Int, code: Int?) {
+        self.index = index
+        self.code = code
+    }
+}
+
+struct FoodChoiceResponse: Decodable {
+    var matches: [FoodChoice]
+}
+
 /// Champ `infeasible` seul : lu avant le décodage complet pour qu'une réponse « impossible »
 /// (jours vides, repas absent) remonte la raison au lieu d'une erreur de format.
 private struct InfeasibleProbe: Decodable {
@@ -154,6 +224,18 @@ public enum AIResponseDecoder {
     public static func decodeMeal(_ data: Data) throws(AIError) -> MealDTO {
         let response: MealReplacementResponse = try decode(data)
         return response.meal
+    }
+
+    public static func decodeRecipe(_ data: Data) throws(AIError) -> [String] {
+        let response: RecipeResponse = try decode(data)
+        let steps = response.steps.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
+        guard !steps.isEmpty else { throw .invalidOutput("Recette vide") }
+        return steps
+    }
+
+    public static func decodeFoodChoices(_ data: Data) throws(AIError) -> [FoodChoice] {
+        let response: FoodChoiceResponse = try decode(data)
+        return response.matches
     }
 
     private static func decode<T: Decodable>(_ data: Data) throws(AIError) -> T {

@@ -112,7 +112,7 @@ struct WeekView: View {
         let context = context
         selectedPlanID = nil
         Task {
-            await model.run("Préparation de ta semaine…") { () async throws(AIError) -> [ValidationIssue] in
+            await model.run("Préparation de ta semaine…", recipesIn: context) { () async throws(AIError) -> [ValidationIssue] in
                 try await generator.generateWeek(profile: profile, preferences: preferences, startDay: start, in: context)
             }
         }
