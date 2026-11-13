@@ -40,9 +40,10 @@ targets:
           - "Info.plist"
     dependencies:
       - package: ShreddishCore
-    # Builds Debug : secrets locaux optionnels (Config/Secrets.example.xcconfig) ; Release jamais.
+    # Clé API locale (Config/Secrets.example.xcconfig), copiée dans l'app au build (spec 009).
     configFiles:
-      Debug: Config/Debug.xcconfig
+      Debug: Config/App.xcconfig
+      Release: Config/App.xcconfig
     info:
       path: App/Info.plist
       properties:
@@ -57,8 +58,8 @@ targets:
         UILaunchScreen: {}
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
         ITSAppUsesNonExemptEncryption: false
-        # Debug seulement (research R13) : vide sauf si Config/Secrets.xcconfig la définit.
-        ShreddishOpenAIDevKey: $(OPENAI_DEV_KEY)
+        # Vide sauf si Config/Secrets.xcconfig la définit (spec 009).
+        ShreddishOpenAIKey: $(OPENAI_API_KEY)
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: app.shreddish

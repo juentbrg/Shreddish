@@ -27,17 +27,14 @@ décodé en JSON puis validé (research R6).
 
 ## Prompt système (résumé des règles imposées)
 
-- Repas simples, ingrédients de supermarché français courants, budget serré.
-- Respect strict : `max_prep_minutes`, `excluded_foods` (aucune trace), nombre de repas / jour
-  (collations incluses dans `meals_per_day`), coût jour ≤ `daily_budget_eur`.
-- `day_offset` 0 = jour de génération ; jours 0 à 6.
-- Totaux journaliers à ±5 % de la cible kcal ; protéines ≥ cible.
-- Valeurs nutritionnelles cohérentes : kcal ≈ 4P + 4G + 9L.
-- Quantités en g, ml ou pièce, crues / non cuites.
-- Variété : même plat principal max 2 fois / semaine (sauf batch cooking).
-- Batch cooking actif : 1–2 `prep_sessions`, repas liés via `prep_session_ref`.
-- Contraintes impossibles : remplir `infeasible`, ne jamais ignorer une contrainte.
-- Réponse en français.
+Texte de référence : `PromptBuilder.systemInstructions()`. Enums, unités et format d'heure sont imposés par le
+schéma strict ; tirets et rayons sont corrigés par l'application.
+
+- Repas par jour exact, macros à ±5 % (kcal) et ±10 % (glucides, lipides), protéines ≥ cible.
+- Allergies, `disliked_foods`, `max_prep_minutes` stricts.
+- Budget = objectif ; prix unitaires réalistes selon `store` et `location`.
+- Compléments possédés à coût 0, selon `kind` (macro ou dose).
+- `infeasible` seulement pour allergies, exclusions ou temps incompatibles, jamais pour le budget ni la longueur.
 
 ## Contexte utilisateur (input)
 

@@ -25,6 +25,11 @@ public enum AIError: Error, Equatable, Sendable {
         }
     }
 
+    /// Refus de l'IA, quelle qu'en soit la raison.
+    public var isInfeasible: Bool {
+        if case .infeasible = self { true } else { false }
+    }
+
     /// Refus de l'IA motivé par le prix : jamais bloquant, le budget est souple (spec 008).
     public var isBudgetRefusal: Bool {
         guard case let .infeasible(reason) = self else { return false }
@@ -35,8 +40,8 @@ public enum AIError: Error, Equatable, Sendable {
     /// Message en français pour l'utilisateur.
     public var userMessage: String {
         switch self {
-        case .missingKey: "Ajoute ta clé API OpenAI dans Profil → Clé API pour générer des repas."
-        case .invalidKey: "Clé API refusée par OpenAI. Vérifie-la dans Profil → Clé API."
+        case .missingKey: "Clé API absente du build : renseigne OPENAI_API_KEY dans Config/Secrets.xcconfig."
+        case .invalidKey: "Clé API refusée par OpenAI : remplace-la dans Config/Secrets.xcconfig."
         case .rateLimited: "Quota OpenAI atteint ou trop de requêtes. Réessaie plus tard ou vérifie ton crédit."
         case .offline: "Pas de connexion internet. Ton planning actuel reste disponible."
         case .timeout: "OpenAI met trop de temps à répondre. Réessaie dans un instant."

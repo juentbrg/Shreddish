@@ -25,7 +25,6 @@ final class AppModel {
     /// Dernier ajustement de calibration appliqué (spec 002).
     var calibrationMessage: String?
     /// Incrémenté quand la clé change, pour rafraîchir les vues qui l'affichent.
-    var keyRevision = 0
 
     init(clock: any AppClock, keyStore: any APIKeyStore, transport: any AITransport, isUITest: Bool = false) {
         self.clock = clock
@@ -42,15 +41,11 @@ final class AppModel {
                 clock: SystemClock(), keyStore: InMemoryKeyStore(key: key), transport: UITestAITransport(), isUITest: true
             )
         }
-        let keychain = KeychainStore()
-        keychain.seedDevelopmentKeyIfNeeded()
-        return AppModel(clock: SystemClock(), keyStore: keychain, transport: URLSessionTransport())
+        LegacyKeychain.deleteStoredKey()
+        return AppModel(clock: SystemClock(), keyStore: BundledKeyStore(), transport: URLSessionTransport())
     }
 
-    var hasAPIKey: Bool {
-        _ = keyRevision
-        return keyStore.read() != nil
-    }
+    var hasAPIKey: Bool { keyStore.read() != nil }
 
     var isBusy: Bool { busyMessage != nil }
 

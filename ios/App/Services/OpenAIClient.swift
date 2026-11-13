@@ -48,13 +48,6 @@ struct OpenAIClient: Sendable {
         return try Self.outputText(from: data)
     }
 
-    /// Test de clé (FR-019) : `GET /v1/models`.
-    func testKey(_ apiKey: String) async throws(AIError) {
-        var request = URLRequest(url: AIConfig.baseURL.appending(path: "models"))
-        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-        _ = try await send(request)
-    }
-
     private func send(_ request: URLRequest) async throws(AIError) -> Data {
         let data: Data
         let response: HTTPURLResponse

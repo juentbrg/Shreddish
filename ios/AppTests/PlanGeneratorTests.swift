@@ -129,6 +129,17 @@ struct PlanGeneratorTests {
         #expect(transport.requestCount == 9)
     }
 
+    /// Spec 008 : semaine refusée (réponse jugée trop longue) → repli jour par jour.
+    @Test func weekRefusalFallsBackToSevenDayRequests() async throws {
+        let refusal = #"{"infeasible":"Format de réponse trop long pour 7 jours.","prep_sessions":[],"days":[]}"#
+        let days = try (0...6).map { Step.output(try dayText($0)) }
+        let transport = ScriptedTransport([.output(refusal)] + days)
+        try await generator(transport).generateWeek(profile: profile, preferences: preferences, in: context)
+        let plan = try #require(PlanStore.currentPlan(in: context))
+        #expect(plan.sortedDays.count == 7)
+        #expect(transport.requestCount == 8)
+    }
+
     typealias Step = ScriptedTransport.Step
 
     @Test func weekAboveBudgetCeilingIsRegenerated() async throws {
@@ -225,8 +236,9 @@ struct PlanGeneratorTests {
     @Test func infeasibleReasonIsSurfaced() async throws {
         let reason = "Allergies et temps de préparation incompatibles."
         let text = #"{"infeasible":"\#(reason)","prep_sessions":[],"days":[]}"#
+        let dayRefusal = Step.output(#"{"infeasible":"\#(reason)","day":null}"#)
         await #expect(throws: AIError.infeasible(reason)) {
-            try await generator(ScriptedTransport([.output(text)]))
+            try await generator(ScriptedTransport([.output(text)] + Array(repeating: dayRefusal, count: 7)))
                 .generateWeek(profile: profile, preferences: preferences, in: context)
         }
     }

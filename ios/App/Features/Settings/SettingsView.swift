@@ -10,12 +10,6 @@ struct SettingsView: View {
     var body: some View {
         List {
             Section {
-                NavigationLink {
-                    APIKeyView()
-                } label: {
-                    LabeledContent("Clé API OpenAI", value: model.hasAPIKey ? "Enregistrée" : "Absente")
-                }
-                .accessibilityIdentifier("apiKeySettings")
                 NavigationLink("Préférences repas") { PreferencesView() }
                     .accessibilityIdentifier("preferencesSettings")
             }
@@ -26,8 +20,6 @@ struct SettingsView: View {
             Section {
                 Button("Supprimer toutes mes données", role: .destructive) { confirmErase = true }
                     .accessibilityIdentifier("eraseAll")
-            } footer: {
-                Text("Tout, sauf la clé API.")
             }
             Section("À propos") {
                 Text("Pas un avis médical. Données sur cet iPhone ; seules cibles et préférences vont à OpenAI.")
@@ -45,91 +37,8 @@ struct SettingsView: View {
     }
 }
 
-/// Saisie, test, remplacement et suppression de la clé (FR-019).
-struct APIKeyView: View {
-    @Environment(AppModel.self) private var model
-    @State private var newKey = ""
-    @State private var status: String?
-    @State private var isTesting = false
-
-    var body: some View {
-        Form {
-            Section {
-                if let key = currentKey {
-                    LabeledContent("Clé actuelle", value: key.maskedKey)
-                        .accessibilityIdentifier("maskedKey")
-                } else {
-                    Text("Aucune clé enregistrée.")
-                        .foregroundStyle(.secondary)
-                }
-            } footer: {
-                Text("Stockée dans le trousseau. Appels facturés sur ton compte OpenAI.")
-            }
-            Section(currentKey == nil ? "Ajouter une clé" : "Remplacer la clé") {
-                SecureField("sk-…", text: $newKey)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .accessibilityIdentifier("apiKeyField")
-                Button("Enregistrer") { save() }
-                    .disabled(newKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-            }
-            if let key = currentKey {
-                Section {
-                    Button {
-                        Task { await test(key) }
-                    } label: {
-                        HStack {
-                            Text("Tester la clé")
-                            if isTesting { Spacer(); ProgressView() }
-                        }
-                    }
-                    .disabled(isTesting)
-                    Button("Supprimer la clé", role: .destructive) {
-                        model.keyStore.delete()
-                        model.keyRevision += 1
-                        status = "Clé supprimée."
-                    }
-                }
-            }
-            if let status {
-                Section { Text(status).accessibilityIdentifier("keyStatus") }
-            }
-        }
-        .themedList()
-        .navigationTitle("Clé API")
-    }
-
-    private var currentKey: String? {
-        _ = model.keyRevision
-        return model.keyStore.read()
-    }
-
-    private func save() {
-        let key = newKey.trimmingCharacters(in: .whitespacesAndNewlines)
-        do {
-            try model.keyStore.save(key)
-            newKey = ""
-            model.keyRevision += 1
-            status = "Clé enregistrée."
-        } catch {
-            status = "Enregistrement impossible dans le trousseau."
-        }
-    }
-
-    private func test(_ key: String) async {
-        isTesting = true
-        defer { isTesting = false }
-        do {
-            try await model.client.testKey(key)
-            status = "Clé valide ✓"
-        } catch {
-            status = error.userMessage
-        }
-    }
-}
-
 extension SettingsView {
-    /// Efface toutes les données locales (FR-211) ; la clé API reste dans le trousseau.
+    /// Efface toutes les données locales (FR-211).
     private func eraseAll() {
         try? context.delete(model: ShoppingItem.self)
         try? context.delete(model: ExtraEntry.self)

@@ -1,0 +1,2 @@
+// Tous les builds. Clé API locale, jamais versionnée (spec 009).
+#include? "Secrets.xcconfig"

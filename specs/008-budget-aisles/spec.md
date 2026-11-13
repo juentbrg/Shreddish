@@ -9,3 +9,4 @@
 - FR-802 : second refus pour le budget : nouvel essai avec un budget annoncé doublé. Le coût obtenu est contrôlé avec le vrai budget ; dépassement signalé en avertissement (spec 004).
 - FR-803 : les refus non liés au prix (allergies, temps) restent affichés tels quels.
 - FR-804 : rayon déduit du nom quand un mot-clé ne laisse pas de doute (surgelé, conserve, crèmerie, viande et poisson, boulangerie), à la validation, à la construction de la liste et au lancement pour les listes enregistrées.
+- FR-805 : semaine entière refusée par l'IA (ex. « le format de réponse ne permet pas… ») : repli sur 7 requêtes d'un jour ; un vrai refus se répète et s'affiche.

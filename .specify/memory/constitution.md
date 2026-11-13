@@ -31,8 +31,9 @@ Shreddish (shred + dish) sert un seul utilisateur : son auteur, sur son iPhone.
 ### III. Données locales et secrets protégés
 
 - Profil, plannings, historique : stockés sur l'appareil seulement.
-- Clé API OpenAI MUST être saisie dans l'app et stockée dans le Keychain iOS. Jamais dans le
-  code, le repo, les logs ni un fichier de config versionné.
+- Clé API OpenAI MUST venir de `ios/Config/Secrets.xcconfig` (git-ignoré), copiée dans l'app au
+  build (spec 009). Jamais dans le code, le repo, les logs ni un fichier de config versionné.
+  Ouverture à d'autres utilisateurs : clé sur un serveur intermédiaire, jamais dans l'app.
 - Seules données envoyées à l'IA : celles nécessaires à la génération (cibles, préférences,
   contraintes). Aucune donnée d'identité.
 

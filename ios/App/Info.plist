@@ -26,8 +26,8 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
-	<key>ShreddishOpenAIDevKey</key>
-	<string>$(OPENAI_DEV_KEY)</string>
+	<key>ShreddishOpenAIKey</key>
+	<string>$(OPENAI_API_KEY)</string>
 	<key>UIAppFonts</key>
 	<array>
 		<string>BricolageGrotesque.ttf</string>

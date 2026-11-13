@@ -66,12 +66,13 @@ final class OnboardingUITests: XCTestCase {
         XCTAssertFalse(compute.isEnabled)
     }
 
-    /// US2 sans clé : invitation à saisir la clé.
-    func testWithoutKeyInvitesToAddIt() {
+    /// Sans clé dans le build : génération indisponible, aucune saisie (spec 009).
+    func testWithoutKeyExplainsMissingBuildKey() {
         let app = launch(["-uitest-no-key"])
         onboard(app)
         app.tabBars.buttons["Semaine"].tap()
-        XCTAssertTrue(app.buttons["addAPIKey"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["missingAPIKey"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["generateWeek"].exists)
     }
 
     /// US2 + US5 : génération simulée → 7 jours, liste de courses remplie.

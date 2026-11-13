@@ -143,18 +143,15 @@ public enum PromptBuilder {
 
     /// Message envoyé au nouvel essai quand le coût dépasse le plafond.
     public static func overBudgetFeedback(costEur: Double, ceilingEur: Double) -> String {
-        "Ta proposition précédente coûtait \(BudgetMath.cents(costEur)) € pour un plafond de "
-            + "\(BudgetMath.cents(ceilingEur)) €. Remplace les produits chers par des équivalents moins chers "
-            + "(marque distributeur, yaourt nature 0 % ou fromage blanc au lieu du skyr, œufs, légumineuses, "
-            + "poulet entier ou cuisses, légumes surgelés) en gardant les macros."
+        "Proposition précédente : \(BudgetMath.cents(costEur)) € pour un plafond de \(BudgetMath.cents(ceilingEur)) €. "
+            + "Remplace les produits chers (marque distributeur, yaourt nature 0 % ou fromage blanc au lieu du skyr, "
+            + "œufs, légumineuses, poulet entier ou cuisses, légumes surgelés), macros identiques."
     }
 
     /// Message envoyé au nouvel essai quand l'IA a refusé à cause du budget (spec 008).
     public static func budgetRefusalFeedback(reason: String) -> String {
-        "Ta réponse précédente refusait la génération : « \(reason) ». Le budget n'est jamais un motif de refus : "
-            + "infeasible = null, et propose le planning le moins cher possible (œufs, yaourt nature 0 %, "
-            + "fromage blanc 0 %, légumineuses, riz, pâtes, flocons d'avoine, légumes surgelés, poulet entier "
-            + "ou cuisses), même s'il dépasse le budget. L'application recalcule le coût."
+        "Refus précédent : « \(reason) ». Le budget n'est jamais un motif de refus : infeasible = null, "
+            + "planning le moins cher possible, même au-dessus du budget."
     }
 
     public static func replaceMealInput(
@@ -182,7 +179,8 @@ public enum PromptBuilder {
         return String(bytes: data, encoding: .utf8) ?? "{}"
     }
 
-    /// Prompt système : règles imposées à l'IA (contracts/ai-requests.md).
+    /// Prompt système : règles imposées à l'IA (contracts/ai-requests.md). Enums, unités et format d'heure sont
+    /// imposés par le schéma strict ; tirets et rayons sont corrigés par l'application.
     public static func systemInstructions() -> String {
         """
         Tu es un assistant de planification de repas pour une personne qui suit un objectif physique \
@@ -191,7 +189,6 @@ public enum PromptBuilder {
 
         Règles strictes :
         - Repas simples et économiques, mais copieux et bons.
-        - Jamais de tiret cadratin (—) ni demi-cadratin (–) dans les textes : virgule, deux-points ou tiret simple.
         - Respecte strictement max_prep_minutes pour chaque repas.
         - allergies : aucun de ces aliments, ni trace, ni dérivé, ni ingrédient qui en contient souvent \
         (ex. arachide → beurre de cacahuète, huile d'arachide ; lait → beurre, fromage, crème).
@@ -237,7 +234,6 @@ public enum PromptBuilder {
         déjeuner 12:00-13:30, dîner 19:00-21:00, collation selon l'entraînement).
         - Quantités en g, ml ou piece, pesées crues / non cuites. cost_eur = coût de la quantité utilisée, \
         recalculé par l'application depuis unit_price_eur.
-        - aisle parmi : fruits_legumes, viande_poisson, cremerie, epicerie, surgeles, boulangerie, autre.
         - Étapes détaillées pour cuisiner sans expérience : 4 à 12 étapes selon le plat (2 à 3 pour une \
         collation sans cuisson). Chaque étape précise quantités, ustensile, intensité du feu ou température, \
         durée et repère visuel (ex. « Rince 80 g de riz à l'eau froide, puis verse-le dans une casserole avec \
@@ -251,9 +247,9 @@ public enum PromptBuilder {
         - task "day" : régénère uniquement le jour day_offset, différent de avoid_meal_names.
         - task "replace_meal" : propose un seul repas de type meal_type_to_replace, proche de remaining_targets, \
         différent de avoid_meal_names et de existing_day_meals.
-        - Si les contraintes sont impossibles à respecter ensemble (allergies, exclusions, temps ; jamais le budget) \
-        : remplis infeasible avec la \
-        raison en une phrase, sans jamais ignorer une contrainte ; sinon infeasible = null.
+        - Si allergies, exclusions et temps sont impossibles à respecter ensemble : remplis infeasible avec la \
+        raison en une phrase, sans jamais ignorer une contrainte ; sinon infeasible = null. Jamais pour le \
+        budget, le prix, la longueur ou le format de la réponse : produis tous les jours demandés.
         - Noms de plats, étapes et textes en français.
         """
     }

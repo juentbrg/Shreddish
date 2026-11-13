@@ -17,7 +17,7 @@ ios/
 ├── Packages/ShreddishCore/      # logique pure + modèles SwiftData, testée en `swift test`
 ├── AppTests/                 # génération avec transport simulé
 ├── UITests/                  # parcours, IA simulée (`-uitest`)
-├── Config/                   # Debug.xcconfig, Secrets.example.xcconfig
+├── Config/                   # App.xcconfig, Secrets.example.xcconfig
 └── scripts/make-app-icon.swift
 ```
 
@@ -41,10 +41,11 @@ SwiftLint tourne en pré-build (`ios/.swiftlint.yml`).
 
 ## Clé API OpenAI
 
-- Dans l'app : Cibles → Réglages → Clé API OpenAI (saisir, tester, supprimer).
-- En développement : copier `ios/Config/Secrets.example.xcconfig` en `ios/Config/Secrets.xcconfig`
-  (git-ignoré) et remplir `OPENAI_DEV_KEY`. Les builds Debug la copient dans le trousseau au
-  premier lancement si celui-ci est vide. Les builds Release ne la lisent jamais.
+- Copier `ios/Config/Secrets.example.xcconfig` en `ios/Config/Secrets.xcconfig` (git-ignoré) et
+  remplir `OPENAI_API_KEY`. Clé copiée dans l'app au build ; aucune saisie dans l'app (spec 009).
+- Usage perso seulement : une clé dans l'app est extractible. Ouverture à d'autres : serveur
+  intermédiaire qui garde la clé.
+- Génération réelle (facturée) : `TEST_RUNNER_SHREDDISH_LIVE=1 xcodebuild test ... -only-testing:AppTests/LiveGenerationTests`.
 - Modèle par défaut : `gpt-6-luna`, modifiable dans Réglages → Préférences repas.
 
 ## Installer sur l'iPhone

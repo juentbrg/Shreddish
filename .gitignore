@@ -18,4 +18,4 @@ build/
 ios/*.xcodeproj/
 
 # Local secrets (developer OpenAI key, research R13)
-ios/Config/Secrets.xcconfig
+ios/Config/Secrets.xcconfig*

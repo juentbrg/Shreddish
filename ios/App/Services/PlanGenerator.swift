@@ -51,8 +51,9 @@ final class PlanGenerator {
         let week: ValidationResult<WeekPlanDTO>
         do {
             week = try await requestWeek(ctx)
-        } catch where error.isRetryable {
-            // Repli : 7 requêtes d'un jour en parallèle (research R5).
+        } catch where error.isRetryable || error.isInfeasible {
+            // Repli : 7 requêtes d'un jour en parallèle (research R5). Aussi quand l'IA refuse la semaine
+            // entière (réponse jugée trop longue, spec 008) : un jour à la fois, un vrai refus se répète.
             week = try await requestWeekByDays(ctx)
         }
         guard let sanitized = week.sanitized else { throw .invalidOutput("Semaine invalide") }

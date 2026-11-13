@@ -93,7 +93,8 @@ struct WeekView: View {
             if model.hasAPIKey {
                 Text("7 jours de repas simples, calés sur tes cibles.")
             } else {
-                Text("Ajoute ta clé API OpenAI pour générer tes repas.")
+                Text("Clé API absente du build : renseigne OPENAI_API_KEY dans Config/Secrets.xcconfig.")
+                    .accessibilityIdentifier("missingAPIKey")
             }
         } actions: {
             if model.hasAPIKey {
@@ -101,10 +102,6 @@ struct WeekView: View {
                     .buttonStyle(.borderedProminent)
                     .disabled(model.isBusy)
                     .accessibilityIdentifier("generateWeek")
-            } else {
-                NavigationLink("Ajouter ma clé API") { APIKeyView() }
-                    .buttonStyle(.borderedProminent)
-                    .accessibilityIdentifier("addAPIKey")
             }
         }
     }
