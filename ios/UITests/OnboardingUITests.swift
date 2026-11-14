@@ -91,6 +91,30 @@ final class OnboardingUITests: XCTestCase {
         XCTAssertTrue(app.descendants(matching: .any)["weekCost"].waitForExistence(timeout: 5))
     }
 
+    /// Étapes de recette : glisser vers la gauche passe à l'étape suivante, vers la droite revient.
+    func testRecipeStepsSwipe() {
+        let app = launch()
+        onboard(app)
+        app.tabBars.buttons["Semaine"].tap()
+        app.buttons["generateWeek"].tap()
+        let start = app.buttons["startGeneration"]
+        XCTAssertTrue(start.waitForExistence(timeout: 3))
+        start.tap()
+        let day = app.buttons["day-0"]
+        XCTAssertTrue(day.waitForExistence(timeout: 10))
+        day.tap()
+        let meal = app.buttons.containing(NSPredicate(format: "label CONTAINS 'Porridge'")).firstMatch
+        XCTAssertTrue(meal.waitForExistence(timeout: 5))
+        meal.tap()
+        let card = app.descendants(matching: .any)["currentStep"]
+        XCTAssertTrue(card.waitForExistence(timeout: 15))
+        XCTAssertTrue(app.staticTexts["Étape 1 sur 4"].waitForExistence(timeout: 2))
+        card.swipeLeft()
+        XCTAssertTrue(app.staticTexts["Étape 2 sur 4"].waitForExistence(timeout: 2))
+        app.descendants(matching: .any)["currentStep"].swipeRight()
+        XCTAssertTrue(app.staticTexts["Étape 1 sur 4"].waitForExistence(timeout: 2))
+    }
+
     /// Spec 007 : valeurs d'un complément selon sa nature (whey à macros, créatine en dose).
     func testSupplementProteinPerServing() {
         let app = launch()

@@ -16,6 +16,32 @@ public struct FoodPrice: Sendable, Equatable {
     public var eurPerEdibleKg: Double { edibleYield > 0 ? eurPerKg / edibleYield : eurPerKg }
 }
 
+/// Produit acheté en magasin auquel se rattachent un ou plusieurs aliments Ciqual (riz cru et cuit, œuf cru
+/// et dur) : la liste de courses fusionne par produit, dans son unité d'achat (spec 012).
+public struct PurchaseProduct: Sendable, Equatable {
+    public let id: String
+    public let label: String
+    /// g, ml, ou pièce (œufs, fruits).
+    public let unit: MeasureUnit
+    /// Poids d'une pièce entière en g, pour l'unité pièce.
+    public let pieceG: Double?
+    public let aisle: Aisle
+
+    public init(id: String, label: String, unit: MeasureUnit = .g, pieceG: Double? = nil, aisle: Aisle = .autre) {
+        self.id = id
+        self.label = label
+        self.unit = unit
+        self.pieceG = pieceG
+        self.aisle = aisle
+    }
+}
+
+/// Aliment rattaché à son produit : `edibleYield` g mangés par g acheté (peau, cuisson).
+public struct PurchaseLink: Sendable, Equatable {
+    public let product: PurchaseProduct
+    public let edibleYield: Double
+}
+
 /// Prix France (quartile bas des relevés Open Prices, licence ODbL) par code Ciqual, générés par
 /// `tools/prices/build_prices.py`. Les prix de l'IA ne servent qu'aux aliments absents, bornés par groupe.
 public final class PriceCatalog: Sendable {
@@ -32,32 +58,69 @@ public final class PriceCatalog: Sendable {
     let prices: [Int: FoodPrice]
     /// Fourchette de prix au kg par groupe Ciqual (10e et 90e centiles de la table).
     let groupRanges: [Int: ClosedRange<Double>]
+    let links: [Int: PurchaseLink]
+    /// Produits par libellé ou identifiant normalisé, pour les ingrédients sans code Ciqual.
+    let productsByName: [String: PurchaseProduct]
 
-    public init(prices: [Int: FoodPrice], groupRanges: [Int: ClosedRange<Double>] = [:]) {
+    public init(
+        prices: [Int: FoodPrice], groupRanges: [Int: ClosedRange<Double>] = [:], links: [Int: PurchaseLink] = [:]
+    ) {
         self.prices = prices
         self.groupRanges = groupRanges
+        self.links = links
+        var byName: [String: PurchaseProduct] = [:]
+        for product in links.values.map(\.product) {
+            byName[TextNormalizer.singular(product.label)] = product
+            byName[TextNormalizer.singular(product.id)] = product
+        }
+        productsByName = byName
     }
 
     convenience init(json: Data) throws {
         struct File: Decodable {
-            let foods: [String: [Double]]
+            let foods: [String: [JSONCell]]
             let groups: [String: [Double]]
+            let products: [String: [JSONCell]]?
         }
         let file = try JSONDecoder().decode(File.self, from: json)
+        var products: [String: PurchaseProduct] = [:]
+        for (id, row) in file.products ?? [:] { products[id] = Self.product(id: id, row: row) }
         var prices: [Int: FoodPrice] = [:]
+        var links: [Int: PurchaseLink] = [:]
         for (code, row) in file.foods {
-            guard let code = Int(code), let price = row.first else { continue }
-            prices[code] = FoodPrice(eurPerKg: price, edibleYield: row.count > 1 ? row[1] : 1)
+            guard let code = Int(code) else { continue }
+            let yield = row.count > 1 ? row[1].number ?? 1 : 1
+            if let price = row.first?.number { prices[code] = FoodPrice(eurPerKg: price, edibleYield: yield) }
+            if row.count > 2, let product = row[2].text.flatMap({ products[$0] }), yield > 0 {
+                links[code] = PurchaseLink(product: product, edibleYield: yield)
+            }
         }
         var ranges: [Int: ClosedRange<Double>] = [:]
         for (group, row) in file.groups {
             guard let group = Int(group), row.count == 2, row[0] <= row[1] else { continue }
             ranges[group] = row[0]...row[1]
         }
-        self.init(prices: prices, groupRanges: ranges)
+        self.init(prices: prices, groupRanges: ranges, links: links)
+    }
+
+    /// Ligne `products` (libellé, unité d'achat, poids d'une pièce, rayon) ; `nil` si invalide.
+    private static func product(id: String, row: [JSONCell]) -> PurchaseProduct? {
+        guard row.count == 4, let label = row[0].text, let unit = row[1].text.flatMap(MeasureUnit.init(rawValue:)) else {
+            return nil
+        }
+        let pieceG = row[2].number.flatMap { $0 > 0 ? $0 : nil }
+        guard unit != .piece || pieceG != nil else { return nil }
+        let aisle = row[3].text.flatMap(Aisle.init(rawValue:)) ?? .autre
+        return PurchaseProduct(id: id, label: label, unit: unit, pieceG: pieceG, aisle: aisle)
     }
 
     public func price(code: Int) -> FoodPrice? { prices[code] }
+
+    /// Produit acheté : par code Ciqual, sinon par nom exact (« Œufs », « avocat ») pour les plans sans code.
+    public func purchase(for ingredient: IngredientDTO) -> PurchaseLink? {
+        if let code = ingredient.foodCode { return links[code] }
+        return productsByName[TextNormalizer.singular(ingredient.name)].map { PurchaseLink(product: $0, edibleYield: 1) }
+    }
 
     /// Prix unitaire dans l'unité de l'ingrédient (€/kg, €/L ou €/pièce) : prix de la table, sinon prix de
     /// l'IA ramené dans la fourchette du groupe ; `nil` si rien n'est connu.
@@ -77,4 +140,23 @@ public final class PriceCatalog: Sendable {
         }
         return min(max(aiPrice, range.lowerBound), range.upperBound)
     }
+}
+
+/// Cellule d'une ligne de `prices.json` : nombre, texte ou null.
+enum JSONCell: Decodable {
+    case number(Double), text(String), null
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if container.decodeNil() {
+            self = .null
+        } else if let number = try? container.decode(Double.self) {
+            self = .number(number)
+        } else {
+            self = .text(try container.decode(String.self))
+        }
+    }
+
+    var number: Double? { if case let .number(value) = self { value } else { nil } }
+    var text: String? { if case let .text(value) = self { value } else { nil } }
 }

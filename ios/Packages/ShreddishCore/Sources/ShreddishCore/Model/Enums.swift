@@ -103,4 +103,3 @@ public enum IngredientAvailability: String, Codable, Sendable, CaseIterable {
     /// Magasins spécialisés acceptés (bio, épicerie fine, exotique).
     case specialty
 }
-

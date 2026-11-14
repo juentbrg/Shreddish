@@ -12,6 +12,8 @@ struct MealDetailView: View {
     let meal: Meal
     @State private var step = 0
     @State private var showAllSteps = false
+    /// Étape affichée dans le carrousel (défilement au doigt ou boutons).
+    @State private var scrolledStep: Int?
 
     private var owned: [String] { allPreferences.first?.supplementList ?? [] }
 
@@ -156,13 +158,31 @@ struct MealDetailView: View {
                 }
             } else if !all.isEmpty {
                 let index = min(step, all.count - 1)
-                Text(all[index])
-                    .font(Theme.text(.title3))
-                    .foregroundStyle(Theme.ink)
-                    .lineSpacing(3)
+                ScrollView(.horizontal) {
+                    HStack(alignment: .top, spacing: 12) {
+                        ForEach(all.indices, id: \.self) { position in
+                            Text(all[position])
+                                .font(Theme.text(.title3))
+                                .foregroundStyle(Theme.ink)
+                                .lineSpacing(3)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                                .card(padding: 18, radius: 22)
+                                .containerRelativeFrame(.horizontal) { width, _ in width - 40 }
+                                .id(position)
+                        }
+                    }
+                    // Cartes à la hauteur de la plus longue étape.
                     .fixedSize(horizontal: false, vertical: true)
-                    .card(padding: 18, radius: 22)
-                    .accessibilityIdentifier("currentStep")
+                    .scrollTargetLayout()
+                }
+                .scrollIndicators(.hidden)
+                .scrollTargetBehavior(.viewAligned)
+                .scrollPosition(id: $scrolledStep)
+                .contentMargins(.horizontal, 20, for: .scrollContent)
+                .padding(.horizontal, -20)
+                .onChange(of: scrolledStep) { _, new in step = new ?? 0 }
+                .accessibilityIdentifier("currentStep")
                 HStack(spacing: 6) {
                     ForEach(all.indices, id: \.self) { dot in
                         Capsule()
@@ -173,11 +193,11 @@ struct MealDetailView: View {
                 .frame(maxWidth: .infinity)
                 .accessibilityHidden(true)
                 HStack(spacing: 10) {
-                    Button("Précédente") { step = max(0, index - 1) }
+                    Button("Précédente") { goToStep(index - 1, count: all.count) }
                         .buttonStyle(PillButtonStyle(prominent: false))
                         .disabled(index == 0)
                     Button(index == all.count - 1 ? "Terminé" : "Étape suivante") {
-                        if index == all.count - 1 { showAllSteps = true } else { step = index + 1 }
+                        if index == all.count - 1 { showAllSteps = true } else { goToStep(index + 1, count: all.count) }
                     }
                     .buttonStyle(PillButtonStyle())
                     .accessibilityIdentifier("nextStep")
@@ -187,6 +207,13 @@ struct MealDetailView: View {
         .padding(.horizontal, 20)
         .animation(.snappy, value: step)
         .animation(.snappy, value: showAllSteps)
+        .onChange(of: showAllSteps) { _, all in if !all { scrolledStep = step } }
+    }
+
+    /// Boutons : même défilement que le doigt.
+    private func goToStep(_ target: Int, count: Int) {
+        guard (0..<count).contains(target) else { return }
+        withAnimation(.snappy) { scrolledStep = target }
     }
 }
 

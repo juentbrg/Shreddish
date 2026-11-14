@@ -93,11 +93,20 @@ public enum PlanStore {
         let checked = Set(plan.shoppingItems.filter(\.isChecked).map(\.key))
         for item in plan.shoppingItems { context.delete(item) }
         plan.shoppingItems = []
-        let owned = (try? context.fetch(FetchDescriptor<Preferences>()))?.first?.supplementList ?? []
-        let lines = ShoppingListBuilder.build(from: plan.days.flatMap { $0.meals.flatMap(\.ingredients) }, owned: owned)
-        for line in lines {
+        for line in shoppingLines(for: plan, in: context) {
             plan.shoppingItems.append(ShoppingItem(line: line, isChecked: checked.contains(line.key)))
         }
+    }
+
+    static func shoppingLines(for plan: WeeklyPlan, in context: ModelContext) -> [ShoppingLine] {
+        let owned = (try? context.fetch(FetchDescriptor<Preferences>()))?.first?.supplementList ?? []
+        return ShoppingListBuilder.build(from: plan.days.flatMap { $0.meals.flatMap(\.ingredients) }, owned: owned)
+    }
+
+    /// Reconstruit une liste faite par une version antérieure (ex. œufs en double avant la spec 012).
+    static func rebuildStaleShoppingList(for plan: WeeklyPlan, in context: ModelContext) {
+        let keys = Set(shoppingLines(for: plan, in: context).map(\.key))
+        if keys != Set(plan.shoppingItems.map(\.key)) { rebuildShoppingList(for: plan, in: context) }
     }
 
     /// Supprime un planning et tout ce qui en dépend (jours, repas, extras du journal, courses).
@@ -128,6 +137,7 @@ public enum PlanStore {
         for plan in (try? context.fetch(FetchDescriptor<WeeklyPlan>())) ?? [] {
             let sessions = cleanData(plan.prepSessionsData)
             if sessions != plan.prepSessionsData { plan.prepSessionsData = sessions }
+            rebuildStaleShoppingList(for: plan, in: context)
         }
         for item in (try? context.fetch(FetchDescriptor<ShoppingItem>())) ?? [] { item.cleanUp(with: clean) }
         for extra in (try? context.fetch(FetchDescriptor<ExtraEntry>())) ?? [] where clean(extra.name) != extra.name {

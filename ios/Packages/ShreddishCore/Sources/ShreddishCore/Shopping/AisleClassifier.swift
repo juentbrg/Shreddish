@@ -21,14 +21,14 @@ public enum AisleClassifier {
     }
 
     private static let frozen = ["surgele", "surgelee", "congele", "congelee"]
-    /// Conserves et produits secs qui contiennent un mot-clé d'un autre rayon (« thon en boîte », « lait de coco »).
+    /// Conserves, produits secs et œufs (non réfrigérés en France), même avec un mot-clé d'un autre rayon (« thon en boîte »).
     private static let pantry = [
         "boite", "conserve", "au naturel", "lait de coco", "lait d amande", "lait de soja", "lait d avoine",
-        "beurre de cacahuete", "beurre d arachide", "creme de coco", "bouillon", "sauce",
+        "beurre de cacahuete", "beurre d arachide", "creme de coco", "bouillon", "sauce", "oeuf",
     ]
     private static let dairy = [
         "yaourt", "yogourt", "yoghourt", "fromage", "skyr", "lait", "beurre", "creme fraiche", "creme",
-        "oeuf", "mozzarella", "feta", "emmental", "comte", "parmesan", "ricotta", "cottage", "faisselle",
+        "mozzarella", "feta", "emmental", "comte", "parmesan", "ricotta", "cottage", "faisselle",
         "petit suisse", "kefir",
     ]
     private static let meatFish = [

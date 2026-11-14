@@ -4,6 +4,7 @@ Usage : python build_prices.py prices.parquet ciqual.json foods.json sortie.json
 Dépendance : duckdb (pip install duckdb). Source : Open Prices (Open Food Facts), licence ODbL.
 
 Prix au kg acheté (au litre pour les liquides) et part comestible ; aliment cuit : prix ramené au poids cuit.
+Chaque aliment Ciqual est rattaché à son produit acheté (libellé, unité d'achat, rayon) pour la liste de courses.
 Prix par aliment : quartile bas des 12 derniers mois (prix promo exclus) dès 8 relevés ; en dessous,
 fenêtre de 24 mois et moyenne des médianes par enseigne.
 """
@@ -114,8 +115,7 @@ def main(parquet, ciqual_path, foods_path, out_path):
                     if "cooked" not in entry:
                         break
                     yield_ = round(yield_ / entry["cooked"], 3)
-                if per_kg:
-                    foods[str(code)] = [round(per_kg, 2), yield_]
+                foods[str(code)] = [round(per_kg, 2) if per_kg else None, yield_, entry["id"]]
                 break
     for entry in entries:
         if not any(any(re.search(p, norm(f[1])) for p in entry["ciqual"]) for f in ciqual):
@@ -124,7 +124,7 @@ def main(parquet, ciqual_path, foods_path, out_path):
     groups = {}
     by_group = {}
     for code, name, group, *_ in ciqual:
-        if str(code) in foods:
+        if str(code) in foods and foods[str(code)][0]:
             by_group.setdefault(group, []).append(foods[str(code)][0])
     for group, values in by_group.items():
         values.sort()
@@ -132,8 +132,11 @@ def main(parquet, ciqual_path, foods_path, out_path):
 
     out = {
         "source": "Open Prices (Open Food Facts), ODbL — prix France (quartile bas) relevés au " + datetime.date.today().isoformat(),
-        "columns": ["eur_per_kg", "edible_yield"],
+        "columns": ["eur_per_kg", "edible_yield", "product"],
         "foods": foods, "groups": groups,
+        # Produit acheté en magasin (liste de courses) : libellé, unité d'achat (g, ml, piece), poids d'une pièce, rayon.
+        "products": {e["id"]: [e["label"], "piece" if e.get("piece") else e.get("unit", "g"), e.get("piece", 0), e["aisle"]]
+                     for e in entries},
     }
     with open(out_path, "w", encoding="utf-8") as handle:
         json.dump(out, handle, ensure_ascii=False, separators=(",", ":"))
