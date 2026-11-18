@@ -88,6 +88,16 @@ enum Format {
         return "Du \(start) au \(end)"
     }
 
+    /// « 19:30 » depuis des minutes après minuit.
+    static func clock(_ minutes: Int) -> String {
+        String(format: "%02d:%02d", minutes / 60 % 24, minutes % 60)
+    }
+
+    /// « 16 h 30 », « 16 h ».
+    static func duration(_ minutes: Int) -> String {
+        minutes % 60 == 0 ? "\(minutes / 60) h" : "\(minutes / 60) h \(String(format: "%02d", minutes % 60))"
+    }
+
     /// Analyse un nombre saisi avec virgule ou point.
     static func parse(_ text: String) -> Double? {
         Double(text.replacingOccurrences(of: ",", with: ".").trimmingCharacters(in: .whitespaces))

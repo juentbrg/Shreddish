@@ -18,6 +18,8 @@ public struct GenerationConstraints: Sendable, Equatable {
     public var ownedSupplements: [String]
     /// Même plat principal au plus 2 fois (spec 010) ; désactivé pour une semaine reconstituée jour par jour.
     public var enforceVariety = true
+    /// Jeûne intermittent (spec 015) : heures des repas ramenées dans la fenêtre.
+    public var eatingWindow: EatingWindow?
 
     public init(
         targets: MacroTotals, mealsPerDay: Int, maxPrepMinutes: Int, weeklyBudgetEur: Double, budgetTolerance: Double,
@@ -79,6 +81,7 @@ public enum ValidationIssue: Equatable, Sendable {
     case mealTypeCorrected(meal: String)
     case supplementCostCleared(meal: String)
     case invalidTimeCleared(meal: String)
+    case mealTimesFitted(dayOffset: Int)
     // Avertissements affichés. Budget : nouvel essai avec retour de coût, puis accepté (spec 004).
     case dayOffTarget(dayOffset: Int, deviation: Double)
     case weekOverBudgetWithinTolerance(costEur: Double, budgetEur: Double)
@@ -250,6 +253,12 @@ public enum AIOutputValidator {
             if mealResult.fatal.isEmpty, let sanitized = mealResult.sanitized { meals.append(sanitized) }
         }
 
+        if let window = constraints.eatingWindow {
+            let fitted = window.fit(meals)
+            if fitted != meals { result.corrected.append(.mealTimesFitted(dayOffset: expectedOffset)) }
+            meals = fitted
+        }
+
         let total = Totals.planned(meals)
         let deviation = Totals.deviation(total, targetKcal: constraints.targets.kcal)
         if result.fatal.isEmpty, Totals.isOffTarget(deviation) {
@@ -306,6 +315,10 @@ public enum AIOutputValidator {
         if let time = meal.time, !isValidTime(time) {
             meal.time = nil
             result.corrected.append(.invalidTimeCleared(meal: name))
+        }
+        // Repas remplacé seul : heure ramenée dans la fenêtre (les jours sont recalés en bloc).
+        if expectedType != nil, let window = constraints.eatingWindow {
+            meal.time = window.fit(time: meal.time)
         }
 
         let computed = meal.macros.kcalFromMacros

@@ -55,6 +55,10 @@ public final class Preferences {
     // Spec 007 (SchemaV6).
     /// `[clé normalisée: SupplementInfo]` encodé : protéines par dose et taille de dose.
     public var supplementInfoData: Data?
+    // Spec 015 (SchemaV9).
+    /// Jeûne intermittent : premier et dernier repas, en minutes depuis minuit ; nil = pas de fenêtre.
+    public var eatingWindowStartMinutes: Int?
+    public var eatingWindowEndMinutes: Int?
 
     public init() {
         mealsPerDay = 4
@@ -121,6 +125,18 @@ public final class Preferences {
         trainingTimeMinutes.map { String(format: "%02d:%02d", $0 / 60 % 24, $0 % 60) }
     }
 
+    /// Fenêtre de repas, nil sans jeûne intermittent.
+    public var eatingWindow: EatingWindow? {
+        get {
+            guard let start = eatingWindowStartMinutes, let end = eatingWindowEndMinutes else { return nil }
+            return EatingWindow(startMinutes: start, endMinutes: end)
+        }
+        set {
+            eatingWindowStartMinutes = newValue?.startMinutes
+            eatingWindowEndMinutes = newValue?.endMinutes
+        }
+    }
+
     public var availability: IngredientAvailability {
         get { ingredientAvailabilityRaw.flatMap(IngredientAvailability.init(rawValue:)) ?? .everywhere }
         set { ingredientAvailabilityRaw = newValue.rawValue }
@@ -131,17 +147,19 @@ public final class Preferences {
             mealsPerDay: mealsPerDay, maxPrepMinutes: maxPrepMinutes, weeklyBudgetEur: weeklyBudget,
             budgetTolerance: tolerance, allergies: allergyList, dislikedFoods: excludedFoods, likedFoods: likedFoods,
             equipment: equipment, batchCooking: batchCooking, ingredientAvailability: availability,
-            ownedSupplements: ownedSupplementDetails, trainingTime: trainingTimeLabel
+            ownedSupplements: ownedSupplementDetails, trainingTime: trainingTimeLabel, eatingWindow: eatingWindow?.label
         )
     }
 
     public func constraints(targets: MacroTotals, costLimitEur: Double? = nil) -> GenerationConstraints {
-        GenerationConstraints(
+        var constraints = GenerationConstraints(
             targets: targets, mealsPerDay: mealsPerDay, maxPrepMinutes: maxPrepMinutes,
             weeklyBudgetEur: weeklyBudget, budgetTolerance: tolerance, batchCooking: batchCooking,
             allergies: allergyList, excludedFoods: excludedFoods, costLimitEur: costLimitEur,
             ownedSupplements: supplementList
         )
+        constraints.eatingWindow = eatingWindow
+        return constraints
     }
 }
 

@@ -11,6 +11,7 @@ struct PreferencesView: View {
         Form {
             if let preferences = allPreferences.first {
                 MealsSection(preferences: preferences)
+                FastingSection(preferences: preferences)
                 BudgetSection(preferences: preferences)
                 StoreSection(preferences: preferences)
                 FoodsSections(preferences: preferences)
@@ -51,6 +52,54 @@ private struct MealsSection: View {
                 )
             }
         }
+    }
+}
+
+/// Jeûne intermittent (spec 015) : heures du premier et du dernier repas.
+private struct FastingSection: View {
+    @Bindable var preferences: Preferences
+
+    var body: some View {
+        Section {
+            Toggle("Jeûne intermittent", isOn: Binding(
+                get: { preferences.eatingWindow != nil },
+                set: { preferences.eatingWindow = $0 ? .default : nil }
+            ))
+            .accessibilityIdentifier("fastingToggle")
+            if let window = preferences.eatingWindow {
+                DatePicker("Premier repas", selection: time(window.startMinutes) { minutes in
+                    EatingWindow(startMinutes: minutes, endMinutes: window.endMinutes)
+                }, displayedComponents: .hourAndMinute)
+                .accessibilityIdentifier("fastingStart")
+                DatePicker("Dernier repas", selection: time(window.endMinutes) { minutes in
+                    EatingWindow(startMinutes: window.startMinutes, endMinutes: minutes)
+                }, displayedComponents: .hourAndMinute)
+                .accessibilityIdentifier("fastingEnd")
+            }
+        } header: {
+            ListHeader {
+                Text("Jeûne")
+            }
+        } footer: {
+            ListFooter {
+                if let window = preferences.eatingWindow {
+                    Text("Repas entre \(Format.clock(window.startMinutes)) et \(Format.clock(window.endMinutes)), "
+                        + "\(Format.duration(window.fastingMinutes)) de jeûne. S'applique aux prochains plannings.")
+                } else {
+                    Text("Tous les repas dans une fenêtre horaire, par exemple de 12:00 à 19:30.")
+                }
+            }
+        }
+    }
+
+    private func time(_ minutes: Int, update: @escaping (Int) -> EatingWindow) -> Binding<Date> {
+        Binding(
+            get: { Calendar.current.date(bySettingHour: minutes / 60, minute: minutes % 60, second: 0, of: .now) ?? .now },
+            set: {
+                let parts = Calendar.current.dateComponents([.hour, .minute], from: $0)
+                preferences.eatingWindow = update((parts.hour ?? 0) * 60 + (parts.minute ?? 0))
+            }
+        )
     }
 }
 

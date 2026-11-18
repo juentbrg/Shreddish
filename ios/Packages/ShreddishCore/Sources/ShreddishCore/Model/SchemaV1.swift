@@ -328,7 +328,43 @@ public enum SchemaV6: VersionedSchema {
     public static let versionIdentifier = Schema.Version(6, 0, 0)
 
     public static var models: [any PersistentModel.Type] {
-        [Profile.self, Preferences.self, WeightEntry.self] + SchemaV6.planModels
+        [Profile.self, SchemaV6.Preferences.self, WeightEntry.self] + SchemaV6.planModels
+    }
+
+    /// Forme V6 à V8 des préférences, figée (spec 015 ajoute la fenêtre de repas). Ne jamais modifier.
+    @Model
+    public final class Preferences {
+        public var mealsPerDay: Int
+        public var maxPrepMinutes: Int
+        public var dailyBudgetEUR: Double
+        public var excludedFoods: [String]
+        public var likedFoods: [String]
+        public var equipment: [String]
+        public var batchCooking: Bool
+        public var aiModel: String
+        public var weeklyBudgetEUR: Double?
+        public var budgetTolerance: Double?
+        public var allergies: [String]?
+        public var ingredientAvailabilityRaw: String?
+        public var storeRaw: String?
+        public var customStoreName: String?
+        public var supplements: [String]?
+        public var trainingTimeMinutes: Int?
+        public var city: String?
+        public var supplementInfoData: Data?
+
+        public init() {
+            mealsPerDay = 4
+            maxPrepMinutes = 20
+            dailyBudgetEUR = 8
+            excludedFoods = []
+            likedFoods = []
+            equipment = []
+            batchCooking = false
+            aiModel = "gpt-6-luna"
+            weeklyBudgetEUR = 56
+            budgetTolerance = 0.1
+        }
     }
 }
 
@@ -336,7 +372,7 @@ public enum ShreddishMigrationPlan: SchemaMigrationPlan {
     public static var schemas: [any VersionedSchema.Type] {
         [
             SchemaV1.self, SchemaV2.self, SchemaV3.self, SchemaV4.self, SchemaV5.self, SchemaV6.self, SchemaV7.self,
-            SchemaV8.self,
+            SchemaV8.self, SchemaV9.self,
         ]
     }
 
@@ -350,6 +386,7 @@ public enum ShreddishMigrationPlan: SchemaMigrationPlan {
             .lightweight(fromVersion: SchemaV5.self, toVersion: SchemaV6.self),
             .lightweight(fromVersion: SchemaV6.self, toVersion: SchemaV7.self),
             .lightweight(fromVersion: SchemaV7.self, toVersion: SchemaV8.self),
+            .lightweight(fromVersion: SchemaV8.self, toVersion: SchemaV9.self),
         ]
     }
 }
@@ -357,7 +394,7 @@ public enum ShreddishMigrationPlan: SchemaMigrationPlan {
 public enum ShreddishStore {
     /// Container local, sans CloudKit. `inMemory` : previews et tests ; `url` : tests de migration.
     public static func makeContainer(inMemory: Bool = false, url: URL? = nil) throws -> ModelContainer {
-        let schema = Schema(versionedSchema: SchemaV8.self)
+        let schema = Schema(versionedSchema: SchemaV9.self)
         let configuration = if let url {
             ModelConfiguration(schema: schema, url: url, cloudKitDatabase: .none)
         } else {

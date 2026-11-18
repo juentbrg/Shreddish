@@ -131,7 +131,7 @@ public enum SchemaV7: VersionedSchema {
 
     public static var models: [any PersistentModel.Type] {
         [
-            Profile.self, Preferences.self, WeeklyPlan.self, DayPlan.self, Meal.self,
+            Profile.self, SchemaV6.Preferences.self, WeeklyPlan.self, DayPlan.self, Meal.self,
             ExtraEntry.self, ShoppingItem.self, WeightEntry.self,
         ]
     }
@@ -142,4 +142,16 @@ public enum SchemaV8: VersionedSchema {
     public static let versionIdentifier = Schema.Version(8, 0, 0)
 
     public static var models: [any PersistentModel.Type] { SchemaV7.models + [SavedRecipe.self] }
+}
+
+/// Schéma V9 (spec 015) : fenêtre de repas (jeûne intermittent) dans les préférences.
+public enum SchemaV9: VersionedSchema {
+    public static let versionIdentifier = Schema.Version(9, 0, 0)
+
+    public static var models: [any PersistentModel.Type] {
+        [
+            Profile.self, Preferences.self, WeeklyPlan.self, DayPlan.self, Meal.self,
+            ExtraEntry.self, ShoppingItem.self, WeightEntry.self, SavedRecipe.self,
+        ]
+    }
 }

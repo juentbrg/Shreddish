@@ -18,12 +18,15 @@ public struct PromptPreferences: Codable, Sendable, Equatable {
     public var trainingTime: String?
     /// Séances par semaine, depuis le profil.
     public var trainingSessionsPerWeek: Int?
+    /// Jeûne intermittent (spec 015) : fenêtre de repas « HH:mm-HH:mm ».
+    public var eatingWindow: String?
 
     public init(
         mealsPerDay: Int, maxPrepMinutes: Int, weeklyBudgetEur: Double, budgetTolerance: Double,
         allergies: [String], dislikedFoods: [String], likedFoods: [String], equipment: [String],
         batchCooking: Bool, ingredientAvailability: IngredientAvailability,
-        ownedSupplements: [OwnedSupplement] = [], trainingTime: String? = nil, trainingSessionsPerWeek: Int? = nil
+        ownedSupplements: [OwnedSupplement] = [], trainingTime: String? = nil, trainingSessionsPerWeek: Int? = nil,
+        eatingWindow: String? = nil
     ) {
         self.mealsPerDay = mealsPerDay
         self.maxPrepMinutes = maxPrepMinutes
@@ -38,6 +41,7 @@ public struct PromptPreferences: Codable, Sendable, Equatable {
         self.ownedSupplements = ownedSupplements
         self.trainingTime = trainingTime
         self.trainingSessionsPerWeek = trainingSessionsPerWeek
+        self.eatingWindow = eatingWindow
     }
 }
 
@@ -328,6 +332,9 @@ public enum PromptBuilder {
         l'entraînement ; sans heure connue, suppose une séance en fin de journée.
         - time : heure conseillée « HH:mm » de chaque repas, cohérente sur la journée (petit-déjeuner 7:00-9:00, \
         déjeuner 12:00-13:30, dîner 19:00-21:00, collation selon l'entraînement).
+        - eating_window : jeûne intermittent, tous les repas entre ces deux heures (premier et dernier repas \
+        inclus). Pas de breakfast si la fenêtre commence après 10:00 : le premier repas est un lunch, \
+        complète avec des snacks. Répartis les apports sur la fenêtre, repas du soir pas plus lourd que le déjeuner.
         - Quantités en g, ml ou piece, pesées crues / non cuites. unit "piece" seulement pour ce qui se compte \
         (œufs, fruits, tortillas), avec piece_g = poids d'une pièce en g ; sinon piece_g = null. cost_eur = \
         coût de la quantité utilisée, recalculé par l'application depuis unit_price_eur.

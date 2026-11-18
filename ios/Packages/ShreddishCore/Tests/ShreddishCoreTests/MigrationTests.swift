@@ -124,7 +124,7 @@ struct MigrationTests {
             let schema = Schema(versionedSchema: SchemaV6.self)
             let container = try ModelContainer(for: schema, configurations: [ModelConfiguration(schema: schema, url: url)])
             let context = container.mainContext
-            let preferences = Preferences()
+            let preferences = SchemaV6.Preferences()
             preferences.weeklyBudgetEUR = 60
             context.insert(preferences)
             let plan = SchemaV6.WeeklyPlan(startDayKey: 20_261_114, createdAt: .now)
@@ -178,6 +178,39 @@ struct MigrationTests {
         #expect(plan.pantry.first?.name == "Riz")
         #expect(!plan.shoppingItems.isEmpty)
         #expect(try context.fetch(FetchDescriptor<SavedRecipe>()).isEmpty)
+    }
+
+    @Test func v8PreferencesMigrateToV9WithoutDataLoss() throws {
+        let directory = FileManager.default.temporaryDirectory.appending(path: "shreddish-migration-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let url = directory.appending(path: "store.sqlite")
+        do {
+            let schema = Schema(versionedSchema: SchemaV8.self)
+            let container = try ModelContainer(for: schema, configurations: [ModelConfiguration(schema: schema, url: url)])
+            let context = container.mainContext
+            let preferences = SchemaV6.Preferences()
+            preferences.mealsPerDay = 3
+            preferences.trainingTimeMinutes = 18 * 60
+            preferences.supplementInfoData = Data("{}".utf8)
+            context.insert(preferences)
+            let targets = try NutritionCalculator.targets(for: NutritionCalculatorTests.man)
+            try PlanStore.saveWeek(
+                WeekPlanDTO(prepSessions: [], days: [DayPlanDTO(dayOffset: 0, meals: [meal(name: "Poulet riz")])]),
+                startDay: LocalDay(year: 2026, month: 11, day: 15), targets: targets, createdAt: .now, in: context
+            )
+            context.insert(SavedRecipe(meal: meal(name: "Chili"), savedAt: .now))
+            try context.save()
+        }
+        let container = try ShreddishStore.makeContainer(url: url)
+        let context = container.mainContext
+        let preferences = try #require(try context.fetch(FetchDescriptor<Preferences>()).first)
+        #expect(preferences.mealsPerDay == 3)
+        #expect(preferences.trainingTimeMinutes == 18 * 60)
+        #expect(preferences.supplementInfoData != nil)
+        #expect(preferences.eatingWindow == nil)
+        #expect(try context.fetch(FetchDescriptor<WeeklyPlan>()).first?.days.first?.meals.first?.name == "Poulet riz")
+        #expect(try context.fetch(FetchDescriptor<SavedRecipe>()).first?.name == "Chili")
     }
 
     /// Copie de la vraie base de l'iPhone (`tools/backup/backup.sh`) : `SHREDDISH_REAL_STORE=<dossier>`.

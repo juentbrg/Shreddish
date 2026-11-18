@@ -307,4 +307,27 @@ final class OnboardingUITests: XCTestCase {
         XCTAssertFalse(app.buttons["Supprimer Airfryer"].exists)
         XCTAssertTrue(app.buttons["suggestion-Airfryer"].exists)
     }
+
+    /// Spec 015 : jeûne intermittent 12:00-19:30, repas de la semaine générée recalés dans la fenêtre.
+    func testIntermittentFastingKeepsMealsInWindow() {
+        let app = launch()
+        onboard(app)
+        XCTAssertTrue(app.buttons["settings"].waitForExistence(timeout: 5))
+        app.buttons["settings"].tap()
+        app.buttons["preferencesSettings"].tap()
+        let toggle = app.switches["fastingToggle"]
+        reveal(toggle, in: app)
+        toggle.switches.firstMatch.tap()
+        XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS '16 h 30 de jeûne'")).firstMatch
+            .waitForExistence(timeout: 3))
+
+        app.tabBars.buttons["Semaine"].tap()
+        let generate = app.buttons["generateWeek"]
+        XCTAssertTrue(generate.waitForExistence(timeout: 5))
+        generate.tap()
+        app.buttons["startGeneration"].tap()
+        XCTAssertTrue(app.buttons["day-0"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.descendants(matching: .any).containing(NSPredicate(format: "label CONTAINS '12:00'")).firstMatch.exists)
+        XCTAssertFalse(app.descendants(matching: .any).containing(NSPredicate(format: "label CONTAINS '08:00'")).firstMatch.exists)
+    }
 }
