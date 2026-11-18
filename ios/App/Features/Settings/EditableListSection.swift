@@ -88,7 +88,7 @@ struct EditableListSection: View {
                                 add(suggestion)
                             } label: {
                                 Label(suggestion, systemImage: "plus")
-                                    .font(.subheadline)
+                                    .font(Theme.text(.subheadline))
                                     .padding(.horizontal, 10)
                                     .padding(.vertical, 6)
                                     .background(Color.accentColor.opacity(0.12), in: Capsule())
@@ -100,9 +100,13 @@ struct EditableListSection: View {
                 }
             }
         } header: {
-            Text(title)
+            ListHeader {
+                Text(title)
+            }
         } footer: {
-            if let footer { Text(footer) }
+            ListFooter {
+                if let footer { Text(footer) }
+            }
         }
     }
 

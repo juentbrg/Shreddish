@@ -32,7 +32,7 @@ struct MacroSettingsView: View {
                     format: { Format.percent($0, signed: true) }
                 )
                 if let targets = profile.targets(clock: model.clock) {
-                    Section("Résultat") {
+                    ThemedSection("Résultat") {
                         LabeledContent("Cible", value: Format.kcal(Double(targets.targetKcal)))
                         MacroLine(macros: targets.macros)
                     }

@@ -169,7 +169,9 @@ struct PlanGeneratorTests {
     }
 
     @Test func weekAboveBudgetCeilingIsRegenerated() async throws {
-        // Viande et poisson à 30 €/kg : plus de 100 € pour un plafond de 56 € × 1,10 = 61,60 € : nouvel essai.
+        // Viande et poisson à 30 €/kg : plus de 100 € pour un plafond de 70 € × 1,10 = 77 € : nouvel essai.
+        // Second essai aux prix médians de la table (spec 013) : sous le plafond.
+        preferences.weeklyBudgetEUR = 70
         let expensive = try weekText().replacingOccurrences(of: "\"unit_price_eur\":7}", with: "\"unit_price_eur\":30}")
             .replacingOccurrences(of: "\"unit_price_eur\":9}", with: "\"unit_price_eur\":30}")
         let transport = ScriptedTransport([.output(expensive), .output(try weekText())])
@@ -181,7 +183,7 @@ struct PlanGeneratorTests {
         let body = try #require(try JSONSerialization.jsonObject(with: transport.requests[1].httpBody ?? Data()) as? [String: Any])
         let input = try #require(body["input"] as? String)
         #expect(input.contains("previous_attempt_feedback"))
-        #expect(input.contains("plafond de 61.6"))
+        #expect(input.contains("plafond de 77"))
     }
 
     @Test func weekStillAboveCeilingIsKeptWithWarning() async throws {
@@ -237,6 +239,42 @@ struct PlanGeneratorTests {
         #expect(!input.contains("Lidl"))
         #expect(input.contains("arachide"))
         #expect(input.contains("\"weekly_budget_eur\":56"))
+    }
+
+    /// Spec 013 : ingrédients à écouler envoyés à l'IA, gardés sur le planning et déduits des courses.
+    @Test func pantryReachesThePromptAndTheShoppingList() async throws {
+        var rice = IngredientDTO(name: "Riz", quantity: 2000, unit: "g", aisle: .epicerie, costEur: 0)
+        rice.foodCode = 9100
+        let typed = IngredientDTO(name: "Huile de colza", quantity: 500, unit: "ml", aisle: .autre, costEur: 0)
+        let transport = ScriptedTransport([.output(try weekText())])
+        try await generator(transport).generateWeek(
+            profile: profile, preferences: preferences, pantry: [rice, typed], in: context
+        )
+        let body = try #require(try JSONSerialization.jsonObject(with: transport.requests[0].httpBody ?? Data()) as? [String: Any])
+        let input = try #require(body["input"] as? String)
+        #expect(input.contains("ingredients_to_use"))
+        #expect(input.contains("Huile de colza"))
+        let plan = try #require(PlanStore.currentPlan(in: context))
+        #expect(plan.pantry.count == 2)
+        #expect(plan.pantry.allSatisfy { $0.foodCode != nil })
+        let riceLine = plan.shoppingItems.first { $0.key.hasPrefix("riz blanc|") }
+        #expect(riceLine.map { $0.totalQuantity == 0 && $0.costEUR == 0 } ?? true)
+    }
+
+    @Test func savedRecipesReachThePrompt() async throws {
+        let recipe = MealDTO(
+            type: .dinner, name: "Curry de pois chiches",
+            ingredients: [IngredientDTO(name: "Pois chiches", quantity: 200, unit: "g", aisle: .epicerie, costEur: 0)],
+            steps: ["Faire revenir l'oignon."], prepMinutes: 15, costEur: 1.2, kcal: 600, proteinG: 30, carbsG: 70, fatG: 15,
+            prepSessionRef: nil, time: nil
+        )
+        let transport = ScriptedTransport([.output(try weekText())])
+        try await generator(transport).generateWeek(profile: profile, preferences: preferences, recipes: [recipe], in: context)
+        let body = try #require(try JSONSerialization.jsonObject(with: transport.requests[0].httpBody ?? Data()) as? [String: Any])
+        let input = try #require(body["input"] as? String)
+        #expect(input.contains("recipes_to_include"))
+        #expect(input.contains("Curry de pois chiches"))
+        #expect(!input.contains("Faire revenir"))
     }
 
     @Test func missingKeyThrowsWithoutNetwork() async throws {

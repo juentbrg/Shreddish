@@ -113,6 +113,19 @@ struct LiveReport {
         let lines011 = meals.flatMap(\.ingredients).filter { ($0.unitPriceEur ?? 0) > 0 }
         let fromTable = lines011.filter { $0.foodCode.flatMap(PriceCatalog.shared.price(code:)) != nil }
         lines.append("LIVE prix table \(fromTable.count) / \(lines011.count) lignes payantes")
+        let summary = plan.shoppingSummary
+        lines.append(String(
+            format: "LIVE ticket %.2f € · gardé %.2f € · perdu %.2f € · semaine %.2f €",
+            summary.checkoutEur, summary.keptEur, summary.wastedEur, summary.weekCostEur
+        ))
+        for item in plan.shoppingItems.sorted(by: { $0.name < $1.name }) {
+            let packing = item.packing
+            guard packing.perishable, packing.leftover > 0 else { continue }
+            lines.append(String(
+                format: "LIVE reste périssable %@ : %.0f %@ (%d × %.0f)", item.name, packing.leftover, item.unitRaw,
+                packing.packCount, packing.packSize ?? 0
+            ))
+        }
         lines.append("LIVE avertissements : \(warnings.isEmpty ? "aucun" : warnings.joined(separator: " ; "))")
         return lines.joined(separator: "\n")
     }

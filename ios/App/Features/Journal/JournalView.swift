@@ -47,52 +47,18 @@ struct JournalView: View {
         let defaultKey = days.first { $0.dayKey == todayKey }?.dayKey ?? days.first?.dayKey
         let key = selectedKey ?? defaultKey
         return VStack(spacing: 0) {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    ForEach(days) { day in
-                        DayChip(day: day, isSelected: day.dayKey == key, isToday: day.dayKey == todayKey) {
-                            selectedKey = day.dayKey
-                        }
-                    }
-                }
-                .padding(.horizontal)
-                .padding(.vertical, 8)
+            DayStrip(
+                days: days, selected: days.first { $0.dayKey == key }?.offset, today: model.clock.today,
+                idPrefix: "journal-day-"
+            ) { offset in
+                selectedKey = days.first { $0.offset == offset }?.dayKey
             }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 8)
             if let day = days.first(where: { $0.dayKey == key }) {
                 JournalDayView(day: day)
             }
         }
-    }
-}
-
-struct DayChip: View {
-    @Environment(AppModel.self) private var model
-    let day: DayPlan
-    let isSelected: Bool
-    let isToday: Bool
-    let action: () -> Void
-
-    var body: some View {
-        let date = day.day.startDate(calendar: model.clock.calendar)
-        Button(action: action) {
-            VStack(spacing: 2) {
-                Text(date.formatted(.dateTime.weekday(.abbreviated).locale(Format.locale)))
-                    .font(.caption)
-                Text(date.formatted(.dateTime.day().locale(Format.locale)))
-                    .font(.headline)
-            }
-            .frame(width: 48, height: 52)
-            .background(isSelected ? Color.accentColor : Color.secondary.opacity(0.12), in: RoundedRectangle(cornerRadius: 12))
-            .foregroundStyle(isSelected ? Color.white : Color.primary)
-            .overlay {
-                if isToday && !isSelected {
-                    RoundedRectangle(cornerRadius: 12).stroke(Color.accentColor, lineWidth: 2)
-                }
-            }
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(Format.day(day.day, calendar: model.clock.calendar))
-        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }
 
@@ -104,7 +70,7 @@ struct JournalDayView: View {
 
     var body: some View {
         List {
-            Section("Bilan du jour") {
+            ThemedSection("Bilan du jour") {
                 let actual = day.actualTotals
                 let planned = day.plannedTotals
                 if let targets = day.plan?.targets {
@@ -116,7 +82,7 @@ struct JournalDayView: View {
                     .accessibilityIdentifier("actualKcal")
                 MacroLine(macros: actual)
             }
-            Section("Repas du planning") {
+            ThemedSection("Repas du planning") {
                 ForEach(day.sortedMeals) { meal in
                     MealStatusRow(meal: meal) { status in
                         meal.setStatus(meal.status == status ? .planned : status, at: model.clock.now)
@@ -130,11 +96,11 @@ struct JournalDayView: View {
                         VStack(alignment: .leading) {
                             Text(extra.name)
                             if let quantity = extra.quantityLabel, !quantity.isEmpty {
-                                Text(quantity).font(.caption).foregroundStyle(.secondary)
+                                Text(quantity).font(Theme.text(.caption)).foregroundStyle(Theme.muted)
                             }
                         }
                         Spacer()
-                        Text(Format.kcal(extra.kcal)).foregroundStyle(.secondary)
+                        Text(Format.kcal(extra.kcal)).foregroundStyle(Theme.muted)
                         DeleteRowButton(label: extra.name) {
                             context.delete(extra)
                             try? context.save()
@@ -149,9 +115,13 @@ struct JournalDayView: View {
                 Button("Ajouter un extra", systemImage: "plus") { showAddExtra = true }
                     .accessibilityIdentifier("addExtra")
             } header: {
-                Text("Extras")
+                ListHeader {
+                    Text("Extras")
+                }
             } footer: {
-                Text("Tout ce qui n'était pas prévu.")
+                ListFooter {
+                    Text("Tout ce qui n'était pas prévu.")
+                }
             }
         }
         .sheet(isPresented: $showAddExtra) {
@@ -167,18 +137,19 @@ struct MealStatusRow: View {
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
-                Text(meal.type.label.uppercased())
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(.secondary)
+                Text([meal.time, meal.type.label].compactMap(\.self).joined(separator: " · "))
+                    .font(Theme.text(.caption))
+                    .foregroundStyle(Theme.muted)
                 Text(meal.name)
+                    .font(Theme.text(.subheadline, .semibold))
                     .strikethrough(meal.status == .skipped)
                 Text(Format.kcal(meal.kcal))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(Theme.text(.caption))
+                    .foregroundStyle(Theme.muted)
             }
             Spacer()
-            statusButton(.eaten, symbol: "checkmark.circle.fill", label: "Mangé", tint: .green)
-            statusButton(.skipped, symbol: "xmark.circle.fill", label: "Sauté", tint: .gray)
+            statusButton(.eaten, symbol: "checkmark.circle.fill", label: "Mangé", tint: Theme.green)
+            statusButton(.skipped, symbol: "xmark.circle.fill", label: "Sauté", tint: Theme.muted)
         }
     }
 
@@ -188,7 +159,7 @@ struct MealStatusRow: View {
         } label: {
             Image(systemName: meal.status == status ? symbol : symbol.replacingOccurrences(of: ".fill", with: ""))
                 .font(.title2)
-                .foregroundStyle(meal.status == status ? tint : .secondary)
+                .foregroundStyle(meal.status == status ? tint : Theme.muted)
                 .frame(width: 44, height: 44)
         }
         .buttonStyle(.plain)

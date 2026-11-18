@@ -113,6 +113,93 @@ struct MigrationTests {
         #expect(preferences.supplementInfo(for: "Whey").isEmpty)
     }
 
+    /// Spec 013 : planning V6 (forme installée sur l'iPhone) ouvert en V7, ingrédients à écouler vides.
+    @Test func v6PlanMigratesToV7WithoutDataLoss() throws {
+        let directory = FileManager.default.temporaryDirectory.appending(path: "shreddish-migration-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let url = directory.appending(path: "store.sqlite")
+
+        do {
+            let schema = Schema(versionedSchema: SchemaV6.self)
+            let container = try ModelContainer(for: schema, configurations: [ModelConfiguration(schema: schema, url: url)])
+            let context = container.mainContext
+            let preferences = Preferences()
+            preferences.weeklyBudgetEUR = 60
+            context.insert(preferences)
+            let plan = SchemaV6.WeeklyPlan(startDayKey: 20_261_114, createdAt: .now)
+            context.insert(plan)
+            let day = SchemaV6.DayPlan(dayKey: 20_261_114, offset: 0)
+            plan.days.append(day)
+            let meal = SchemaV6.Meal(order: 0)
+            meal.name = "Poulet riz"
+            meal.time = "12:30"
+            day.meals.append(meal)
+            day.extras.append(SchemaV6.ExtraEntry(name: "Pomme", loggedAt: .now))
+            plan.shoppingItems.append(SchemaV6.ShoppingItem(name: "Riz", key: "riz blanc|g"))
+            try context.save()
+        }
+
+        let container = try ShreddishStore.makeContainer(url: url)
+        let context = container.mainContext
+        let plan = try #require(try context.fetch(FetchDescriptor<WeeklyPlan>()).first)
+        #expect(plan.pantryData == nil)
+        #expect(plan.pantry.isEmpty)
+        let meal = try #require(plan.days.first?.meals.first)
+        #expect(meal.name == "Poulet riz")
+        #expect(meal.time == "12:30")
+        #expect(meal.day?.extras.first?.name == "Pomme")
+        #expect(plan.shoppingItems.first?.key == "riz blanc|g")
+        #expect(try context.fetch(FetchDescriptor<Preferences>()).first?.weeklyBudget == 60)
+    }
+
+    /// Spec 014 : base V7 ouverte en V8, planning intact et aucune recette sauvegardée.
+    @Test func v7PlanMigratesToV8WithoutDataLoss() throws {
+        let directory = FileManager.default.temporaryDirectory.appending(path: "shreddish-migration-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let url = directory.appending(path: "store.sqlite")
+        do {
+            let schema = Schema(versionedSchema: SchemaV7.self)
+            let container = try ModelContainer(for: schema, configurations: [ModelConfiguration(schema: schema, url: url)])
+            let context = container.mainContext
+            let targets = try NutritionCalculator.targets(for: NutritionCalculatorTests.man)
+            try PlanStore.saveWeek(
+                WeekPlanDTO(prepSessions: [], days: [DayPlanDTO(dayOffset: 0, meals: [meal(name: "Poulet riz")])]),
+                startDay: LocalDay(year: 2026, month: 11, day: 15), targets: targets, createdAt: .now,
+                pantry: [ingredient("Riz", 300)], in: context
+            )
+        }
+        let container = try ShreddishStore.makeContainer(url: url)
+        let context = container.mainContext
+        let plan = try #require(try context.fetch(FetchDescriptor<WeeklyPlan>()).first)
+        #expect(plan.isCurrent)
+        #expect(plan.days.first?.meals.first?.name == "Poulet riz")
+        #expect(plan.pantry.first?.name == "Riz")
+        #expect(!plan.shoppingItems.isEmpty)
+        #expect(try context.fetch(FetchDescriptor<SavedRecipe>()).isEmpty)
+    }
+
+    /// Copie de la vraie base de l'iPhone (`tools/backup/backup.sh`) : `SHREDDISH_REAL_STORE=<dossier>`.
+    @Test(.enabled(if: ProcessInfo.processInfo.environment["SHREDDISH_REAL_STORE"] != nil))
+    func realBackupOpensWithCurrentSchema() throws {
+        let source = URL(fileURLWithPath: try #require(ProcessInfo.processInfo.environment["SHREDDISH_REAL_STORE"]))
+        let directory = FileManager.default.temporaryDirectory.appending(path: "shreddish-real-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        for name in try FileManager.default.contentsOfDirectory(atPath: source.path) {
+            try FileManager.default.copyItem(at: source.appending(path: name), to: directory.appending(path: name))
+        }
+        let container = try ShreddishStore.makeContainer(url: directory.appending(path: "default.store"))
+        let context = container.mainContext
+        let plans = try context.fetch(FetchDescriptor<WeeklyPlan>())
+        let meals = plans.flatMap(\.days).flatMap(\.meals)
+        print("REAL plans \(plans.count), repas \(meals.count), courses \(plans.flatMap(\.shoppingItems).count)")
+        let hasCurrent = plans.contains { $0.isCurrent }
+        #expect(hasCurrent)
+        #expect(meals.count >= 28)
+    }
+
     @Test func deletingPlanRemovesItsDays() throws {
         let (container, context, targets) = try PlanStoreTests.setup()
         _ = container

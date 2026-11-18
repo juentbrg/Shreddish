@@ -8,7 +8,7 @@ import SwiftData
 @Observable
 final class AppModel {
     enum Tab: Hashable {
-        case week, journal, shopping, weight, targets
+        case week, journal, shopping, recipes, targets
     }
 
     let clock: any AppClock

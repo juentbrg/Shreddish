@@ -42,7 +42,7 @@ struct PlanStoreTests {
         let (container, context, targets) = try Self.setup()
         _ = container
         let plan = try PlanStore.saveWeek(try Fixture.week(), startDay: Self.start, targets: targets, createdAt: .now, in: context)
-        let oats = try #require(plan.shoppingItems.first { $0.key.hasPrefix("flocon d'avoine") })
+        let oats = try #require(plan.shoppingItems.first { $0.key.hasPrefix("flocons avoine") })
         #expect(oats.totalQuantity == 560)
         oats.isChecked = true
 
@@ -51,7 +51,7 @@ struct PlanStoreTests {
         let replacement = try PlanStore.replaceMeal(lunch, with: meal(.lunch, name: "Pâtes thon"), in: context)
         #expect(replacement?.status == .planned)
         #expect(replacement?.order == 1)
-        #expect(plan.shoppingItems.first { $0.key.hasPrefix("flocon d'avoine") }?.isChecked == true)
+        #expect(plan.shoppingItems.first { $0.key.hasPrefix("flocons avoine") }?.isChecked == true)
         #expect(plan.sortedDays[2].meals.count == 4)
         #expect(plan.sortedDays[3].sortedMeals[1].name.hasPrefix("Poulet riz"))
     }
@@ -90,7 +90,7 @@ struct PlanStoreTests {
         #expect(PlanStore.focusPlan(PlanStore.activePlans(in: context), today: Self.start) === current)
         #expect(PlanStore.focusPlan(PlanStore.activePlans(in: context), today: sunday) === upcoming)
         // Courses de la semaine en cours : 4 jours seulement.
-        let oats = try #require(current.shoppingItems.first { $0.key.hasPrefix("flocon d'avoine") })
+        let oats = try #require(current.shoppingItems.first { $0.key.hasPrefix("flocons avoine") })
         #expect(oats.totalQuantity == 4 * 80)
     }
 

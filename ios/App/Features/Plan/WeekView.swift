@@ -30,7 +30,7 @@ struct WeekView: View {
                                 .padding(.horizontal, 20)
                                 .padding(.bottom, 8)
                         }
-                        WeekPlanList(plan: plan)
+                        WeekPlanList(plan: plan, planNext: canPlanAfter(plan) ? { showNewWeek = true } : nil)
                             .id(plan.id)
                     }
                     .paperBackground()
@@ -41,9 +41,9 @@ struct WeekView: View {
             .navigationTitle("Ma semaine")
             .toolbar { toolbar }
             .sheet(isPresented: $showNewWeek) {
-                NewWeekSheet(today: model.clock.today, activePlans: activePlans) { start in
+                NewWeekSheet(today: model.clock.today, activePlans: activePlans) { start, pantry, recipes in
                     showNewWeek = false
-                    generate(from: start)
+                    generate(from: start, pantry: pantry, recipes: recipes)
                 }
                 .presentationDetents([.medium, .large])
             }
@@ -99,21 +99,34 @@ struct WeekView: View {
         } actions: {
             if model.hasAPIKey {
                 Button("Planifier ma semaine") { showNewWeek = true }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(PillButtonStyle())
+                    .frame(maxWidth: 280)
                     .disabled(model.isBusy)
                     .accessibilityIdentifier("generateWeek")
             }
         }
     }
 
-    private func generate(from start: LocalDay) {
+    /// Bouton « Planifier la suite » : seulement sous le dernier planning actif, s'il n'est pas terminé.
+    private func canPlanAfter(_ plan: WeeklyPlan) -> Bool {
+        model.hasAPIKey && !model.isBusy && plan.id == activePlans.last?.id && plan.endDay >= model.clock.today
+    }
+
+    private func generate(from start: LocalDay, pantry: [IngredientDTO], recipes: [SavedRecipe]) {
         guard let profile = profiles.first, let preferences = allPreferences.first else { return }
         let generator = model.generator
         let context = context
         selectedPlanID = nil
         Task {
             await model.run("Préparation de ta semaine…", recipesIn: context) { () async throws(AIError) -> [ValidationIssue] in
-                try await generator.generateWeek(profile: profile, preferences: preferences, startDay: start, in: context)
+                let warnings = try await generator.generateWeek(
+                    profile: profile, preferences: preferences, startDay: start, pantry: pantry,
+                    recipes: recipes.map(\.dto), in: context
+                )
+                // Recettes replacées : plus en attente.
+                for recipe in recipes { recipe.isQueued = false }
+                try? context.save()
+                return warnings
             }
         }
     }
@@ -154,22 +167,46 @@ struct PlanSwitcher: View {
 struct NewWeekSheet: View {
     let today: LocalDay
     let activePlans: [WeeklyPlan]
-    let start: (LocalDay) -> Void
+    let start: (LocalDay, [IngredientDTO], [SavedRecipe]) -> Void
+    @Query(sort: \SavedRecipe.savedAt, order: .reverse) var savedRecipes: [SavedRecipe]
     @State private var startDay: LocalDay?
+    /// Recettes sauvegardées à replacer (spec 014) ; par défaut celles mises en attente.
+    @State private var pickedRecipes: Set<UUID>?
+    /// Questionnaire facultatif : ingrédients à écouler (spec 013).
+    @State private var hasPantry = false
+    @State private var pantry: [PantryRow] = []
 
-    private var chosen: LocalDay { startDay ?? today }
+    private var chosen: LocalDay { startDay ?? defaultStart }
 
-    /// Raccourcis : aujourd'hui, demain, prochain lundi, prochain dimanche, lendemain du dernier planning.
+    /// Lendemain du dernier planning en cours, pour ne pas archiver la semaine en cours par erreur.
+    private var followingDay: LocalDay? {
+        guard let next = activePlans.map(\.endDay).max()?.adding(days: 1), next > today,
+              next <= today.adding(days: 13) else { return nil }
+        return next
+    }
+
+    private var defaultStart: LocalDay { followingDay ?? today }
+
+    /// Le choix touche un planning en cours (archivé ou jours remplacés).
+    private var replacesActivePlan: Bool {
+        if chosen <= today { return !activePlans.isEmpty }
+        return activePlans.contains { $0.contains(chosen) || $0.startDay > chosen }
+    }
+
+    /// Paquets entamés du dernier planning.
+    private var suggestions: [IngredientDTO] {
+        activePlans.max { $0.startDay < $1.startDay }?.leftovers ?? []
+    }
+
+    /// Raccourcis : suite du planning en cours, aujourd'hui, demain, prochain lundi, prochain dimanche.
     private var shortcuts: [(String, LocalDay)] {
-        var items: [(String, LocalDay)] = [("Aujourd'hui", today), ("Demain", today.adding(days: 1))]
-        for (label, weekday) in [("Lundi prochain", 2), ("Dimanche prochain", 1)] {
-            let day = Format.next(weekday: weekday, after: today)
-            if !items.contains(where: { $0.1 == day }) { items.append((label, day)) }
-        }
-        if let last = activePlans.map(\.endDay).max()?.adding(days: 1), last > today,
-           last <= today.adding(days: 13), !items.contains(where: { $0.1 == last }) {
-            items.append(("Après le planning actuel", last))
-        }
+        var items: [(String, LocalDay)] = followingDay.map { [("Suite du planning", $0)] } ?? []
+        let others = [
+            ("Aujourd'hui", today), ("Demain", today.adding(days: 1)),
+            ("Lundi prochain", Format.next(weekday: 2, after: today)),
+            ("Dimanche prochain", Format.next(weekday: 1, after: today)),
+        ]
+        for (label, day) in others where !items.contains(where: { $0.1 == day }) { items.append((label, day)) }
         return items.sorted { $0.1 < $1.1 }
     }
 
@@ -221,8 +258,15 @@ struct NewWeekSheet: View {
                     .font(Theme.text(.body))
                     .card()
                     Text("Du \(Format.weekdayLong(chosen)) au \(Format.weekdayLong(chosen.adding(days: 6))). \(effect)")
-                        .font(Theme.text(.footnote))
-                        .foregroundStyle(Theme.muted)
+                        .font(Theme.text(.footnote, replacesActivePlan ? .semibold : .regular))
+                        .foregroundStyle(replacesActivePlan ? Theme.tomato : Theme.muted)
+                    PantryQuestion(hasPantry: $hasPantry, rows: $pantry, suggestions: suggestions)
+                    if !savedRecipes.isEmpty {
+                        RecipePicker(recipes: savedRecipes, picked: Binding(
+                            get: { pickedRecipes ?? Set(savedRecipes.filter(\.isQueued).map(\.id)) },
+                            set: { pickedRecipes = $0 }
+                        ))
+                    }
                 }
                 .padding(20)
             }
@@ -231,7 +275,10 @@ struct NewWeekSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Générer") { start(chosen) }
+                    Button("Générer") {
+                        let picked = pickedRecipes ?? Set(savedRecipes.filter(\.isQueued).map(\.id))
+                        start(chosen, hasPantry ? pantry.compactMap(\.ingredient) : [], savedRecipes.filter { picked.contains($0.id) })
+                    }
                         .accessibilityIdentifier("startGeneration")
                 }
             }
@@ -244,6 +291,8 @@ struct WeekPlanList: View {
     @Environment(AppModel.self) private var model
     @Query var allPreferences: [Preferences]
     let plan: WeeklyPlan
+    /// Planifier la semaine qui suit ce planning ; `nil` hors dernier planning actif.
+    var planNext: (() -> Void)?
     @State private var selectedOffset: Int?
 
     private var days: [DayPlan] { plan.sortedDays }
@@ -264,6 +313,18 @@ struct WeekPlanList: View {
                     DayContent(day: day)
                 }
                 weekCard
+                if let planNext {
+                    Button(action: planNext) {
+                        VStack(spacing: 1) {
+                            Label("Planifier la suite", systemImage: "calendar.badge.plus")
+                            Text("dès le \(Format.weekdayLong(plan.endDay.adding(days: 1)))")
+                                .font(Theme.text(.caption))
+                        }
+                        .padding(.vertical, 6)
+                    }
+                    .buttonStyle(PillButtonStyle())
+                    .accessibilityIdentifier("planNextWeek")
+                }
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 24)
@@ -279,7 +340,7 @@ struct WeekPlanList: View {
                     LabeledContent("Cible", value: Format.kcal(Double(targets.targetKcal)))
                 }
                 if let preferences = allPreferences.first {
-                    WeekCostRow(cost: days.reduce(0) { $0 + $1.plannedCostEUR }, preferences: preferences)
+                    WeekCostRow(summary: plan.shoppingSummary, preferences: preferences)
                 }
                 if !plan.prepSessions.isEmpty {
                     NavigationLink {
@@ -300,6 +361,8 @@ struct DayStrip: View {
     let days: [DayPlan]
     let selected: Int?
     let today: LocalDay
+    /// Préfixe des identifiants d'accessibilité (semaine ou journal).
+    var idPrefix = "day-"
     let select: (Int) -> Void
 
     var body: some View {
@@ -325,7 +388,7 @@ struct DayStrip: View {
                 .buttonStyle(.plain)
                 .accessibilityLabel(Format.weekdayLong(day.day) + (day.day == today ? ", aujourd'hui" : ""))
                 .accessibilityAddTraits(isSelected ? .isSelected : [])
-                .accessibilityIdentifier("day-\(day.offset)")
+                .accessibilityIdentifier("\(idPrefix)\(day.offset)")
             }
         }
     }
@@ -353,13 +416,27 @@ struct DayBadges: View {
 
 /// Coût estimé de la semaine face au budget et à la tolérance (spec 003, FR-207).
 struct WeekCostRow: View {
-    let cost: Double
+    let summary: ShoppingSummary
     let preferences: Preferences
+
+    /// Coût réel de la semaine (ticket moins les restes qui se gardent), comparé au budget (spec 013).
+    private var cost: Double { summary.weekCostEur }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            LabeledContent("Courses estimées", value: Format.euros(cost))
+            LabeledContent("Ticket estimé", value: Format.euros(summary.checkoutEur))
                 .accessibilityIdentifier("weekCost")
+            if summary.keptEur >= 0.5 {
+                LabeledContent("Coût de la semaine", value: Format.euros(cost))
+                Text("Ticket moins \(Format.euros(summary.keptEur)) de produits qui te resteront (riz, huile…)")
+                    .font(Theme.text(.caption))
+                    .foregroundStyle(Theme.muted)
+            }
+            if summary.wastedEur >= 0.5 {
+                Text("Dont \(Format.euros(summary.wastedEur)) de restes à finir vite (paquets entamés)")
+                    .font(Theme.text(.caption))
+                    .foregroundStyle(Theme.tomato)
+            }
             let budget = Format.euros(preferences.weeklyBudget)
             ProgressView(value: min(cost, preferences.budgetCeiling), total: max(preferences.budgetCeiling, 1))
                 .tint(cost > preferences.weeklyBudget + 0.005 ? Theme.tomato : Theme.green)
@@ -372,6 +449,119 @@ struct WeekCostRow: View {
                     text: beyond ? "Au-dessus de la tolérance" : "Au-dessus du budget, dans la tolérance",
                     systemImage: "eurosign.circle.fill"
                 )
+            }
+        }
+    }
+}
+
+/// Ingrédient à écouler saisi avant la génération.
+struct PantryRow: Identifiable, Equatable {
+    let id = UUID()
+    var name = ""
+    var quantity = ""
+    var unit: MeasureUnit = .g
+    /// Code Ciqual d'un reste proposé par l'application.
+    var foodCode: Int?
+    var pieceG: Double?
+
+    init(name: String = "", quantity: String = "", unit: MeasureUnit = .g, foodCode: Int? = nil, pieceG: Double? = nil) {
+        self.name = name
+        self.quantity = quantity
+        self.unit = unit
+        self.foodCode = foodCode
+        self.pieceG = pieceG
+    }
+
+    init(_ ingredient: IngredientDTO) {
+        self.init(
+            name: ingredient.name, quantity: Format.number(ingredient.quantity, digits: 0),
+            unit: ingredient.measureUnit ?? .g, foodCode: ingredient.foodCode, pieceG: ingredient.pieceG
+        )
+    }
+
+    var ingredient: IngredientDTO? {
+        let name = name.trimmingCharacters(in: .whitespaces)
+        let value = Double(quantity.replacingOccurrences(of: ",", with: ".").trimmingCharacters(in: .whitespaces))
+        guard !name.isEmpty, let value, value > 0 else { return nil }
+        return IngredientDTO(
+            name: name, quantity: value, unit: unit.rawValue, aisle: .autre, costEur: 0, pieceG: pieceG, foodCode: foodCode
+        )
+    }
+}
+
+/// « As-tu des ingrédients à écouler ? » : facultatif ; oui, liste éditable avec les restes de la semaine passée.
+struct PantryQuestion: View {
+    @Binding var hasPantry: Bool
+    @Binding var rows: [PantryRow]
+    let suggestions: [IngredientDTO]
+
+    private var remainingSuggestions: [IngredientDTO] {
+        suggestions.filter { suggestion in !rows.contains { $0.name == suggestion.name } }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            SectionTitle(title: "Des ingrédients à écouler ?")
+            Picker("Des ingrédients à écouler ?", selection: $hasPantry) {
+                Text("Non").tag(false)
+                Text("Oui").tag(true)
+            }
+            .pickerStyle(.segmented)
+            .accessibilityIdentifier("hasPantry")
+            if hasPantry {
+                Text("Restes, conserves, féculents… L'IA s'en sert en priorité et ils sont déduits des courses.")
+                    .font(Theme.text(.footnote))
+                    .foregroundStyle(Theme.muted)
+                if !remainingSuggestions.isEmpty {
+                    Text("Restes de ta dernière liste")
+                        .font(Theme.text(.subheadline, .semibold))
+                    suggestionButtons
+                }
+                ForEach($rows) { $row in
+                    HStack(spacing: 8) {
+                        TextField("Ingrédient", text: $row.name)
+                            .textInputAutocapitalization(.sentences)
+                            .accessibilityIdentifier("pantryName")
+                        TextField("Qté", text: $row.quantity)
+                            .keyboardType(.decimalPad)
+                            .multilineTextAlignment(.trailing)
+                            .frame(width: 64)
+                            .accessibilityIdentifier("pantryQuantity")
+                        Picker("Unité", selection: $row.unit) {
+                            Text("g").tag(MeasureUnit.g)
+                            Text("ml").tag(MeasureUnit.ml)
+                            Text("pièce").tag(MeasureUnit.piece)
+                        }
+                        .labelsHidden()
+                        .fixedSize()
+                        Button("Retirer", systemImage: "xmark.circle.fill") { rows.removeAll { $0.id == row.id } }
+                            .labelStyle(.iconOnly)
+                            .foregroundStyle(Theme.muted)
+                    }
+                    .font(Theme.text(.body))
+                    .card()
+                }
+                Button("Ajouter un ingrédient", systemImage: "plus") { rows.append(PantryRow()) }
+                    .font(Theme.text(.subheadline, .semibold))
+                    .accessibilityIdentifier("addPantry")
+            }
+        }
+        .onChange(of: hasPantry) { _, isOn in
+            if isOn, rows.isEmpty { rows = suggestions.isEmpty ? [PantryRow()] : suggestions.map(PantryRow.init) }
+        }
+    }
+
+    private var suggestionButtons: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(remainingSuggestions, id: \.name) { suggestion in
+                    Button("+ \(suggestion.name)") { rows.append(PantryRow(suggestion)) }
+                        .font(Theme.text(.subheadline))
+                        .padding(.horizontal, 12)
+                        .frame(minHeight: 36)
+                        .background(Theme.card, in: Capsule())
+                        .buttonStyle(.plain)
+                }
             }
         }
     }

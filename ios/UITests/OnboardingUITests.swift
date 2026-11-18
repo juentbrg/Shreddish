@@ -181,6 +181,90 @@ final class OnboardingUITests: XCTestCase {
         XCTAssertTrue(app.buttons.containing(NSPredicate(format: "label BEGINSWITH 'En cours'")).firstMatch.exists)
     }
 
+    /// La semaine suivante se planifie depuis le bouton sous le planning, sans toucher à la semaine en cours.
+    func testPlanNextWeekFromButton() {
+        let app = launch()
+        onboard(app)
+        app.tabBars.buttons["Semaine"].tap()
+        app.buttons["generateWeek"].tap()
+        app.buttons["startGeneration"].tap()
+        XCTAssertTrue(app.buttons["day-0"].waitForExistence(timeout: 10))
+        let next = app.buttons["planNextWeek"]
+        for _ in 0..<5 where !next.isHittable { app.swipeUp() }
+        // Pas de débordement horizontal de la semaine.
+        XCTAssertLessThanOrEqual(next.frame.maxX, app.windows.firstMatch.frame.maxX)
+        next.tap()
+        let following = app.buttons.containing(NSPredicate(format: "label BEGINSWITH 'Suite du planning'")).firstMatch
+        XCTAssertTrue(following.waitForExistence(timeout: 3))
+        XCTAssertTrue(following.isSelected)
+        app.buttons["startGeneration"].tap()
+        let upcoming = app.buttons.containing(NSPredicate(format: "label BEGINSWITH 'À venir'")).firstMatch
+        XCTAssertTrue(upcoming.waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons.containing(NSPredicate(format: "label BEGINSWITH 'En cours'")).firstMatch.exists)
+        XCTAssertFalse(app.buttons["planNextWeek"].exists)
+    }
+
+    /// Spec 014 : un repas sauvegardé se retrouve dans Recettes et se replace dans la semaine suivante.
+    func testSaveRecipeAndPlanItNextWeek() {
+        let app = launch()
+        onboard(app)
+        app.tabBars.buttons["Semaine"].tap()
+        app.buttons["generateWeek"].tap()
+        app.buttons["startGeneration"].tap()
+        let day = app.buttons["day-0"]
+        XCTAssertTrue(day.waitForExistence(timeout: 10))
+        day.tap()
+        let meal = app.buttons.containing(NSPredicate(format: "label CONTAINS 'Porridge'")).firstMatch
+        XCTAssertTrue(meal.waitForExistence(timeout: 5))
+        meal.tap()
+        XCTAssertTrue(app.descendants(matching: .any)["currentStep"].waitForExistence(timeout: 15))
+        let save = app.buttons["saveRecipe"]
+        XCTAssertTrue(save.waitForExistence(timeout: 3))
+        save.tap()
+        XCTAssertTrue(app.buttons["Retirer des recettes"].waitForExistence(timeout: 3))
+
+        app.tabBars.buttons["Recettes"].tap()
+        let saved = app.buttons["savedRecipe"].firstMatch
+        XCTAssertTrue(saved.waitForExistence(timeout: 3))
+        saved.tap()
+        let queue = app.switches["queueRecipe"]
+        XCTAssertTrue(queue.waitForExistence(timeout: 3))
+        queue.switches.firstMatch.tap()
+        XCTAssertEqual(queue.value as? String, "1")
+
+        app.tabBars.buttons["Semaine"].tap()
+        // Retour du détail du repas à la semaine.
+        app.navigationBars.buttons.firstMatch.tap()
+        let next = app.buttons["planNextWeek"]
+        XCTAssertTrue(next.waitForExistence(timeout: 3))
+        for _ in 0..<5 where !next.isHittable { app.swipeUp() }
+        next.tap()
+        let pick = app.buttons["pickRecipe"].firstMatch
+        for _ in 0..<5 where !(pick.exists && pick.isHittable) { app.swipeUp() }
+        XCTAssertTrue(pick.isSelected)
+        app.buttons["startGeneration"].tap()
+        XCTAssertTrue(app.buttons.containing(NSPredicate(format: "label BEGINSWITH 'À venir'")).firstMatch.waitForExistence(timeout: 10))
+    }
+
+    /// Pesée depuis le profil, courbe et historique un écran plus loin.
+    func testWeighInFromProfile() {
+        let app = launch()
+        onboard(app)
+        app.tabBars.buttons["Profil"].tap()
+        XCTAssertTrue(app.staticTexts["targetKcal"].waitForExistence(timeout: 5))
+        app.buttons["Modifier mon profil"].firstMatch.tap()
+        let input = app.textFields["weightInput"]
+        XCTAssertTrue(input.waitForExistence(timeout: 5))
+        input.tap()
+        input.typeText("79,5")
+        app.buttons["saveWeight"].tap()
+        XCTAssertTrue(app.buttons["recalcTargets"].waitForExistence(timeout: 3))
+        app.buttons["Plus tard"].tap()
+        app.buttons["weightHistory"].tap()
+        let entry = app.descendants(matching: .any).containing(NSPredicate(format: "label CONTAINS '79,5 kg'")).firstMatch
+        XCTAssertTrue(entry.waitForExistence(timeout: 3))
+    }
+
     /// Spec 004 : le planning courant se supprime depuis le menu, après confirmation.
     func testDeleteCurrentPlan() {
         let app = launch()

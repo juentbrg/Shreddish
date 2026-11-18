@@ -1,12 +1,13 @@
 """Construit prices.json (prix médians France, Open Prices) pour Shreddish, spec 011.
 
 Usage : python build_prices.py prices.parquet ciqual.json foods.json sortie.json
+Entrée de foods.json avec "price" : prix de repli (€/kg) si moins de 8 relevés.
 Dépendance : duckdb (pip install duckdb). Source : Open Prices (Open Food Facts), licence ODbL.
 
 Prix au kg acheté (au litre pour les liquides) et part comestible ; aliment cuit : prix ramené au poids cuit.
 Chaque aliment Ciqual est rattaché à son produit acheté (libellé, unité d'achat, rayon) pour la liste de courses.
-Prix par aliment : quartile bas des 12 derniers mois (prix promo exclus) dès 8 relevés ; en dessous,
-fenêtre de 24 mois et moyenne des médianes par enseigne.
+Prix par aliment : médiane des 12 derniers mois (prix promo exclus) dès 8 relevés ; en dessous,
+fenêtre de 24 mois et moyenne des médianes par enseigne (spec 013 : le quartile bas sous-estimait le ticket).
 """
 import datetime
 import json
@@ -70,11 +71,11 @@ def trimmed(values):
 
 
 def estimate(rows, key):
-    """(prix, méthode, nombre) : quartile bas sur 12 mois, sinon moyenne des médianes par enseigne sur 24 mois."""
+    """(prix, méthode, nombre) : médiane sur 12 mois, sinon moyenne des médianes par enseigne sur 24 mois."""
     cutoff = datetime.date.today() - datetime.timedelta(days=365)
     recent = trimmed([r[key] for r in rows if r[key] and r["date"] >= cutoff])
     if len(recent) >= MIN_COUNT:
-        return statistics.quantiles(recent, n=4)[0], "q1", len(recent)
+        return statistics.median(recent), "médiane", len(recent)
     by_brand = {}
     for r in rows:
         if r[key]:
@@ -86,6 +87,13 @@ def estimate(rows, key):
     return statistics.mean(medians), f"enseignes:{len(by_brand)}", count
 
 
+def product_price(entry, per_kg):
+    """Prix dans l'unité d'achat du produit : € par kg (ou L), ou € par pièce."""
+    if not per_kg:
+        return None
+    return round(per_kg * entry["piece"] / 1000, 3) if entry.get("piece") else round(per_kg, 2)
+
+
 def main(parquet, ciqual_path, foods_path, out_path):
     rows = load_rows(parquet)
     entries = json.load(open(foods_path, encoding="utf-8"))
@@ -95,6 +103,9 @@ def main(parquet, ciqual_path, foods_path, out_path):
     for entry in entries:
         selected = [r for r in rows if matches(entry, r)]
         per_kg, method, count = estimate(selected, "per_kg")
+        # Relevés trop rares (filet mignon : surtout des plats préparés) : prix de repli de foods.json.
+        if entry.get("price") and count < MIN_COUNT:
+            per_kg, method = entry["price"], "repli"
         per_unit, _, unit_count = estimate(selected, "per_unit")
         piece = entry.get("piece")
         if per_kg is None and per_unit and piece:
@@ -131,11 +142,13 @@ def main(parquet, ciqual_path, foods_path, out_path):
         groups[group] = [round(values[int(len(values) * 0.1)], 2), round(values[int(len(values) * 0.9)], 2)]
 
     out = {
-        "source": "Open Prices (Open Food Facts), ODbL — prix France (quartile bas) relevés au " + datetime.date.today().isoformat(),
+        "source": "Open Prices (Open Food Facts), ODbL — prix France (médiane) relevés au " + datetime.date.today().isoformat(),
         "columns": ["eur_per_kg", "edible_yield", "product"],
         "foods": foods, "groups": groups,
-        # Produit acheté en magasin (liste de courses) : libellé, unité d'achat (g, ml, piece), poids d'une pièce, rayon.
-        "products": {e["id"]: [e["label"], "piece" if e.get("piece") else e.get("unit", "g"), e.get("piece", 0), e["aisle"]]
+        # Produit acheté en magasin (liste de courses) : libellé, unité d'achat (g, ml, piece), poids d'une pièce, rayon,
+        # Prix : € par kg (par L) acheté, ou par pièce ; paquets en g, ml ou pièces ; périssable une fois ouvert.
+        "products": {e["id"]: [e["label"], "piece" if e.get("piece") else e.get("unit", "g"), e.get("piece", 0), e["aisle"],
+                               product_price(e, priced[e["id"]][0]), e.get("packs", []), 1 if e.get("perishable") else 0]
                      for e in entries},
     }
     with open(out_path, "w", encoding="utf-8") as handle:

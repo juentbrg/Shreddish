@@ -32,6 +32,10 @@ final class PlanGenerator {
         let resolver: NutritionResolver
         /// Huile ajoutée si les lipides manquent ; `nil` si exclue (allergie ou aliment non aimé).
         let oil: IngredientDTO?
+        /// Ingrédients à écouler (spec 013), rapprochés de Ciqual.
+        var pantry: [IngredientDTO] = []
+        /// Recettes sauvegardées à replacer (spec 014).
+        var recipes: [MealDTO] = []
     }
 
     private func context(profile: Profile, preferences: Preferences) throws(AIError) -> Context {
@@ -55,10 +59,13 @@ final class PlanGenerator {
     /// semaine au-dessus du budget dans la tolérance).
     @discardableResult
     func generateWeek(
-        profile: Profile, preferences: Preferences, startDay: LocalDay? = nil, in store: ModelContext
+        profile: Profile, preferences: Preferences, startDay: LocalDay? = nil, pantry: [IngredientDTO] = [],
+        recipes: [MealDTO] = [], in store: ModelContext
     ) async throws(AIError) -> [ValidationIssue] {
         let startDay = max(startDay ?? clock.today, clock.today)
-        let ctx = try context(profile: profile, preferences: preferences)
+        var ctx = try context(profile: profile, preferences: preferences)
+        ctx.pantry = Self.resolvedPantry(pantry, resolver: ctx.resolver)
+        ctx.recipes = recipes
         let week: ValidationResult<WeekPlanDTO>
         do {
             week = try await requestWeek(ctx)
@@ -69,11 +76,12 @@ final class PlanGenerator {
         }
         guard let sanitized = week.sanitized else { throw .invalidOutput("Semaine invalide") }
         let finished = await finish(sanitized.days, ctx: ctx)
-        let days = await retryOffTargetDays(finished.days, ctx: ctx)
+        let days = SavedRecipeMatcher.restoreSteps(await retryOffTargetDays(finished.days, ctx: ctx), recipes: ctx.recipes)
         let plan = WeekPlanDTO(prepSessions: sanitized.prepSessions, days: days)
         do {
             try PlanStore.saveWeek(
-                plan, startDay: startDay, targets: ctx.targets, createdAt: clock.now, today: clock.today, in: store
+                plan, startDay: startDay, targets: ctx.targets, createdAt: clock.now, today: clock.today,
+                pantry: ctx.pantry, in: store
             )
         } catch {
             throw .unexpected("Enregistrement impossible")
@@ -87,7 +95,8 @@ final class PlanGenerator {
             var preferences = ctx.preferences
             preferences.weeklyBudgetEur *= budgetScale
             let input = PromptBuilder.weekInput(
-                targets: ctx.targets.macros, goal: ctx.goal, preferences: preferences, feedback: feedback
+                targets: ctx.targets.macros, goal: ctx.goal, preferences: preferences, feedback: feedback,
+                pantry: ctx.pantry, recipes: ctx.recipes
             )
             let data = try await client.generate(
                 kind: .week, instructions: PromptBuilder.systemInstructions(), input: input,
@@ -107,7 +116,12 @@ final class PlanGenerator {
         do {
             try await withThrowingTaskGroup(of: ValidationResult<DayPlanDTO>.self) { group in
                 for offset in 0...6 {
-                    group.addTask { try await self.requestDay(ctx, offset: offset, avoid: [], costLimit: dayLimit) }
+                    group.addTask {
+                        try await self.requestDay(
+                            ctx, offset: offset, avoid: [], costLimit: dayLimit,
+                            recipes: SavedRecipeMatcher.recipes(ctx.recipes, forDay: offset)
+                        )
+                    }
                 }
                 for try await result in group {
                     if let day = result.sanitized { days.append(day) }
@@ -127,11 +141,24 @@ final class PlanGenerator {
         return result
     }
 
+    /// Ingrédients à écouler avec leur code Ciqual, pour les déduire des courses par produit.
+    static func resolvedPantry(_ pantry: [IngredientDTO], resolver: NutritionResolver) -> [IngredientDTO] {
+        let items = pantry.filter { !$0.name.trimmingCharacters(in: .whitespaces).isEmpty && $0.quantity > 0 }
+        // Restes proposés par l'application : code déjà connu ; saisies libres rapprochées de Ciqual.
+        let typed = items.filter { $0.foodCode == nil }
+        guard !typed.isEmpty else { return items }
+        let meal = MealDTO(
+            type: .lunch, name: "Stock", ingredients: typed, steps: [], prepMinutes: 0, costEur: 0,
+            kcal: 0, proteinG: 0, carbsG: 0, fatG: 0, prepSessionRef: nil, time: nil
+        )
+        return items.filter { $0.foodCode != nil } + resolver.resolve(meal).meal.ingredients
+    }
+
     // MARK: Jour et repas
 
     func requestDay(
         _ ctx: Context, offset: Int, avoid: [String], prepSessions: Set<Int> = [], costLimit: Double,
-        correction: String? = nil
+        correction: String? = nil, recipes: [MealDTO] = []
     ) async throws(AIError) -> ValidationResult<DayPlanDTO> {
         var dayConstraints = ctx.constraints
         dayConstraints.costLimitEur = costLimit
@@ -143,7 +170,8 @@ final class PlanGenerator {
             let input = PromptBuilder.dayInput(
                 targets: ctx.targets.macros, goal: ctx.goal, preferences: preferences, dayOffset: offset,
                 avoidMealNames: avoid, costLimitEur: costLimit * budgetScale,
-                feedback: [correction, feedback].compactMap(\.self).joined(separator: " ").nilIfEmpty
+                feedback: [correction, feedback].compactMap(\.self).joined(separator: " ").nilIfEmpty,
+                pantry: ctx.pantry, recipes: recipes
             )
             let data = try await client.generate(
                 kind: .day, instructions: PromptBuilder.systemInstructions(), input: input,
@@ -168,7 +196,7 @@ final class PlanGenerator {
         ctx = Context(
             apiKey: ctx.apiKey, targets: plan.targets ?? ctx.targets, goal: ctx.goal, preferences: ctx.preferences,
             constraints: preferences.constraints(targets: (plan.targets ?? ctx.targets).macros), model: ctx.model,
-            resolver: ctx.resolver, oil: ctx.oil
+            resolver: ctx.resolver, oil: ctx.oil, pantry: plan.pantry
         )
         let avoid = plan.days.flatMap(\.meals).map(\.name)
         let otherDaysCost = plan.days.filter { $0.persistentModelID != day.persistentModelID }.reduce(0) { $0 + $1.plannedCostEUR }

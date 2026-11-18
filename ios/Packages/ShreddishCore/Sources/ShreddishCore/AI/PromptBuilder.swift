@@ -114,7 +114,58 @@ public enum PromptBuilder {
         var previousAttemptFeedback: String?
         /// Prix de référence en France (spec 011), pour estimer le budget comme l'application.
         var referencePricesEurPerKg: String? = PromptBuilder.referencePrices
+        /// Formats vendus des produits qui se perdent une fois ouverts (spec 013).
+        var packSizes: String? = PromptBuilder.packSizes
+        /// Ingrédients déjà chez l'utilisateur, à écouler en priorité (spec 013).
+        var ingredientsToUse: [PantryItem]?
+        /// Recettes sauvegardées à replacer (spec 014).
+        var recipesToInclude: [RecipeItem]?
     }
+
+    /// Recette sauvegardée envoyée à l'IA : nom, type et ingrédients, sans étapes.
+    struct RecipeItem: Encodable {
+        var type: MealType
+        var name: String
+        var ingredients: [PantryItem]
+    }
+
+    static func recipesPayload(_ recipes: [MealDTO]) -> [RecipeItem]? {
+        recipes.isEmpty ? nil : recipes.map { RecipeItem(type: $0.type, name: $0.name, ingredients: $0.ingredients.map(PantryItem.init)) }
+    }
+
+    /// Ingrédient à écouler envoyé à l'IA.
+    struct PantryItem: Encodable {
+        var name: String
+        var quantity: Double
+        var unit: String
+
+        init(_ ingredient: IngredientDTO) {
+            name = ingredient.name
+            quantity = ingredient.quantity
+            unit = ingredient.unit
+        }
+    }
+
+    static func pantryPayload(_ pantry: [IngredientDTO]) -> [PantryItem]? {
+        pantry.isEmpty ? nil : pantry.map(PantryItem.init)
+    }
+
+    /// Produits frais et conserves vendus en paquets : « Pois chiches en conserve 400 g / 800 g ; … ».
+    static let packSizes: String? = {
+        let products = PriceCatalog.shared.allProducts.filter { $0.perishable && !$0.packs.isEmpty }
+            .sorted { $0.label.localizedStandardCompare($1.label) == .orderedAscending }
+        func size(_ value: Double, _ unit: MeasureUnit) -> String {
+            switch unit {
+            case .piece: "\(Int(value))"
+            case .g: value >= 1000 ? "\(String(format: "%g", value / 1000)) kg" : "\(Int(value)) g"
+            case .ml: value >= 1000 ? "\(String(format: "%g", value / 1000)) L" : "\(Int(value)) ml"
+            }
+        }
+        let items = products.map { product in
+            "\(product.label) " + product.packs.map { size($0, product.unit) }.joined(separator: " / ")
+        }
+        return items.isEmpty ? nil : items.joined(separator: " ; ")
+    }()
 
     /// Aliments de base et leur prix au kg mangé (table de prix), envoyés avec les tâches de planification.
     static let referenceFoods: [(label: String, code: Int)] = [
@@ -136,22 +187,23 @@ public enum PromptBuilder {
     }()
 
     public static func weekInput(
-        targets: MacroTotals, goal: Goal, preferences: PromptPreferences, feedback: String? = nil
+        targets: MacroTotals, goal: Goal, preferences: PromptPreferences, feedback: String? = nil,
+        pantry: [IngredientDTO] = [], recipes: [MealDTO] = []
     ) -> String {
         encode(Input(
             task: "week", targets: TargetsPayload(targets), goal: goal, preferences: preferences,
-            previousAttemptFeedback: feedback
+            previousAttemptFeedback: feedback, ingredientsToUse: pantryPayload(pantry), recipesToInclude: recipesPayload(recipes)
         ))
     }
 
     public static func dayInput(
         targets: MacroTotals, goal: Goal, preferences: PromptPreferences, dayOffset: Int, avoidMealNames: [String],
-        costLimitEur: Double, feedback: String? = nil
+        costLimitEur: Double, feedback: String? = nil, pantry: [IngredientDTO] = [], recipes: [MealDTO] = []
     ) -> String {
         encode(Input(
             task: "day", targets: TargetsPayload(targets), goal: goal, preferences: preferences,
             dayOffset: dayOffset, avoidMealNames: avoidMealNames, costLimitEur: BudgetMath.cents(costLimitEur),
-            previousAttemptFeedback: feedback
+            previousAttemptFeedback: feedback, ingredientsToUse: pantryPayload(pantry), recipesToInclude: recipesPayload(recipes)
         ))
     }
 
@@ -248,6 +300,16 @@ public enum PromptBuilder {
         le prix au kg mangé des aliments courants : base-toi dessus pour le budget. Pour chaque ingrédient, \
         unit_price_eur en € par kg (unit "g"), par litre (unit "ml") ou par pièce (unit "piece"). \
         cost_eur = quantity × unit_price_eur (÷ 1000 pour g et ml). L'application recalcule les prix.
+        - pack_sizes : formats vendus des produits frais et conserves, qui se gardent 3 jours une fois \
+        ouverts (poids acheté ; conserve de légumineuses ≈ 60 % égoutté). Utilise chaque paquet entier : \
+        répartis-le sur des repas proches (même plat en 2 fois, ou 2 recettes en 3 jours) plutôt que d'en \
+        laisser (ex. boîte de 400 g de pois chiches = 240 g égouttés sur 2 repas).
+        - ingredients_to_use : ingrédients déjà chez l'utilisateur (quantités disponibles au plus), à utiliser \
+        en priorité cette semaine, les plus périssables dans les premiers jours. L'application les déduit des \
+        courses.
+        - recipes_to_include : recettes que l'utilisateur veut revoir. Place chacune une fois sur la période \
+        demandée, à son type de repas, avec le même nom et les mêmes ingrédients ; ajuste seulement les \
+        quantités si les cibles l'exigent.
         - ingredient_availability : "everywhere" = uniquement des ingrédients basiques trouvables dans tout \
         supermarché et en hard discount (Lidl, Aldi), aucun produit de niche (tempeh, seitan, spiruline, levure \
         maltée, sirop d'agave, farines spéciales, superaliments) ; "supermarket" = rayon d'un grand \

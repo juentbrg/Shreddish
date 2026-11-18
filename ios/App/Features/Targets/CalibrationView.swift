@@ -21,8 +21,8 @@ struct CalibrationView: View {
                             + "dans le journal) à l'évolution de ton poids : 1 kg ≈ 7 700 kcal. La dépense réelle "
                             + "en découle. Chaque semaine, la cible avance de la moitié de l'écart, 150 kcal au plus."
                     )
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+                    .font(Theme.text(.footnote))
+                    .foregroundStyle(Theme.muted)
                 }
             }
         }
@@ -34,7 +34,7 @@ struct CalibrationView: View {
     private func statusSection(_ outcome: CalibrationOutcome?, profile: Profile) -> some View {
         switch outcome {
         case let .estimate(estimate):
-            Section("Estimation") {
+            ThemedSection("Estimation") {
                 LabeledContent("Dépense réelle", value: Format.kcal(estimate.observedTdee))
                     .accessibilityIdentifier("observedTdee")
                 if let formula = CalibrationService.formulaTdee(profile: profile, clock: model.clock) {
@@ -55,17 +55,21 @@ struct CalibrationView: View {
                     "Jours couverts par les pesées", value: weightSpanDays, total: EnergyCalibration.requiredWeightSpanDays
                 )
             } header: {
-                Text("Pas encore assez de données")
+                ListHeader {
+                    Text("Pas encore assez de données")
+                }
             } footer: {
-                Text("Coche tous tes repas et pèse-toi 2 fois par semaine.")
+                ListFooter {
+                    Text("Coche tous tes repas et pèse-toi 2 fois par semaine.")
+                }
             }
         case let .implausible(observed):
-            Section("Estimation écartée") {
+            ThemedSection("Estimation écartée") {
                 Label(
                     "Dépense de \(Format.kcal(observed)), trop loin de la formule : extras oubliés ?",
                     systemImage: "exclamationmark.triangle.fill"
                 )
-                .foregroundStyle(.orange)
+                .foregroundStyle(Theme.tomato)
             }
         case nil:
             Section { Text("Profil incomplet.") }
@@ -101,7 +105,9 @@ struct CalibrationView: View {
                 }
             }
         } header: {
-            Text("Réglages")
+            ListHeader {
+                Text("Réglages")
+            }
         }
     }
 
@@ -110,7 +116,7 @@ struct CalibrationView: View {
             HStack {
                 Text(title)
                 Spacer()
-                Text("\(min(value, total)) / \(total)").monospacedDigit().foregroundStyle(.secondary)
+                Text("\(min(value, total)) / \(total)").monospacedDigit().foregroundStyle(Theme.muted)
             }
             ProgressView(value: Double(min(value, total)), total: Double(total))
         }

@@ -14,6 +14,9 @@ public final class WeeklyPlan {
     public var prepSessionsData: Data
     /// Un seul planning courant ; les autres restent consultables.
     public var isCurrent: Bool
+    /// `[IngredientDTO]` encodés : ingrédients à écouler déclarés avant la génération (spec 013, SchemaV7),
+    /// déduits de la liste de courses.
+    public var pantryData: Data?
     @Relationship(deleteRule: .cascade, inverse: \DayPlan.plan) public var days: [DayPlan] = []
     @Relationship(deleteRule: .cascade, inverse: \ShoppingItem.plan) public var shoppingItems: [ShoppingItem] = []
 
@@ -39,6 +42,21 @@ public final class WeeklyPlan {
     public var prepSessions: [PrepSessionDTO] {
         get { (try? JSONDecoder().decode([PrepSessionDTO].self, from: prepSessionsData)) ?? [] }
         set { prepSessionsData = (try? JSONEncoder().encode(newValue)) ?? Data() }
+    }
+
+    public var pantry: [IngredientDTO] {
+        get { pantryData.flatMap { try? JSONDecoder().decode([IngredientDTO].self, from: $0) } ?? [] }
+        set { pantryData = newValue.isEmpty ? nil : try? JSONEncoder().encode(newValue) }
+    }
+
+    /// Ticket estimé de la liste de courses (spec 013).
+    public var shoppingSummary: ShoppingSummary {
+        ShoppingListBuilder.summary(shoppingItems.map(\.line))
+    }
+
+    /// Paquets entamés de la liste, à proposer comme ingrédients à écouler (spec 013).
+    public var leftovers: [IngredientDTO] {
+        ShoppingListBuilder.leftovers(shoppingItems.map(\.line))
     }
 
     public var sortedDays: [DayPlan] { days.sorted { $0.offset < $1.offset } }
@@ -211,6 +229,13 @@ public final class ShoppingItem {
 
     public var unit: MeasureUnit { MeasureUnit(rawValue: unitRaw) ?? .g }
     public var aisle: Aisle { Aisle(rawValue: aisleRaw) ?? .autre }
+
+    public var line: ShoppingLine {
+        ShoppingLine(key: key, name: name, totalQuantity: totalQuantity, unit: unit, aisle: aisle, costEur: costEUR)
+    }
+
+    /// Paquets à acheter et reste (spec 013).
+    public var packing: Packing { ShoppingListBuilder.packing(key: key, quantity: totalQuantity, unit: unit) }
 
     /// Nom sans tirets et rayon corrigé d'après le nom (spec 008), pour les listes déjà enregistrées.
     func cleanUp(with clean: (String) -> String) {

@@ -40,20 +40,20 @@ struct ShoppingListView: View {
         let aisles = grouped.keys.sorted { $0.sortIndex < $1.sortIndex }
         let visible = aisleFilter.map { [$0] } ?? aisles
         let checked = items.filter(\.isChecked).count
-        let cost = items.reduce(0) { $0 + $1.costEUR }
+        let summary = plan.shoppingSummary
         return ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 if activePlans.count > 1 {
                     PlanSwitcher(plans: activePlans, selected: plan, today: model.clock.today) { selectedPlanID = $0 }
                 }
-                Text("Prix moyens en France")
+                Text("Prix médians en France, paquets entiers")
                     .font(Theme.text(.subheadline))
                     .foregroundStyle(Theme.muted)
                 VStack(alignment: .leading, spacing: 12) {
                     if let preferences = allPreferences.first {
-                        WeekCostRow(cost: cost, preferences: preferences)
+                        WeekCostRow(summary: summary, preferences: preferences)
                     } else {
-                        LabeledContent("Courses estimées", value: Format.euros(cost))
+                        LabeledContent("Ticket estimé", value: Format.euros(summary.checkoutEur))
                     }
                     Divider().overlay(Theme.line)
                     LabeledContent("Dans le panier", value: "\(checked) / \(items.count)")
@@ -153,17 +153,36 @@ struct ShoppingRow: View {
                 Image(systemName: item.isChecked ? "checkmark.circle.fill" : "circle")
                     .font(.title3)
                     .foregroundStyle(item.isChecked ? Theme.green : Theme.muted)
-                Text(item.name)
-                    .font(Theme.text(.body))
-                    .strikethrough(item.isChecked)
-                    .foregroundStyle(item.isChecked ? Theme.muted : Theme.ink)
-                Spacer()
-                Text("\(Format.quantity(item.totalQuantity, unit: item.unit)) · \(Format.euros(item.costEUR))")
-                    .font(Theme.text(.footnote))
-                    .monospacedDigit()
-                    .foregroundStyle(Theme.muted)
+                let packing = item.packing
+                VStack(alignment: .leading, spacing: 2) {
+                    // Ligne 1 : produit et prix ; ligne 2 : paquets et reste, sur toute la largeur.
+                    HStack(alignment: .firstTextBaseline) {
+                        Text(item.name)
+                            .font(Theme.text(.subheadline, .semibold))
+                            .strikethrough(item.isChecked)
+                            .foregroundStyle(item.isChecked ? Theme.muted : Theme.ink)
+                        Spacer(minLength: 8)
+                        Text(item.totalQuantity > 0 ? Format.euros(item.costEUR) : "Déjà chez toi")
+                            .font(Theme.text(.subheadline, .semibold))
+                            .monospacedDigit()
+                            .foregroundStyle(item.isChecked ? Theme.muted : Theme.ink)
+                    }
+                    if item.totalQuantity > 0 {
+                        Text(Format.packing(packing, quantity: item.totalQuantity, unit: item.unit))
+                            .font(Theme.text(.caption))
+                            .monospacedDigit()
+                            .foregroundStyle(Theme.muted)
+                    }
+                    if packing.leftover >= (item.unit == .piece ? 1 : 10) {
+                        let rest = Format.quantity(packing.leftover, unit: item.unit)
+                        Text(packing.perishable ? "Reste \(rest), à finir sous 3 jours" : "Reste \(rest) pour la suite")
+                            .font(Theme.text(.caption))
+                            .foregroundStyle(packing.perishable ? Theme.tomato : Theme.muted)
+                    }
+                }
             }
             .frame(minHeight: 44)
+            .padding(.vertical, 6)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

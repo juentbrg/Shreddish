@@ -83,7 +83,7 @@ struct ProfileFormView: View {
     let clock: any AppClock
 
     var body: some View {
-        Section("Toi") {
+        ThemedSection("Toi") {
             Picker("Genre", selection: $draft.sex) {
                 ForEach(Sex.allCases, id: \.self) { Text($0.label).tag($0) }
             }
@@ -111,7 +111,7 @@ struct ProfileFormView: View {
                 ForEach(DailyActivity.allCases, id: \.self) { level in
                     VStack(alignment: .leading) {
                         Text(level.label)
-                        Text(level.detail).font(.caption).foregroundStyle(.secondary)
+                        Text(level.detail).font(Theme.text(.caption)).foregroundStyle(Theme.muted)
                     }
                     .tag(level)
                 }
@@ -119,10 +119,12 @@ struct ProfileFormView: View {
             .pickerStyle(.navigationLink)
             .accessibilityIdentifier("dailyActivity")
         } header: {
-            Text("Activité hors sport")
+            ListHeader {
+                Text("Activité hors sport")
+            }
         }
         TrainingSection(training: $draft.training, weightKg: Format.parse(draft.weight))
-        Section("Objectif") {
+        ThemedSection("Objectif") {
             Picker("Objectif", selection: $draft.goal) {
                 ForEach(Goal.allCases, id: \.self) { Text($0.label).tag($0) }
             }
@@ -131,7 +133,7 @@ struct ProfileFormView: View {
         if let message = draft.validationMessage(clock: clock) {
             Section {
                 Label(message, systemImage: "exclamationmark.circle")
-                    .foregroundStyle(.red)
+                    .foregroundStyle(Theme.tomato)
                     .accessibilityIdentifier("validationError")
             }
         }
@@ -163,14 +165,18 @@ struct TrainingSection: View {
                 .accessibilityIdentifier("intensity")
             }
         } header: {
-            Text("Entraînement")
+            ListHeader {
+                Text("Entraînement")
+            }
         } footer: {
-            VStack(alignment: .leading, spacing: 4) {
-                if training.sessionsPerWeek > 0 {
-                    Text(training.intensity.detail)
-                }
-                if let weightKg, training.sessionsPerWeek > 0 {
-                    Text("≈ \(Format.kcal(training.kcalPerSession(weightKg: weightKg))) par séance.")
+            ListFooter {
+                VStack(alignment: .leading, spacing: 4) {
+                    if training.sessionsPerWeek > 0 {
+                        Text(training.intensity.detail)
+                    }
+                    if let weightKg, training.sessionsPerWeek > 0 {
+                        Text("≈ \(Format.kcal(training.kcalPerSession(weightKg: weightKg))) par séance.")
+                    }
                 }
             }
         }

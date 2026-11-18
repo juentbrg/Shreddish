@@ -32,7 +32,7 @@ public enum PlanStore {
     @discardableResult
     public static func saveWeek(
         _ week: WeekPlanDTO, startDay: LocalDay, targets: NutritionTargets, createdAt: Date, today: LocalDay? = nil,
-        in context: ModelContext
+        pantry: [IngredientDTO] = [], in context: ModelContext
     ) throws -> WeeklyPlan {
         let today = today ?? startDay
         for plan in activePlans(in: context) {
@@ -50,6 +50,7 @@ public enum PlanStore {
         }
 
         let plan = WeeklyPlan(startDay: startDay, createdAt: createdAt, targets: targets, prepSessions: week.prepSessions)
+        plan.pantry = pantry
         context.insert(plan)
         for dayDTO in week.days {
             let day = DayPlan(day: startDay.adding(days: dayDTO.dayOffset), offset: dayDTO.dayOffset)
@@ -100,7 +101,9 @@ public enum PlanStore {
 
     static func shoppingLines(for plan: WeeklyPlan, in context: ModelContext) -> [ShoppingLine] {
         let owned = (try? context.fetch(FetchDescriptor<Preferences>()))?.first?.supplementList ?? []
-        return ShoppingListBuilder.build(from: plan.days.flatMap { $0.meals.flatMap(\.ingredients) }, owned: owned)
+        return ShoppingListBuilder.build(
+            from: plan.days.flatMap { $0.meals.flatMap(\.ingredients) }, owned: owned, pantry: plan.pantry
+        )
     }
 
     /// Reconstruit une liste faite par une version antérieure (ex. œufs en double avant la spec 012).

@@ -69,24 +69,20 @@ struct DisclaimerView: View {
             VStack(alignment: .leading, spacing: 20) {
                 Image(systemName: "fork.knife.circle.fill")
                     .font(.system(size: 64))
-                    .foregroundStyle(.tint)
+                    .foregroundStyle(Theme.green)
                     .accessibilityHidden(true)
                 Text("Bienvenue sur Shreddish")
-                    .font(.largeTitle.bold())
+                    .font(Theme.display(34, .heavy, relativeTo: .largeTitle))
                 Text("Repas simples, pas chers et rapides, calés sur ton objectif.")
-                    .font(.title3)
+                    .font(Theme.text(.title3))
                 VStack(alignment: .leading, spacing: 12) {
                     Label("Pas un avis médical.", systemImage: "stethoscope")
                     Label("Cibles, valeurs et prix : des estimations.", systemImage: "function")
                     Label("Pathologie, grossesse, doute : vois un professionnel de santé.", systemImage: "heart.text.square")
                 }
-                .font(.body)
-                Button(action: onAccept) {
-                    Text("J'ai compris, continuer")
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 6)
-                }
-                .buttonStyle(.borderedProminent)
+                .font(Theme.text(.body))
+                Button("J'ai compris, continuer", action: onAccept)
+                    .buttonStyle(PillButtonStyle())
                 .accessibilityIdentifier("acceptDisclaimer")
             }
             .padding(24)

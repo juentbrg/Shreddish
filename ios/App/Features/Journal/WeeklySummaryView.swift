@@ -13,17 +13,17 @@ struct WeeklySummaryView: View {
             Section {
                 if let rate = summary.adherenceRate {
                     LabeledContent("Adhérence", value: Format.percent(rate))
-                        .font(.title3.bold())
+                        .font(Theme.display(20, .bold, relativeTo: .title3))
                         .accessibilityIdentifier("adherence")
                     LabeledContent("Repas mangés", value: "\(summary.eatenCount) / \(summary.plannedCount)")
                 } else {
                     Text("Aucun jour terminé. Le jour compte à partir de 21 h.")
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Theme.muted)
                 }
                 LabeledContent("Jours comptés", value: "\(summary.elapsedDays)")
             }
             if summary.elapsedDays > 0, let targets = plan.targets {
-                Section("Moyenne par jour") {
+                ThemedSection("Moyenne par jour") {
                     let average = summary.averageActual
                     TargetGauge(title: "Calories", value: average.kcal, target: Double(targets.targetKcal), format: Format.kcal)
                     TargetGauge(title: "Protéines", value: average.proteinG, target: Double(targets.proteinG), format: Format.grams)
@@ -31,14 +31,14 @@ struct WeeklySummaryView: View {
                     TargetGauge(title: "Lipides", value: average.fatG, target: Double(targets.fatG), format: Format.grams)
                 }
             }
-            Section("Par jour") {
+            ThemedSection("Par jour") {
                 ForEach(plan.sortedDays) { day in
                     LabeledContent(Format.day(day.day, calendar: model.clock.calendar)) {
                         VStack(alignment: .trailing) {
                             Text(Format.kcal(day.actualTotals.kcal))
                             Text("prévu \(Format.kcal(day.plannedTotals.kcal))")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .font(Theme.text(.caption))
+                                .foregroundStyle(Theme.muted)
                         }
                     }
                 }

@@ -65,7 +65,7 @@ struct ShoppingListBuilderTests {
         #expect(lines.count == 1)
         #expect(lines.first?.totalQuantity == 30)
         #expect(lines.first?.unit == .ml)
-        #expect(abs((lines.first?.costEur ?? 0) - 0.06) < 0.0001)
+        #expect(lines.first?.costEur == 2.12) // bouteille de 1 L
     }
 
     @Test func eggsAreOneLineInPieces() {
@@ -84,7 +84,7 @@ struct ShoppingListBuilderTests {
         #expect(lines.first?.unit == .piece)
         #expect(lines.first?.totalQuantity == 11)
         #expect(lines.first?.aisle == .epicerie)
-        #expect(abs((lines.first?.costEur ?? 0) - 2.75) < 0.0001)
+        #expect(lines.first?.costEur == 3.56) // boîte de 12 à 0,297 € l'œuf
     }
 
     @Test func fruitsInGramsAreCountedInPieces() {
@@ -118,6 +118,74 @@ struct ShoppingListBuilderTests {
         #expect(lines.first?.totalQuantity == 180) // 250 g cuits × 0,4 + 80 g crus
     }
 
+    @Test func frozenVegetablesStayFrozen() {
+        var frozen = ingredient("Haricots verts surgelés", 150, aisle: .surgeles, cost: 0.4)
+        frozen.foodCode = 20061
+        var frozen2 = ingredient("haricots verts surgelés", 100, aisle: .fruitsLegumes, cost: 0.3)
+        frozen2.foodCode = 20061
+        var fresh = ingredient("Haricots verts", 200, aisle: .fruitsLegumes, cost: 0.6)
+        fresh.foodCode = 20061
+        let lines = ShoppingListBuilder.build(from: [frozen, frozen2, fresh])
+        #expect(lines.count == 2)
+        let frozenLine = lines.first { $0.aisle == .surgeles }
+        #expect(frozenLine?.name == "Haricots verts surgelés")
+        #expect(frozenLine?.totalQuantity == 250)
+        #expect(lines.contains { $0.name == "Haricots verts" && $0.aisle == .fruitsLegumes })
+    }
+
+    @Test func cannedChickpeasAreBoughtByTheCan() {
+        var chickpeas = ingredient("Pois chiches en conserve égouttés", 150, aisle: .epicerie, cost: 0.6)
+        chickpeas.foodCode = 20532
+        let lines = ShoppingListBuilder.build(from: [chickpeas])
+        let line = try? #require(lines.first)
+        #expect(line?.totalQuantity == 250) // 150 g égouttés ÷ 0,6
+        let packing = ShoppingListBuilder.packing(key: line?.key ?? "", quantity: 250, unit: .g)
+        #expect(packing.packSize == 400)
+        #expect(packing.packCount == 1)
+        #expect(packing.leftover == 150)
+        #expect(packing.perishable)
+        #expect(line?.costEur == 1.78) // 400 g à 4,45 €/kg
+        let summary = ShoppingListBuilder.summary(lines)
+        #expect(abs(summary.wastedEur - 0.6675) < 0.001)
+        #expect(summary.keptEur == 0)
+    }
+
+    @Test func dryGoodsLeftoversAreKept() {
+        var rice = ingredient("Riz basmati cru", 560, aisle: .epicerie)
+        rice.foodCode = 9100
+        let summary = ShoppingListBuilder.summary(ShoppingListBuilder.build(from: [rice]))
+        #expect(summary.checkoutEur == 5.38) // paquet de 1 kg
+        #expect(abs(summary.keptEur - 0.44 * 5.38) < 0.001)
+        #expect(abs(summary.weekCostEur - 0.56 * 5.38) < 0.01)
+    }
+
+    @Test func frozenVegetablesComeInBags() {
+        var frozen = ingredient("Haricots verts surgelés", 400, aisle: .surgeles)
+        frozen.foodCode = 20061
+        let line = ShoppingListBuilder.build(from: [frozen]).first
+        let packing = ShoppingListBuilder.packing(key: line?.key ?? "", quantity: 400, unit: .g)
+        #expect(packing.packSize == 750)
+        #expect(!packing.perishable)
+    }
+
+    @Test func pantryIsDeducted() {
+        var rice = ingredient("Riz basmati cru", 560, aisle: .epicerie)
+        rice.foodCode = 9100
+        var chickpeas = ingredient("Pois chiches égouttés", 240, aisle: .epicerie)
+        chickpeas.foodCode = 20532
+        var stockRice = ingredient("Riz", 1000, aisle: .epicerie)
+        stockRice.foodCode = 9100
+        var stockChickpeas = ingredient("Pois chiches en conserve", 150, aisle: .epicerie)
+        stockChickpeas.foodCode = 20532
+        let lines = ShoppingListBuilder.build(from: [rice, chickpeas], pantry: [stockRice, stockChickpeas])
+        let riceLine = lines.first { $0.name == "Riz" }
+        #expect(riceLine?.totalQuantity == 0)
+        #expect(riceLine?.costEur == 0)
+        #expect(riceLine?.fromPantry == 560)
+        let chickpeaLine = lines.first { $0.name == "Pois chiches en conserve" }
+        #expect(chickpeaLine?.totalQuantity == 150) // 400 g achetés-équivalent − 250 g en stock
+    }
+
     @Test func pommeDeTerreIsNotAnApple() {
         let lines = ShoppingListBuilder.build(from: [ingredient("Pommes de terre", 400, aisle: .fruitsLegumes)])
         #expect(lines.first?.unit == .g)
@@ -137,9 +205,9 @@ struct ShoppingListBuilderTests {
     @Test func weekFixtureAggregatesSevenDays() throws {
         let week = try Fixture.week()
         let lines = ShoppingListBuilder.build(from: week.days)
-        let oats = lines.first { $0.key.hasPrefix("flocon d'avoine") }
+        let oats = lines.first { $0.key.hasPrefix("flocons avoine") }
         #expect(oats?.totalQuantity == 560) // 80 g × 7
-        #expect(abs(ShoppingListBuilder.totalCost(lines) - 57.4) < 0.001) // 8,20 € × 7
+        #expect(ShoppingListBuilder.packing(key: oats?.key ?? "", quantity: 560, unit: .g).bought == 1000)
     }
 
     @Test func invalidUnitsAreSkipped() {

@@ -161,6 +161,22 @@ struct PillButtonStyle: ButtonStyle {
     }
 }
 
+/// Petit bouton en ligne (à côté d'un champ, dans une ligne de liste).
+struct CompactButtonStyle: ButtonStyle {
+    var prominent = true
+    @Environment(\.isEnabled) private var isEnabled
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(Theme.text(.subheadline, .semibold))
+            .foregroundStyle(prominent ? Theme.onGreen : Theme.ink)
+            .padding(.horizontal, 14)
+            .frame(minHeight: 36)
+            .background(prominent ? Theme.green : Theme.paper, in: Capsule())
+            .opacity(isEnabled ? (configuration.isPressed ? 0.8 : 1) : 0.4)
+    }
+}
+
 extension MealType {
     /// Fond et encre de l'icône du repas.
     var tileColors: (background: Color, ink: Color) {
@@ -200,5 +216,50 @@ struct MealTile: View {
             .frame(width: size, height: size)
             .background(colors.background, in: RoundedRectangle(cornerRadius: size * 0.3, style: .continuous))
             .accessibilityHidden(true)
+    }
+}
+
+// MARK: - Listes
+
+/// Titre de section de liste : même police que `SectionTitle`, sans majuscules forcées.
+struct ListHeader<Content: View>: View {
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        content
+            .font(Theme.display(18, .bold, relativeTo: .headline))
+            .foregroundStyle(Theme.ink)
+            .textCase(nil)
+            .accessibilityAddTraits(.isHeader)
+    }
+}
+
+/// Note sous une section de liste : petite, grise.
+struct ListFooter<Content: View>: View {
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        content
+            .font(Theme.text(.footnote))
+            .foregroundStyle(Theme.muted)
+    }
+}
+
+/// `Section("Titre")` au style de l'app.
+struct ThemedSection<Content: View>: View {
+    let title: String
+    @ViewBuilder var content: Content
+
+    init(_ title: String, @ViewBuilder content: () -> Content) {
+        self.title = title
+        self.content = content()
+    }
+
+    var body: some View {
+        Section {
+            content
+        } header: {
+            ListHeader { Text(title) }
+        }
     }
 }

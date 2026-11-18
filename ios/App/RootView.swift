@@ -40,10 +40,10 @@ struct RootView: View {
             Tab("Courses", systemImage: "cart", value: AppModel.Tab.shopping) {
                 ShoppingListView()
             }
-            Tab("Poids", systemImage: "scalemass", value: AppModel.Tab.weight) {
-                WeightView()
+            Tab("Recettes", systemImage: "bookmark", value: AppModel.Tab.recipes) {
+                RecipesView()
             }
-            Tab("Cibles", systemImage: "target", value: AppModel.Tab.targets) {
+            Tab("Profil", systemImage: "person.crop.circle", value: AppModel.Tab.targets) {
                 TargetsView()
             }
         }

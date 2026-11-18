@@ -2,7 +2,7 @@ import ShreddishCore
 import SwiftData
 import SwiftUI
 
-/// Cibles kcal et macros, détail du calcul (US1, FR-002 à FR-005).
+/// Profil : pesée du jour, cibles kcal et macros, détail du calcul (US1, US6, FR-002 à FR-005).
 struct TargetsView: View {
     @Environment(AppModel.self) private var model
     @Query var profiles: [Profile]
@@ -17,7 +17,7 @@ struct TargetsView: View {
                 }
             }
             .themedList()
-            .navigationTitle("Mes cibles")
+            .navigationTitle("Mon profil")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     NavigationLink {
@@ -34,25 +34,24 @@ struct TargetsView: View {
     private func content(profile: Profile, targets: NutritionTargets) -> some View {
         List {
             Section {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(profile.goal.label.uppercased())
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                    Text(Format.kcal(Double(targets.targetKcal)))
-                        .font(.system(size: 44, weight: .bold, design: .rounded))
-                        .accessibilityIdentifier("targetKcal")
-                    Text("par jour")
-                        .foregroundStyle(.secondary)
+                TargetsHeroCard(goal: profile.goal, targets: targets)
+                    .listRowInsets(EdgeInsets())
+                    .listRowBackground(Color.clear)
+            }
+            Section {
+                NavigationLink("Modifier mon profil") { ProfileEditView() }
+                NavigationLink("Ajuster les macros") { MacroSettingsView() }
+                NavigationLink {
+                    CalibrationView()
+                } label: {
+                    LabeledContent("Calibration par les pesées", value: profile.isAutoCalibrationOn ? "Auto" : "Manuelle")
                 }
-                .padding(.vertical, 6)
-                macroRow("Protéines", grams: targets.proteinG, kcalPerGram: 4, color: .red)
-                macroRow("Glucides", grams: targets.carbsG, kcalPerGram: 4, color: .blue)
-                macroRow("Lipides", grams: targets.fatG, kcalPerGram: 9, color: .yellow)
+                .accessibilityIdentifier("calibration")
             }
             if let message = model.calibrationMessage {
                 Section {
                     Label(message, systemImage: "scalemass.fill")
-                        .foregroundStyle(.tint)
+                        .foregroundStyle(Theme.green)
                         .accessibilityIdentifier("calibrationMessage")
                 }
             }
@@ -72,47 +71,21 @@ struct TargetsView: View {
                 Section {
                     ForEach(targets.warnings, id: \.self) { warning in
                         Label(warning.message, systemImage: "exclamationmark.triangle.fill")
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(Theme.tomato)
                     }
                 }
             }
             breakdownSection(targets.breakdown, targets: targets, profile: profile)
             Section {
-                NavigationLink("Modifier mon profil") { ProfileEditView() }
-                NavigationLink("Ajuster les macros") { MacroSettingsView() }
-                NavigationLink {
-                    CalibrationView()
-                } label: {
-                    LabeledContent("Calibration par les pesées", value: profile.isAutoCalibrationOn ? "Auto" : "Manuelle")
-                }
-                .accessibilityIdentifier("calibration")
-            }
-            Section {
                 Text("Estimations, pas un avis médical.")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+                    .font(Theme.text(.footnote))
+                    .foregroundStyle(Theme.muted)
             }
         }
-    }
-
-    private func macroRow(_ title: String, grams: Int, kcalPerGram: Int, color: Color) -> some View {
-        HStack {
-            Circle().fill(color).frame(width: 10, height: 10).accessibilityHidden(true)
-            Text(title)
-            Spacer()
-            Text("\(grams) g")
-                .bold()
-                .monospacedDigit()
-            Text("\(grams * kcalPerGram) kcal")
-                .foregroundStyle(.secondary)
-                .monospacedDigit()
-                .frame(minWidth: 80, alignment: .trailing)
-        }
-        .accessibilityElement(children: .combine)
     }
 
     private func breakdownSection(_ breakdown: CalculationBreakdown, targets: NutritionTargets, profile: Profile) -> some View {
-        Section("Détail du calcul") {
+        ThemedSection("Détail du calcul") {
             LabeledContent("Métabolisme de base", value: Format.kcal(breakdown.bmr))
             if let daily = breakdown.dailyActivityFactor {
                 LabeledContent("Activité hors sport", value: "× \(Format.number(daily, digits: 2))")
@@ -138,8 +111,8 @@ struct TargetsView: View {
             LabeledContent("Lipides", value: "\(Format.number(breakdown.fatPerKg)) g/kg")
             LabeledContent("Glucides", value: "le reste")
             Text("Formule Mifflin-St Jeor : 10 × poids + 6,25 × taille − 5 × âge \(profile.sex == .male ? "+ 5" : "− 161").")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
+                .font(Theme.text(.footnote))
+                .foregroundStyle(Theme.muted)
         }
     }
 }
@@ -158,12 +131,23 @@ struct ProfileEditView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
     @Query var profiles: [Profile]
+    @Query(sort: \WeightEntry.dayKey) var entries: [WeightEntry]
     @State private var draft: ProfileDraft?
 
     var body: some View {
         Form {
             if let profile = profiles.first {
                 let binding = Binding(get: { draft ?? ProfileDraft(profile: profile) }, set: { draft = $0 })
+                WeightEntrySection()
+                WeightTrendSection(entries: entries, goal: profile.goal)
+                Section {
+                    NavigationLink {
+                        WeightView()
+                    } label: {
+                        Label("Courbe et historique des pesées", systemImage: "chart.xyaxis.line")
+                    }
+                    .accessibilityIdentifier("weightHistory")
+                }
                 ProfileFormView(draft: binding, clock: model.clock)
                 Section {
                     Button("Enregistrer") {
@@ -178,7 +162,37 @@ struct ProfileEditView: View {
             }
         }
         .themedList()
-        .navigationTitle("Mon profil")
+        .navigationTitle("Modifier mon profil")
         .keyboardDoneButton()
+    }
+}
+
+/// Carte verte de l'objectif : kcal par jour et macros (même style que la carte du jour).
+struct TargetsHeroCard: View {
+    let goal: Goal
+    let targets: NutritionTargets
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("\(goal.label) · par jour")
+                    .font(Theme.text(.footnote))
+                    .opacity(0.85)
+                Text(Format.kcal(Double(targets.targetKcal)))
+                    .font(Theme.display(38, .heavy, relativeTo: .largeTitle))
+                    .minimumScaleFactor(0.7)
+                    .lineLimit(1)
+                    .accessibilityIdentifier("targetKcal")
+            }
+            HStack(spacing: 8) {
+                MacroTile(title: "Protéines", value: Double(targets.proteinG), target: nil)
+                MacroTile(title: "Glucides", value: Double(targets.carbsG), target: nil)
+                MacroTile(title: "Lipides", value: Double(targets.fatG), target: nil)
+            }
+        }
+        .foregroundStyle(Theme.onGreen)
+        .padding(18)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.green, in: RoundedRectangle(cornerRadius: 26, style: .continuous))
     }
 }

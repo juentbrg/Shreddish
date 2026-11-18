@@ -41,6 +41,7 @@ struct PromptBuilderTests {
         #expect(preferences["ingredient_availability"] as? String == "everywhere")
         #expect(preferences["store"] == nil)
         #expect((input["reference_prices_eur_per_kg"] as? String)?.contains("graines de chia") == true)
+        #expect((input["pack_sizes"] as? String)?.contains("Pois chiches en conserve 400 g / 800 g") == true)
         #expect(input["cost_limit_eur"] == nil)
         #expect(preferences["batch_cooking"] as? Bool == false)
         #expect(input["day_offset"] == nil)
@@ -64,7 +65,8 @@ struct PromptBuilderTests {
             "disliked_foods", "ingredient_availability", "cost_limit_eur", "liked_foods",
             "equipment", "batch_cooking", "day_offset", "existing_day_meals", "meal_type_to_replace",
             "remaining_targets", "avoid_meal_names", "type", "name", "owned_supplements", "training_time",
-            "training_sessions_per_week", "previous_attempt_feedback", "reference_prices_eur_per_kg",
+            "training_sessions_per_week", "previous_attempt_feedback", "reference_prices_eur_per_kg", "pack_sizes",
+            "ingredients_to_use", "quantity", "unit", "recipes_to_include", "ingredients",
             "protein_g_per_serving", "serving_g", "kind", "kcal_per_serving", "carbs_g_per_serving",
             "fat_g_per_serving", "dose", "doses_per_day",
         ]
@@ -125,6 +127,9 @@ struct PromptBuilderTests {
         #expect(text.contains("cost_limit_eur"))
         #expect(text.contains("ingredient_availability"))
         #expect(text.contains("reference_prices_eur_per_kg"))
+        #expect(text.contains("pack_sizes"))
+        #expect(text.contains("ingredients_to_use"))
+        #expect(text.contains("recipes_to_include"))
         #expect(text.contains("français"))
     }
 
@@ -153,5 +158,35 @@ struct PromptBuilderTests {
     ])
     func supplementKindIsInferred(name: String, kind: SupplementKind) {
         #expect(SupplementKind.infer(from: name) == kind)
+    }
+}
+
+extension PromptBuilderTests {
+    @Test func pantryReachesThePrompt() throws {
+        let pantry = [IngredientDTO(name: "Pois chiches égouttés", quantity: 150, unit: "g", aisle: .epicerie, costEur: 0)]
+        let text = PromptBuilder.weekInput(targets: referenceTargets, goal: .cut, preferences: Self.preferences, pantry: pantry)
+        let input = try #require(try JSONSerialization.jsonObject(with: Data(text.utf8)) as? [String: Any])
+        let items = try #require(input["ingredients_to_use"] as? [[String: Any]])
+        #expect(items.first?["name"] as? String == "Pois chiches égouttés")
+        #expect(items.first?["quantity"] as? Double == 150)
+        let empty = PromptBuilder.weekInput(targets: referenceTargets, goal: .cut, preferences: Self.preferences)
+        #expect(!empty.contains("ingredients_to_use"))
+    }
+}
+
+extension PromptBuilderTests {
+    @Test func savedRecipesReachThePromptWithoutSteps() throws {
+        var recipe = meal(.dinner)
+        recipe.name = "Curry de pois chiches"
+        recipe.steps = ["Faire revenir l'oignon."]
+        let text = PromptBuilder.weekInput(targets: referenceTargets, goal: .cut, preferences: Self.preferences, recipes: [recipe])
+        let input = try Self.json(text)
+        let items = try #require(input["recipes_to_include"] as? [[String: Any]])
+        #expect(items.first?["name"] as? String == "Curry de pois chiches")
+        #expect(items.first?["type"] as? String == "dinner")
+        #expect(items.first?["ingredients"] is [[String: Any]])
+        #expect(!text.contains("Faire revenir"))
+        let keys = Self.allKeys(try JSONSerialization.jsonObject(with: Data(text.utf8)))
+        for forbidden in ["age", "weight", "sex", "height", "steps"] { #expect(!keys.contains(forbidden)) }
     }
 }

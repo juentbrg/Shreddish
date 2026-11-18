@@ -110,7 +110,7 @@ struct DayHeroCard: View {
     }
 }
 
-private struct MacroTile: View {
+struct MacroTile: View {
     let title: String
     let value: Double
     let target: Double?

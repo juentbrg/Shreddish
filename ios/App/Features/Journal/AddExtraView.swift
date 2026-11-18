@@ -43,8 +43,10 @@ struct AddExtraView: View {
                     numberField("Glucides (g)", text: $carbs, id: "extraCarbs")
                     numberField("Lipides (g)", text: $fat, id: "extraFat")
                 } footer: {
-                    if kcal.isEmpty, macros.kcal > 0 {
-                        Text("Calculé depuis les macros : \(Format.kcal(macros.kcal)).")
+                    ListFooter {
+                        if kcal.isEmpty, macros.kcal > 0 {
+                            Text("Calculé depuis les macros : \(Format.kcal(macros.kcal)).")
+                        }
                     }
                 }
             }

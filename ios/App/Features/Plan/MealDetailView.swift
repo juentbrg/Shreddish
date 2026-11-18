@@ -10,10 +10,7 @@ struct MealDetailView: View {
     @Query var profiles: [Profile]
     @Query var allPreferences: [Preferences]
     let meal: Meal
-    @State private var step = 0
-    @State private var showAllSteps = false
-    /// Étape affichée dans le carrousel (défilement au doigt ou boutons).
-    @State private var scrolledStep: Int?
+    @Query var savedRecipes: [SavedRecipe]
 
     private var owned: [String] { allPreferences.first?.supplementList ?? [] }
 
@@ -41,6 +38,16 @@ struct MealDetailView: View {
         }
         .paperBackground()
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                let isSaved = savedRecipes.contains { RecipeBook.key($0.name) == RecipeBook.key(meal.name) }
+                Button(isSaved ? "Retirer des recettes" : "Sauvegarder la recette", systemImage: isSaved ? "bookmark.fill" : "bookmark") {
+                    RecipeBook.toggle(meal.dto, at: model.clock.now, in: context)
+                }
+                .disabled(meal.needsRecipe)
+                .accessibilityIdentifier("saveRecipe")
+            }
+        }
     }
 
     private var header: some View {
@@ -75,38 +82,14 @@ struct MealDetailView: View {
     }
 
     private var ingredients: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            SectionTitle(title: "Ce qu'il te faut")
-            LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)], spacing: 8) {
-                ForEach(Array(meal.ingredients.enumerated()), id: \.offset) { _, ingredient in
-                    let isOwned = AIOutputValidator.isOwnedSupplement(ingredient.name, owned: owned)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(ingredient.name)
-                            .font(Theme.text(.subheadline, .semibold))
-                            .foregroundStyle(Theme.ink)
-                        Text(
-                            Format.quantity(ingredient.quantity, unit: ingredient.measureUnit ?? .g)
-                                + " · " + (isOwned ? "possédé" : Format.euros(ingredient.costEur))
-                        )
-                        .font(Theme.text(.caption))
-                        .foregroundStyle(isOwned ? Theme.green : Theme.muted)
-                    }
-                    .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 10)
-                    .background(Theme.card, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                    .accessibilityElement(children: .combine)
-                }
-            }
-        }
-        .padding(.horizontal, 20)
+        IngredientGrid(ingredients: meal.ingredients, owned: owned)
     }
 
     @ViewBuilder private var steps: some View {
         if meal.needsRecipe {
             pendingRecipe
         } else {
-            recipeSteps
+            RecipeSteps(steps: meal.steps)
         }
     }
 
@@ -131,9 +114,52 @@ struct MealDetailView: View {
         .padding(.horizontal, 20)
         .task { model.recipes.prioritize(meal, in: context) }
     }
+}
 
-    @ViewBuilder private var recipeSteps: some View {
-        let all = meal.steps
+/// Ingrédients d'un repas sur deux colonnes.
+struct IngredientGrid: View {
+    let ingredients: [IngredientDTO]
+    let owned: [String]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            SectionTitle(title: "Ce qu'il te faut")
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)], spacing: 8) {
+                ForEach(Array(ingredients.enumerated()), id: \.offset) { _, ingredient in
+                    let isOwned = AIOutputValidator.isOwnedSupplement(ingredient.name, owned: owned)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(ingredient.name)
+                            .font(Theme.text(.subheadline, .semibold))
+                            .foregroundStyle(Theme.ink)
+                        Text(
+                            Format.quantity(ingredient.quantity, unit: ingredient.measureUnit ?? .g)
+                                + " · " + (isOwned ? "possédé" : Format.euros(ingredient.costEur))
+                        )
+                        .font(Theme.text(.caption))
+                        .foregroundStyle(isOwned ? Theme.green : Theme.muted)
+                    }
+                    .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
+                    .background(Theme.card, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .accessibilityElement(children: .combine)
+                }
+            }
+        }
+        .padding(.horizontal, 20)
+    }
+}
+
+/// Étapes d'une recette : pas à pas en carrousel ou toutes (repas et recettes sauvegardées).
+struct RecipeSteps: View {
+    let steps: [String]
+    @State private var step = 0
+    @State private var showAllSteps = false
+    /// Étape affichée dans le carrousel (défilement au doigt ou boutons).
+    @State private var scrolledStep: Int?
+
+    var body: some View {
+        let all = steps
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 SectionTitle(title: showAllSteps ? "Préparation" : "Étape \(min(step, all.count - 1) + 1) sur \(all.count)")

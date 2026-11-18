@@ -35,6 +35,13 @@ enum Format {
         }
     }
 
+    /// Paquets à acheter : « 2 × 400 g », « 1 × 12 », ou la quantité au détail (spec 013).
+    static func packing(_ packing: Packing, quantity: Double, unit: MeasureUnit) -> String {
+        guard let size = packing.packSize, packing.packCount > 0 else { return Self.quantity(quantity, unit: unit) }
+        let pack = unit == .piece ? number(size) : Self.quantity(size, unit: unit)
+        return "\(packing.packCount) × \(pack)"
+    }
+
     static func day(_ day: LocalDay, calendar: Calendar, style: Date.FormatStyle? = nil) -> String {
         let date = day.startDate(calendar: calendar)
         let format = style ?? Date.FormatStyle(date: .omitted, time: .omitted).weekday(.wide).day().month(.abbreviated)
@@ -212,8 +219,8 @@ struct MacroLine: View {
         let carbs = Format.grams(macros.carbsG)
         let fat = Format.grams(macros.fatG)
         Text("\(Format.kcal(macros.kcal)) · P \(protein) · G \(carbs) · L \(fat)")
-            .font(.footnote)
-            .foregroundStyle(.secondary)
+            .font(Theme.text(.footnote))
+            .foregroundStyle(Theme.muted)
             .accessibilityLabel(
                 "\(Format.kcal(macros.kcal)), protéines \(protein), glucides \(carbs), lipides \(fat)"
             )
@@ -246,11 +253,11 @@ struct TargetGauge: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
-                Text(title).font(.subheadline)
+                Text(title).font(Theme.text(.subheadline))
                 Spacer()
                 Text("\(format(value)) / \(format(target))")
-                    .font(.subheadline.monospacedDigit())
-                    .foregroundStyle(.secondary)
+                    .font(Theme.text(.subheadline).monospacedDigit())
+                    .foregroundStyle(Theme.muted)
             }
             ProgressView(value: min(value, target * 1.5), total: max(target, 1))
                 .tint(target > 0 && abs(value - target) / target > Totals.offTargetThreshold && value > target ? Theme.tomato : Theme.green)
@@ -268,7 +275,7 @@ struct DeleteRowButton: View {
         Button(action: action) {
             Image(systemName: "minus.circle.fill")
                 .font(.title3)
-                .foregroundStyle(.red)
+                .foregroundStyle(Theme.tomato)
         }
         .buttonStyle(.borderless)
         .accessibilityLabel("Supprimer \(label)")

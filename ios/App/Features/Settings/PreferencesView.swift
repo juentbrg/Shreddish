@@ -41,11 +41,15 @@ private struct MealsSection: View {
             )
             Toggle("Batch cooking", isOn: $preferences.batchCooking)
         } header: {
-            Text("Repas")
+            ListHeader {
+                Text("Repas")
+            }
         } footer: {
-            Text(
-                "Collations incluses : 4 = 3 repas + 1 collation."
-            )
+            ListFooter {
+                Text(
+                    "Collations incluses : 4 = 3 repas + 1 collation."
+                )
+            }
         }
     }
 }
@@ -70,16 +74,16 @@ private struct BudgetSection: View {
                     .keyboardType(.decimalPad)
                     .multilineTextAlignment(.trailing)
                     .frame(maxWidth: 90)
-                    .font(.title3.bold().monospacedDigit())
+                    .font(Theme.display(20, .bold, relativeTo: .title3).monospacedDigit())
                     .accessibilityIdentifier("weeklyBudget")
                 Text("€")
             }
             Slider(value: budget, in: Preferences.weeklyBudgetRange, step: 1) {
                 Text("Budget")
             } minimumValueLabel: {
-                Text("20 €").font(.caption)
+                Text("20 €").font(Theme.text(.caption))
             } maximumValueLabel: {
-                Text("300 €").font(.caption)
+                Text("300 €").font(Theme.text(.caption))
             }
             .accessibilityValue(Format.euros(preferences.weeklyBudget))
             HStack(spacing: 6) {
@@ -101,11 +105,15 @@ private struct BudgetSection: View {
             }
             .accessibilityIdentifier("budgetTolerance")
         } header: {
-            Text("Budget courses")
+            ListHeader {
+                Text("Budget courses")
+            }
         } footer: {
-            Text(
-                "Plafond \(Format.euros(preferences.budgetCeiling)). Prix moyens relevés en France (Open Prices)."
-            )
+            ListFooter {
+                Text(
+                    "Plafond \(Format.euros(preferences.budgetCeiling)). Prix moyens relevés en France (Open Prices)."
+                )
+            }
         }
     }
 }
@@ -121,9 +129,13 @@ private struct StoreSection: View {
             }
             .accessibilityIdentifier("availability")
         } header: {
-            Text("Ingrédients")
+            ListHeader {
+                Text("Ingrédients")
+            }
         } footer: {
-            Text(preferences.availability.detail)
+            ListFooter {
+                Text(preferences.availability.detail)
+            }
         }
     }
 }
@@ -208,9 +220,11 @@ private struct SupplementInfoView: View {
                 }
                 .accessibilityIdentifier("supplementKind")
             } footer: {
-                Text(kind == .macro
-                    ? "Calories et macros comptées."
-                    : "Aucune calorie, prise placée dans un repas.")
+                ListFooter {
+                    Text(kind == .macro
+                        ? "Calories et macros comptées."
+                        : "Aucune calorie, prise placée dans un repas.")
+                }
             }
             if kind == .macro {
                 Section {
@@ -220,9 +234,13 @@ private struct SupplementInfoView: View {
                     field("Glucides", value: $info.carbsPerServingG, unit: "g", identifier: "carbsPerServing")
                     field("Lipides", value: $info.fatPerServingG, unit: "g", identifier: "fatPerServing")
                 } header: {
-                    Text("Par dose")
+                    ListHeader {
+                        Text("Par dose")
+                    }
                 } footer: {
-                    Text("Valeurs de l'étiquette.")
+                    ListFooter {
+                        Text("Valeurs de l'étiquette.")
+                    }
                 }
             } else {
                 Section {
@@ -246,7 +264,9 @@ private struct SupplementInfoView: View {
                         in: 1...4
                     )
                 } header: {
-                    Text("Dose")
+                    ListHeader {
+                        Text("Dose")
+                    }
                 }
             }
         }
@@ -301,9 +321,13 @@ private struct SupplementsSection: View {
                 ), displayedComponents: .hourAndMinute)
             }
         } header: {
-            Text("Entraînement")
+            ListHeader {
+                Text("Entraînement")
+            }
         } footer: {
-            Text("Pour placer la collation protéinée.")
+            ListFooter {
+                Text("Pour placer la collation protéinée.")
+            }
         }
     }
 }
@@ -318,7 +342,9 @@ private struct ModelSection: View {
                 .autocorrectionDisabled()
             Button("Modèle par défaut") { preferences.aiModel = Preferences.defaultAIModel }
         } header: {
-            Text("Modèle IA")
+            ListHeader {
+                Text("Modèle IA")
+            }
         }
     }
 }

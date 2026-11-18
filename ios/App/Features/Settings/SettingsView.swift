@@ -14,18 +14,18 @@ struct SettingsView: View {
                     .accessibilityIdentifier("preferencesSettings")
             }
             Section {
-                NavigationLink("Mon profil") { ProfileEditView() }
+                NavigationLink("Modifier mon profil") { ProfileEditView() }
                 NavigationLink("Ajuster les macros") { MacroSettingsView() }
             }
             Section {
                 Button("Supprimer toutes mes données", role: .destructive) { confirmErase = true }
                     .accessibilityIdentifier("eraseAll")
             }
-            Section("À propos") {
+            ThemedSection("À propos") {
                 Text("Pas un avis médical. Données sur cet iPhone ; seules cibles et préférences vont à OpenAI. "
                     + FoodCatalog.attribution + " " + PriceCatalog.attribution)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+                    .font(Theme.text(.footnote))
+                    .foregroundStyle(Theme.muted)
             }
         }
         .themedList()
