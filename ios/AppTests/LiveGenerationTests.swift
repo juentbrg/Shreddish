@@ -13,6 +13,8 @@ final class CountingTransport: AITransport, @unchecked Sendable {
     var requestCount: Int { lock.withLock { count } }
 
     private(set) var kinds: [String: Int] = [:]
+    /// Tokens par type de requête : entrée, entrée en cache, sortie (raisonnement compris).
+    private(set) var usage: [String: TokenUsage] = [:]
 
     func send(_ request: URLRequest) async throws -> (Data, HTTPURLResponse) {
         let body = request.httpBody.flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: Any] }
@@ -21,7 +23,52 @@ final class CountingTransport: AITransport, @unchecked Sendable {
             count += 1
             kinds[kind, default: 0] += 1
         }
-        return try await base.send(request)
+        let (data, response) = try await base.send(request)
+        let tokens = TokenUsage(response: data)
+        lock.withLock { usage[kind, default: TokenUsage()].add(tokens) }
+        return (data, response)
+    }
+
+    var totalUsage: TokenUsage { lock.withLock { usage.values.reduce(into: TokenUsage()) { $0.add($1) } } }
+}
+
+/// Tokens facturés d'une ou plusieurs réponses (Responses API, champ `usage`).
+struct TokenUsage: Sendable {
+    /// gpt-6-luna, $ par million de tokens : entrée, entrée en cache, sortie.
+    static let inputPrice = 0.10
+    static let cachedPrice = 0.01
+    static let outputPrice = 0.50
+
+    var input = 0
+    var cached = 0
+    var output = 0
+    var reasoning = 0
+
+    init() {}
+
+    init(response data: Data) {
+        let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
+        let usage = json?["usage"] as? [String: Any]
+        input = usage?["input_tokens"] as? Int ?? 0
+        cached = (usage?["input_tokens_details"] as? [String: Any])?["cached_tokens"] as? Int ?? 0
+        output = usage?["output_tokens"] as? Int ?? 0
+        reasoning = (usage?["output_tokens_details"] as? [String: Any])?["reasoning_tokens"] as? Int ?? 0
+    }
+
+    mutating func add(_ other: TokenUsage) {
+        input += other.input
+        cached += other.cached
+        output += other.output
+        reasoning += other.reasoning
+    }
+
+    var costUSD: Double {
+        (Double(input - cached) * Self.inputPrice + Double(cached) * Self.cachedPrice + Double(output) * Self.outputPrice)
+            / 1_000_000
+    }
+
+    var summary: String {
+        String(format: "entrée %d (cache %d), sortie %d (raisonnement %d), %.4f $", input, cached, output, reasoning, costUSD)
     }
 }
 
@@ -31,6 +78,15 @@ final class CountingTransport: AITransport, @unchecked Sendable {
 @MainActor
 @Suite(.enabled(if: ProcessInfo.processInfo.environment["SHREDDISH_LIVE"] == "1" && BundledKeyStore().read() != nil))
 struct LiveGenerationTests {
+    static func delta(_ after: TokenUsage, _ before: TokenUsage) -> TokenUsage {
+        var result = TokenUsage()
+        result.input = after.input - before.input
+        result.cached = after.cached - before.cached
+        result.output = after.output - before.output
+        result.reasoning = after.reasoning - before.reasoning
+        return result
+    }
+
     @Test(.timeLimit(.minutes(10)))
     func realWeekMeetsTargets() async throws {
         let container = try ShreddishStore.makeContainer(inMemory: true)
@@ -62,6 +118,25 @@ struct LiveGenerationTests {
         await recipes.waitUntilIdle()
         print("LIVE requêtes par type \(transport.kinds.sorted { $0.key < $1.key })")
         print("LIVE recettes \(Int(Date().timeIntervalSince(recipesStarted))) s")
+        let weekUsage = transport.totalUsage
+        print("LIVE COUT semaine + recettes : \(weekUsage.summary)")
+
+        // Actions ponctuelles : un repas remplacé, un jour régénéré (recettes comprises).
+        let plan0 = try #require(PlanStore.currentPlan(in: context))
+        let meal = try #require(plan0.sortedDays.first?.sortedMeals.first { $0.type == .lunch })
+        _ = try await generator.replaceMeal(meal, profile: profile, preferences: preferences, in: context)
+        recipes.fillMissing(in: context)
+        await recipes.waitUntilIdle()
+        let afterReplace = transport.totalUsage
+        print("LIVE COUT remplacement repas : \(Self.delta(afterReplace, weekUsage).summary)")
+        let day = try #require(plan0.sortedDays.last)
+        _ = try await generator.regenerateDay(day, profile: profile, preferences: preferences, in: context)
+        recipes.fillMissing(in: context)
+        await recipes.waitUntilIdle()
+        print("LIVE COUT jour régénéré : \(Self.delta(transport.totalUsage, afterReplace).summary)")
+        for (kind, tokens) in transport.usage.sorted(by: { $0.key < $1.key }) {
+            print("LIVE COUT par type \(kind) : \(tokens.summary)")
+        }
 
         let plan = try #require(PlanStore.currentPlan(in: context))
         let targets = try #require(plan.targets).macros

@@ -6,9 +6,10 @@ import SwiftUI
 struct TargetsView: View {
     @Environment(AppModel.self) private var model
     @Query var profiles: [Profile]
+    @State private var path = NavigationPath()
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             Group {
                 if let profile = profiles.first, let targets = profile.targets(clock: model.clock) {
                     content(profile: profile, targets: targets)
@@ -28,7 +29,17 @@ struct TargetsView: View {
                     .accessibilityIdentifier("settings")
                 }
             }
+            .navigationDestination(for: WeighInRoute.self) { _ in ProfileEditView() }
+            .onAppear(perform: openDeepLink)
+            .onChange(of: model.deepLink) { openDeepLink() }
         }
+    }
+
+    /// Rappel de pesée touché : « Modifier mon profil », où se trouve la pesée.
+    private func openDeepLink() {
+        guard model.deepLink == .weighIn else { return }
+        model.deepLink = nil
+        path = NavigationPath([WeighInRoute()])
     }
 
     private func content(profile: Profile, targets: NutritionTargets) -> some View {

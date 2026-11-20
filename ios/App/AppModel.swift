@@ -3,6 +3,30 @@ import ShreddishCore
 import Observation
 import SwiftData
 
+/// Repas d'un planning actif : jour et rang.
+struct MealRef: Hashable {
+    let dayKey: Int
+    let order: Int
+}
+
+/// Écran ouvert au toucher d'un rappel (spec 016).
+enum DeepLink: Hashable {
+    case meal(MealRef)
+    case planNext
+    /// Sessions de batch cooking du planning qui commence ce jour.
+    case prep(planStartKey: Int)
+    case weighIn
+    case shopping
+}
+
+/// Sessions de batch cooking d'un planning, pour la pile de navigation.
+struct PrepRoute: Hashable {
+    let planStartKey: Int
+}
+
+/// Pesée dans « Modifier mon profil », pour la pile de navigation.
+struct WeighInRoute: Hashable {}
+
 /// État partagé de l'app : horloge, services, génération en cours.
 @MainActor
 @Observable
@@ -17,9 +41,13 @@ final class AppModel {
     let generator: PlanGenerator
     /// Recettes rédigées en arrière-plan (spec 010).
     let recipes: RecipeGenerator
+    /// Rappels locaux (spec 016).
+    let notifications: NotificationService
     let isUITest: Bool
 
     var selectedTab: Tab = .week
+    /// Écran à ouvrir (toucher d'un rappel), consommé par l'onglet concerné.
+    var deepLink: DeepLink?
     /// Génération IA en cours : un seul appel à la fois.
     var busyMessage: String?
     var errorMessage: String?
@@ -37,6 +65,7 @@ final class AppModel {
         client = OpenAIClient(transport: transport)
         generator = PlanGenerator(client: client, keyStore: keyStore, clock: clock, matchCache: matchCache)
         recipes = RecipeGenerator(client: client, keyStore: keyStore)
+        notifications = NotificationService(enabled: !isUITest)
     }
 
     static func live(arguments: [String] = ProcessInfo.processInfo.arguments) -> AppModel {
@@ -71,6 +100,7 @@ final class AppModel {
             let warnings = try await action()
             warningMessage = Self.describe(warnings)
             if let context { recipes.fillMissing(in: context) }
+            await notifications.reschedule()
         } catch {
             errorMessage = error.userMessage
         }

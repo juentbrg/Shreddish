@@ -21,9 +21,13 @@ struct RootView: View {
                     PlanStore.cleanUpStoredData(in: context)
                     model.recipes.fillMissing(in: context)
                     model.calibrateIfDue(context: context)
+                    await model.notifications.requestAuthorizationIfNeeded()
+                    await model.notifications.reschedule()
                 }
                 .onChange(of: scenePhase) { _, phase in
                     if phase == .active { model.calibrateIfDue(context: context) }
+                    // Rappels recalculés à l'ouverture et à la sortie : plannings, coches et pesées à jour.
+                    if phase != .inactive { Task { await model.notifications.reschedule() } }
                 }
         }
     }

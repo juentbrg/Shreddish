@@ -330,4 +330,21 @@ final class OnboardingUITests: XCTestCase {
         XCTAssertTrue(app.descendants(matching: .any).containing(NSPredicate(format: "label CONTAINS '12:00'")).firstMatch.exists)
         XCTAssertFalse(app.descendants(matching: .any).containing(NSPredicate(format: "label CONTAINS '08:00'")).firstMatch.exists)
     }
+
+    /// Spec 016 : chaque rappel se règle dans Réglages → Notifications.
+    func testNotificationSettings() {
+        let app = launch()
+        onboard(app)
+        XCTAssertTrue(app.buttons["settings"].waitForExistence(timeout: 5))
+        app.buttons["settings"].tap()
+        app.buttons["notificationSettings"].tap()
+        let meals = app.switches["mealReminders"]
+        XCTAssertTrue(meals.waitForExistence(timeout: 3))
+        if (meals.value as? String) != "1" { meals.switches.firstMatch.tap() }
+        XCTAssertTrue(app.buttons["Moment"].exists || app.staticTexts["Moment"].exists)
+        meals.switches.firstMatch.tap()
+        XCTAssertFalse(app.buttons["Moment"].exists || app.staticTexts["Moment"].exists)
+        meals.switches.firstMatch.tap()
+        XCTAssertTrue(app.staticTexts["Rappel de pesée"].exists)
+    }
 }

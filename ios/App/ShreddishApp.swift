@@ -11,6 +11,7 @@ struct ShreddishApp: App {
         let model = AppModel.live()
         _model = State(initialValue: model)
         container = ModelContainerFactory.make(inMemory: model.isUITest)
+        model.notifications.attach(model: model, container: container)
         Theme.applyAppearance()
     }
 

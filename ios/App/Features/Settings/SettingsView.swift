@@ -12,6 +12,8 @@ struct SettingsView: View {
             Section {
                 NavigationLink("Préférences repas") { PreferencesView() }
                     .accessibilityIdentifier("preferencesSettings")
+                NavigationLink("Notifications") { NotificationSettingsView() }
+                    .accessibilityIdentifier("notificationSettings")
             }
             Section {
                 NavigationLink("Modifier mon profil") { ProfileEditView() }
