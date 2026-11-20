@@ -122,13 +122,13 @@ struct SectionTitle: View {
 
     var body: some View {
         HStack(alignment: .firstTextBaseline) {
-            Text(title)
+            Text(LocalizedStringKey(title))
                 .font(Theme.display(20, .bold, relativeTo: .title3))
                 .foregroundStyle(Theme.ink)
                 .accessibilityAddTraits(.isHeader)
             Spacer()
             if let trailing {
-                Text(trailing)
+                Text(LocalizedStringKey(trailing))
                     .font(Theme.text(.footnote))
                     .foregroundStyle(Theme.muted)
             }
@@ -265,7 +265,7 @@ struct ThemedSection<Content: View>: View {
         Section {
             content
         } header: {
-            ListHeader { Text(title) }
+            ListHeader { Text(LocalizedStringKey(title)) }
         }
     }
 }
@@ -282,7 +282,7 @@ struct EmptyState: View {
                 .font(.system(size: 44))
                 .foregroundStyle(Theme.green)
                 .accessibilityHidden(true)
-            Text(title)
+            Text(LocalizedStringKey(title))
                 .font(Theme.display(22, .bold, relativeTo: .title2))
                 .foregroundStyle(Theme.ink)
                 .multilineTextAlignment(.center)

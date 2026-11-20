@@ -22,6 +22,8 @@ public struct PromptPreferences: Codable, Sendable, Equatable {
     public var eatingWindow: String?
     /// Régimes (spec 017).
     public var diets: [Diet]?
+    /// Langue de l'appareil (code ISO, ex. « en ») ; nil = français (spec 017, FR-1712).
+    public var language: String?
 
     public init(
         mealsPerDay: Int, maxPrepMinutes: Int, weeklyBudgetEur: Double, budgetTolerance: Double,
@@ -281,8 +283,10 @@ public enum PromptBuilder {
         complète avec des snacks. Répartis les apports sur la fenêtre, repas du soir pas plus lourd que le déjeuner.
         """
 
-    /// Régimes (spec 017), règle du prompt système.
+    /// Régimes (spec 017), règle du prompt système ; langue des plats.
     static let dietRules = """
+        - language : si présent, noms des plats (name) et étapes dans cette langue ; noms d'ingrédients \
+        toujours en français, tels qu'achetés en France (table Ciqual).
         - diets : régimes cumulés, à respecter dans chaque ingrédient (vegetarian : ni viande ni poisson ; vegan : \
         aucun produit animal, ni œuf, lait, fromage, miel, whey ; pescatarian : poisson oui, viande non ; halal : \
         ni porc ni alcool ; kosher : ni porc ni fruits de mer, jamais viande et laitage dans le même repas ; \
@@ -390,7 +394,7 @@ public enum PromptBuilder {
     public static func recipeInstructions() -> String {
         """
         Tu rédiges la recette d'un repas déjà composé. Tu reçois un JSON de contexte et tu réponds uniquement \
-        avec le JSON demandé par le schéma, en français.
+        avec le JSON demandé par le schéma, en français sauf si language est indiqué : étapes dans cette langue.
         - Utilise exactement les ingrédients et quantités de meal.ingredients, sans en ajouter d'autres que \
         sel, poivre, épices, herbes et eau.
         - Respecte meal.prep_minutes.
@@ -421,6 +425,7 @@ public enum PromptBuilder {
         var supplementDoses: [String]
         var equipment: [String]
         var trainingTime: String?
+        var language: String?
     }
 
     public static func recipeInput(meal: MealDTO, supplementDoses: [String], preferences: PromptPreferences) -> String {
@@ -430,7 +435,7 @@ public enum PromptBuilder {
         )
         return encodeAny(RecipeInput(
             meal: payload, supplementDoses: supplementDoses, equipment: preferences.equipment,
-            trainingTime: preferences.trainingTime
+            trainingTime: preferences.trainingTime, language: preferences.language
         ))
     }
 

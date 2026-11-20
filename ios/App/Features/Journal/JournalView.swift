@@ -74,8 +74,10 @@ struct JournalDayView: View {
                 let actual = day.actualTotals
                 let planned = day.plannedTotals
                 if let targets = day.plan?.targets {
-                    TargetGauge(title: "Calories mangées", value: actual.kcal, target: Double(targets.targetKcal), format: Format.kcal)
-                    TargetGauge(title: "Protéines", value: actual.proteinG, target: Double(targets.proteinG), format: Format.grams)
+                    TargetGauge(title: String(localized: "Calories mangées"), value: actual.kcal,
+                        target: Double(targets.targetKcal), format: Format.kcal)
+                    TargetGauge(title: String(localized: "Protéines"), value: actual.proteinG, target: Double(targets.proteinG),
+                        format: Format.grams)
                 }
                 LabeledContent("Prévu", value: Format.kcal(planned.kcal))
                 LabeledContent("Réel", value: Format.kcal(actual.kcal))

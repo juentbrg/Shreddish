@@ -55,7 +55,8 @@ struct MealDetailView: View {
             }
             ToolbarItem(placement: .topBarTrailing) {
                 let isSaved = savedRecipes.contains { RecipeBook.key($0.name) == RecipeBook.key(meal.name) }
-                Button(isSaved ? "Retirer des recettes" : "Sauvegarder la recette", systemImage: isSaved ? "bookmark.fill" : "bookmark") {
+                Button(isSaved ? String(localized: "Retirer des recettes") : String(localized: "Sauvegarder la recette"),
+                    systemImage: isSaved ? "bookmark.fill" : "bookmark") {
                     RecipeBook.toggle(meal.dto, at: model.clock.now, in: context)
                 }
                 .disabled(meal.needsRecipe)
@@ -126,7 +127,9 @@ struct MealDetailView: View {
             SectionTitle(title: "Préparation")
             HStack(spacing: 12) {
                 if model.recipes.isPreparing(meal) { ProgressView() }
-                Text(model.recipes.isPreparing(meal) ? "Recette en préparation…" : "Recette indisponible pour l'instant.")
+                Text(model.recipes.isPreparing(meal)
+                    ? String(localized: "Recette en préparation…")
+                    : String(localized: "Recette indisponible pour l'instant."))
                     .font(Theme.text(.body))
                     .foregroundStyle(Theme.muted)
                 if !model.recipes.isPreparing(meal) {
@@ -160,7 +163,7 @@ struct IngredientGrid: View {
                             .foregroundStyle(Theme.ink)
                         Text(
                             Format.quantity(ingredient.quantity, unit: ingredient.measureUnit ?? .g)
-                                + " · " + (isOwned ? "possédé" : Format.euros(ingredient.costEur))
+                                + " · " + (isOwned ? String(localized: "possédé") : Format.euros(ingredient.costEur))
                         )
                         .font(Theme.text(.caption))
                         .foregroundStyle(isOwned ? Theme.green : Theme.muted)
@@ -189,8 +192,10 @@ struct RecipeSteps: View {
         let all = steps
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                SectionTitle(title: showAllSteps ? "Préparation" : "Étape \(min(step, all.count - 1) + 1) sur \(all.count)")
-                Button(showAllSteps ? "Pas à pas" : "Tout voir") { showAllSteps.toggle() }
+                SectionTitle(title: showAllSteps
+                    ? String(localized: "Préparation")
+                    : String(localized: "Étape \(min(step, all.count - 1) + 1) sur \(all.count)"))
+                Button(showAllSteps ? String(localized: "Pas à pas") : String(localized: "Tout voir")) { showAllSteps.toggle() }
                     .font(Theme.text(.subheadline, .semibold))
                     .accessibilityIdentifier("toggleSteps")
             }
@@ -249,7 +254,7 @@ struct RecipeSteps: View {
                     Button("Précédente") { goToStep(index - 1, count: all.count) }
                         .buttonStyle(PillButtonStyle(prominent: false))
                         .disabled(index == 0)
-                    Button(index == all.count - 1 ? "Terminé" : "Étape suivante") {
+                    Button(index == all.count - 1 ? String(localized: "Terminé") : String(localized: "Étape suivante")) {
                         if index == all.count - 1 { showAllSteps = true } else { goToStep(index + 1, count: all.count) }
                     }
                     .buttonStyle(PillButtonStyle())

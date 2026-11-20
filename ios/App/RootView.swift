@@ -79,7 +79,7 @@ struct RootView: View {
         .sheet(isPresented: $model.needsAIConsent) { AIConsentView() }
         .sheet(isPresented: $model.needsPaywall) { PaywallView() }
         .alert(
-            "Génération impossible",
+            String(localized: "Génération impossible"),
             isPresented: Binding(get: { model.errorMessage != nil }, set: { if !$0 { model.errorMessage = nil } })
         ) {
             Button("OK", role: .cancel) {}
@@ -108,7 +108,7 @@ struct BusyOverlay: View {
                         .font(Theme.text(.footnote))
                         .foregroundStyle(Theme.muted)
                 } else {
-                    Text("\(liveMeals.count) plat\(liveMeals.count > 1 ? "s" : "") au menu")
+                    Text(liveMeals.count > 1 ? "\(liveMeals.count) plats au menu" : "\(liveMeals.count) plat au menu")
                         .font(Theme.text(.subheadline, .semibold))
                         .foregroundStyle(Theme.green)
                         .contentTransition(.numericText())

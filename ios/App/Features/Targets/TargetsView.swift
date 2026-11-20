@@ -57,7 +57,8 @@ struct TargetsView: View {
                 NavigationLink {
                     CalibrationView()
                 } label: {
-                    LabeledContent("Calibration par les pesées", value: profile.isAutoCalibrationOn ? "Auto" : "Manuelle")
+                    LabeledContent("Calibration par les pesées",
+                        value: profile.isAutoCalibrationOn ? String(localized: "Auto") : String(localized: "Manuelle"))
                 }
                 .accessibilityIdentifier("calibration")
             }
@@ -74,7 +75,7 @@ struct TargetsView: View {
                         ProfileEditView()
                     } label: {
                         Label(
-                            "Précise ton activité (séances, intensité, pas) pour une dépense plus juste.",
+                            String(localized: "Précise ton activité (séances, intensité, pas) pour une dépense plus juste."),
                             systemImage: "figure.strengthtraining.traditional"
                         )
                     }
@@ -108,13 +109,13 @@ struct TargetsView: View {
             }
             if let calibration = breakdown.calibrationKcal {
                 LabeledContent(
-                    "Calibration (pesées)",
+                    String(localized: "Calibration (pesées)"),
                     value: "\(calibration >= 0 ? "+" : "−") \(Format.kcal(abs(calibration)))"
                 )
             }
             LabeledContent("Dépense estimée", value: Format.kcal(breakdown.tdee))
             LabeledContent(
-                "Ajustement \(profile.goal.label.lowercased())",
+                String(localized: "Ajustement \(profile.goal.label.lowercased())"),
                 value: Format.percent(breakdown.calorieAdjustment, signed: true)
             )
             if targets.floorApplied {
@@ -133,11 +134,11 @@ struct TargetsView: View {
 extension TargetWarning {
     var message: String {
         switch self {
-        case .floorApplied: "Cible ramenée au plancher de sécurité : descendre plus bas n'est pas conseillé."
+        case .floorApplied: String(localized: "Cible ramenée au plancher de sécurité : descendre plus bas n'est pas conseillé.")
         case .underweightNoDeficit:
             "IMC sous 18,5 : pas de déficit calorique, cible à l'entretien. Parles-en à un médecin avant une sèche."
-        case .fatReduced: "Lipides abaissés (minimum 0,6 g/kg) pour garder des glucides."
-        case .carbsAtZero: "Protéines et lipides couvrent déjà toute la cible : glucides à 0. Revois tes réglages."
+        case .fatReduced: String(localized: "Lipides abaissés (minimum 0,6 g/kg) pour garder des glucides.")
+        case .carbsAtZero: String(localized: "Protéines et lipides couvrent déjà toute la cible : glucides à 0. Revois tes réglages.")
         }
     }
 }

@@ -48,6 +48,7 @@ final class PlanGenerator {
         var promptPreferences = preferences.promptPreferences
         promptPreferences.trainingSessionsPerWeek = profile.training?.sessionsPerWeek
         promptPreferences.weeklyBudgetEur /= portions
+        promptPreferences.language = Self.outputLanguage
         var constraints = preferences.constraints(targets: targets.macros)
         constraints.weeklyBudgetEur /= portions
         return Context(
@@ -57,6 +58,12 @@ final class PlanGenerator {
             resolver: NutritionResolver(cache: matchCache, supplements: preferences.ownedSupplementDetails),
             oil: Self.allowedOil(preferences.constraints(targets: targets.macros))
         )
+    }
+
+    /// Langue de l'appareil pour les plats et recettes ; nil en français (spec 017, FR-1712).
+    static var outputLanguage: String? {
+        let code = Locale.current.language.languageCode?.identifier ?? "fr"
+        return code == "fr" ? nil : code
     }
 
     /// Budget d'une portion : budget du foyer ÷ portions.

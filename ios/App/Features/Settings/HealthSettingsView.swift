@@ -25,16 +25,18 @@ struct HealthSettingsView: View {
             } footer: {
                 ListFooter {
                     Text(health.isAvailable
-                        ? "Importe tes pesées (balance connectée), lit ta dépense active et enregistre les apports du journal. "
-                            + "Rien ne quitte ton iPhone."
-                        : "Apple Santé n'est pas disponible sur cet appareil.")
+                        ? """
+                            Importe tes pesées (balance connectée), lit ta dépense active et enregistre les apports du \
+                            journal. Rien ne quitte ton iPhone.
+                            """
+                        : String(localized: "Apple Santé n'est pas disponible sur cet appareil."))
                 }
             }
             if health.isEnabled {
                 ThemedSection("Activité mesurée") {
                     LabeledContent(
-                        "Dépense active",
-                        value: health.averageActiveKcal.map { "\(Format.kcal($0)) / jour" } ?? "Pas encore de données"
+                        String(localized: "Dépense active"),
+                        value: health.averageActiveKcal.map { "\(Format.kcal($0)) / jour" } ?? String(localized: "Pas encore de données")
                     )
                 }
             }

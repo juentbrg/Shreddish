@@ -25,10 +25,14 @@ struct WeeklySummaryView: View {
             if summary.elapsedDays > 0, let targets = plan.targets {
                 ThemedSection("Moyenne par jour") {
                     let average = summary.averageActual
-                    TargetGauge(title: "Calories", value: average.kcal, target: Double(targets.targetKcal), format: Format.kcal)
-                    TargetGauge(title: "Protéines", value: average.proteinG, target: Double(targets.proteinG), format: Format.grams)
-                    TargetGauge(title: "Glucides", value: average.carbsG, target: Double(targets.carbsG), format: Format.grams)
-                    TargetGauge(title: "Lipides", value: average.fatG, target: Double(targets.fatG), format: Format.grams)
+                    TargetGauge(title: String(localized: "Calories"), value: average.kcal, target: Double(targets.targetKcal),
+                        format: Format.kcal)
+                    TargetGauge(title: String(localized: "Protéines"), value: average.proteinG, target: Double(targets.proteinG),
+                        format: Format.grams)
+                    TargetGauge(title: String(localized: "Glucides"), value: average.carbsG, target: Double(targets.carbsG),
+                        format: Format.grams)
+                    TargetGauge(title: String(localized: "Lipides"), value: average.fatG, target: Double(targets.fatG),
+                        format: Format.grams)
                 }
             }
             ThemedSection("Par jour") {

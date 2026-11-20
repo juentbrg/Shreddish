@@ -56,7 +56,7 @@ final class HealthService {
             isEnabled = true
             await sync(container: container, clock: clock)
         } catch {
-            lastError = "Autorisation Santé refusée."
+            lastError = String(localized: "Autorisation Santé refusée.")
         }
     }
 
@@ -119,7 +119,7 @@ final class HealthService {
             }
         }
         guard !samples.isEmpty else { return }
-        do { try await store.save(samples) } catch { lastError = "Écriture dans Santé impossible." }
+        do { try await store.save(samples) } catch { lastError = String(localized: "Écriture dans Santé impossible.") }
     }
 
     private func quantitySamples(

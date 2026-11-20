@@ -39,7 +39,7 @@ struct WeekShareCard: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(Theme.card, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
             let cost = plan.shoppingSummary.weekCostEur
-            Text("\(Format.euros(cost)) de courses pour la semaine\(cost <= budget ? ", dans le budget" : "")")
+            Text("\(Format.euros(cost)) de courses pour la semaine\(cost <= budget ? String(localized: ", dans le budget") : "")")
                 .font(Theme.text(.subheadline, .semibold))
                 .foregroundStyle(Theme.onGreen)
             Spacer(minLength: 0)

@@ -157,4 +157,26 @@ extension OnboardingUITests {
             }
         }
     }
+
+    /// Spec 017, FR-1712 : interface traduite (anglais, allemand).
+    func testTranslatedInterface() {
+        for (language, week, groceries) in [("en", "Week", "Groceries"), ("de", "Woche", "Einkauf")] {
+            let app = launch(["-AppleLanguages", "(\(language))", "-AppleLocale", language == "en" ? "en_US" : "de_DE"])
+            onboard(app)
+            XCTAssertTrue(app.tabBars.buttons[week].waitForExistence(timeout: 5))
+            app.tabBars.buttons[week].tap()
+            app.buttons["generateWeek"].tap()
+            app.buttons["startGeneration"].tap()
+            XCTAssertTrue(app.buttons["day-0"].waitForExistence(timeout: 10))
+            Self.saveScreenshot(app, name: "\(language)-week")
+            app.tabBars.buttons[groceries].tap()
+            Self.saveScreenshot(app, name: "\(language)-groceries")
+            app.terminate()
+        }
+    }
+
+    static func saveScreenshot(_ app: XCUIApplication, name: String) {
+        guard let folder = ProcessInfo.processInfo.environment["SHOTS_DIR"] else { return }
+        try? app.screenshot().pngRepresentation.write(to: URL(fileURLWithPath: "\(folder)/\(name).png"))
+    }
 }

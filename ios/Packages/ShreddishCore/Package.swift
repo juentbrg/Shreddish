@@ -15,7 +15,7 @@ let package = Package(
     targets: [
         .target(
             name: "ShreddishCore",
-            resources: [.copy("Resources/ciqual.json"), .copy("Resources/prices.json")],
+            resources: [.copy("Resources/ciqual.json"), .copy("Resources/prices.json"), .process("Resources/Localizable.xcstrings")],
             swiftSettings: [.swiftLanguageMode(.v6)]
         ),
         .testTarget(

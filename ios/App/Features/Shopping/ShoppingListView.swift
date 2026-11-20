@@ -90,7 +90,7 @@ private struct AisleFilter: View {
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                chip("Tout", isSelected: selected == nil, color: Theme.card) { selected = nil }
+                chip(String(localized: "Tout"), isSelected: selected == nil, color: Theme.card) { selected = nil }
                 ForEach(aisles, id: \.self) { aisle in
                     chip(aisle.label, isSelected: selected == aisle, color: aisle.dotColor.opacity(0.22)) { selected = aisle }
                 }
@@ -163,7 +163,7 @@ struct ShoppingRow: View {
                             .strikethrough(item.isChecked)
                             .foregroundStyle(item.isChecked ? Theme.muted : Theme.ink)
                         Spacer(minLength: 8)
-                        Text(item.totalQuantity > 0 ? Format.euros(item.costEUR) : "Déjà chez toi")
+                        Text(item.totalQuantity > 0 ? Format.euros(item.costEUR) : String(localized: "Déjà chez toi"))
                             .font(Theme.text(.subheadline, .semibold))
                             .monospacedDigit()
                             .foregroundStyle(item.isChecked ? Theme.muted : Theme.ink)
@@ -176,7 +176,9 @@ struct ShoppingRow: View {
                     }
                     if packing.leftover >= (item.unit == .piece ? 1 : 10) {
                         let rest = Format.quantity(packing.leftover, unit: item.unit)
-                        Text(packing.perishable ? "Reste \(rest), à finir sous 3 jours" : "Reste \(rest) pour la suite")
+                        Text(packing.perishable
+                            ? String(localized: "Reste \(rest), à finir sous 3 jours")
+                            : String(localized: "Reste \(rest) pour la suite"))
                             .font(Theme.text(.caption))
                             .foregroundStyle(packing.perishable ? Theme.tomato : Theme.muted)
                     }

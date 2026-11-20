@@ -21,8 +21,8 @@ struct DayContent: View {
                 SectionTitle(
                     title: "Au menu",
                     trailing: members.isEmpty
-                        ? "\(Format.euros(day.plannedCostEUR)) la journée"
-                        : "\(Format.euros(day.plannedCostEUR * Household.portions(members))) pour le foyer"
+                        ? String(localized: "\(Format.euros(day.plannedCostEUR)) la journée")
+                        : String(localized: "\(Format.euros(day.plannedCostEUR * Household.portions(members))) pour le foyer")
                 )
                 ForEach(day.sortedMeals) { meal in
                     NavigationLink {
@@ -92,7 +92,9 @@ struct DayHeroCard: View {
                 }
                 Spacer()
                 if targets != nil {
-                    Text(Totals.isOffTarget(deviation) ? "Hors cible \(Format.percent(deviation, signed: true))" : "Dans la cible")
+                    Text(Totals.isOffTarget(deviation)
+                        ? String(localized: "Hors cible \(Format.percent(deviation, signed: true))")
+                        : String(localized: "Dans la cible"))
                         .font(Theme.text(.caption, .bold))
                         .foregroundStyle(Totals.isOffTarget(deviation) ? Theme.tomato : Theme.green)
                         .padding(.horizontal, 10)
@@ -121,7 +123,7 @@ struct MacroTile: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(title).font(Theme.text(.caption, .medium))
+            Text(LocalizedStringKey(title)).font(Theme.text(.caption, .medium))
             Text(Format.grams(value)).font(Theme.text(.headline, .bold))
             if let target {
                 Text("cible \(Int(target.rounded()))").font(Theme.text(.caption2, .medium))

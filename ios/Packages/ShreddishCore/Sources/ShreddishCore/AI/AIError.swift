@@ -37,20 +37,23 @@ public enum AIError: Error, Equatable, Sendable {
         return ["budget", "€", "euro", "prix", "cout", "plafond", "cher", "argent"].contains { text.contains($0) }
     }
 
-    /// Message en français pour l'utilisateur.
+    /// Message pour l'utilisateur, dans la langue de l'appareil.
     public var userMessage: String {
         switch self {
-        case .missingKey: "Clé API absente du build : renseigne OPENAI_API_KEY dans Config/Secrets.xcconfig."
-        case .invalidKey: "Clé API refusée par OpenAI : remplace-la dans Config/Secrets.xcconfig."
-        case .rateLimited: "Quota OpenAI atteint ou trop de requêtes. Réessaie plus tard ou vérifie ton crédit."
-        case .offline: "Pas de connexion internet. Ton planning actuel reste disponible."
-        case .timeout: "OpenAI met trop de temps à répondre. Réessaie dans un instant."
-        case let .server(status): "OpenAI est indisponible (erreur \(status)). Réessaie dans un instant."
-        case .incomplete: "Réponse incomplète de l'IA. Réessaie."
-        case .invalidOutput: "L'IA a renvoyé un planning invalide. Réessaie."
-        case let .infeasible(reason): "Contraintes impossibles à respecter : \(reason)"
-        case .cancelled: "Génération annulée."
-        case let .unexpected(detail): "Erreur inattendue : \(detail)"
+        case .missingKey: String(localized: "Clé API absente du build : renseigne OPENAI_API_KEY dans Config/Secrets.xcconfig.",
+            bundle: .module)
+        case .invalidKey: String(localized: "Clé API refusée par OpenAI : remplace-la dans Config/Secrets.xcconfig.", bundle: .module)
+        case .rateLimited:
+            String(localized: "Quota OpenAI atteint ou trop de requêtes. Réessaie plus tard ou vérifie ton crédit.", bundle: .module)
+        case .offline: String(localized: "Pas de connexion internet. Ton planning actuel reste disponible.", bundle: .module)
+        case .timeout: String(localized: "OpenAI met trop de temps à répondre. Réessaie dans un instant.", bundle: .module)
+        case let .server(status): String(localized: "OpenAI est indisponible (erreur \(status)). Réessaie dans un instant.",
+            bundle: .module)
+        case .incomplete: String(localized: "Réponse incomplète de l'IA. Réessaie.", bundle: .module)
+        case .invalidOutput: String(localized: "L'IA a renvoyé un planning invalide. Réessaie.", bundle: .module)
+        case let .infeasible(reason): String(localized: "Contraintes impossibles à respecter : \(reason)", bundle: .module)
+        case .cancelled: String(localized: "Génération annulée.", bundle: .module)
+        case let .unexpected(detail): String(localized: "Erreur inattendue : \(detail)", bundle: .module)
         }
     }
 }

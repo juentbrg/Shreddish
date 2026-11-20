@@ -113,8 +113,10 @@ private struct FastingSection: View {
         } footer: {
             ListFooter {
                 if let window = preferences.eatingWindow {
-                    Text("Repas entre \(Format.clock(window.startMinutes)) et \(Format.clock(window.endMinutes)), "
-                        + "\(Format.duration(window.fastingMinutes)) de jeûne. S'applique aux prochains plannings.")
+                    Text("""
+                        Repas entre \(Format.clock(window.startMinutes)) et \(Format.clock(window.endMinutes)), \
+                        \(Format.duration(window.fastingMinutes)) de jeûne. S'applique aux prochains plannings.
+                        """)
                 } else {
                     Text("Tous les repas dans une fenêtre horaire, par exemple de 12:00 à 19:30.")
                 }
@@ -179,7 +181,7 @@ private struct BudgetSection: View {
             }
             Picker("Dépassement toléré", selection: Binding(get: { preferences.tolerance }, set: { preferences.tolerance = $0 })) {
                 ForEach(Preferences.toleranceOptions, id: \.self) { option in
-                    Text(option == 0 ? "Aucun" : "+\(Format.percent(option))").tag(option)
+                    Text(option == 0 ? String(localized: "Aucun") : "+\(Format.percent(option))").tag(option)
                 }
             }
             .accessibilityIdentifier("budgetTolerance")
@@ -253,7 +255,7 @@ extension SupplementsSection {
         case .macro:
             guard let serving = info.servingG else {
                 return info.proteinPerServingG.map { "\(Format.number($0)) g de protéines par dose" }
-                    ?? "Préciser les valeurs par dose"
+                    ?? String(localized: "Préciser les valeurs par dose")
             }
             var parts = ["Dose de \(Format.number(serving)) g"]
             if let kcal = info.kcalPerServing { parts.append("\(Format.number(kcal, digits: 0)) kcal") }
@@ -262,9 +264,9 @@ extension SupplementsSection {
             if let fat = info.fatPerServingG { parts.append("L \(Format.number(fat)) g") }
             return parts.joined(separator: " · ")
         case .dose:
-            guard let amount = info.doseAmount else { return "Préciser la dose" }
+            guard let amount = info.doseAmount else { return String(localized: "Préciser la dose") }
             let perDay = info.dosesPerDay ?? 1
-            return "\(Format.number(amount)) \((info.doseUnit ?? .g).label) par prise, \(perDay) fois par jour"
+            return String(localized: "\(Format.number(amount)) \((info.doseUnit ?? .g).label) par prise, \(perDay) fois par jour")
         }
     }
 }
@@ -276,8 +278,8 @@ extension SupplementUnit {
         case .mg: "mg"
         case .µg: "µg"
         case .ml: "ml"
-        case .gelule: "gélule(s)"
-        case .comprime: "comprimé(s)"
+        case .gelule: String(localized: "gélule(s)")
+        case .comprime: String(localized: "comprimé(s)")
         case .sachet: "sachet(s)"
         }
     }
@@ -302,7 +304,7 @@ private struct SupplementInfoView: View {
                 ListFooter {
                     Text(kind == .macro
                         ? "Calories et macros comptées."
-                        : "Aucune calorie, prise placée dans un repas.")
+                        : String(localized: "Aucune calorie, prise placée dans un repas."))
                 }
             }
             if kind == .macro {
@@ -338,7 +340,7 @@ private struct SupplementInfoView: View {
                         .fixedSize()
                     }
                     Stepper(
-                        "\(info.dosesPerDay ?? 1) prise(s) par jour",
+                        String(localized: "\(info.dosesPerDay ?? 1) prise(s) par jour"),
                         value: Binding(get: { info.dosesPerDay ?? 1 }, set: { info.dosesPerDay = $0 }),
                         in: 1...4
                     )
@@ -359,7 +361,7 @@ private struct SupplementInfoView: View {
 
     private func field(_ title: String, value: Binding<Double?>, unit: String, identifier: String) -> some View {
         HStack {
-            Text(title)
+            Text(LocalizedStringKey(title))
             Spacer()
             TextField("0", value: value, format: .number.precision(.fractionLength(0...1)).locale(Format.locale))
                 .keyboardType(.decimalPad)
@@ -431,17 +433,17 @@ private struct ModelSection: View {
 extension IngredientAvailability {
     var label: String {
         switch self {
-        case .everywhere: "Trouvables partout"
-        case .supermarket: "Grand supermarché"
-        case .specialty: "Magasins spécialisés OK"
+        case .everywhere: String(localized: "Trouvables partout")
+        case .supermarket: String(localized: "Grand supermarché")
+        case .specialty: String(localized: "Magasins spécialisés OK")
         }
     }
 
     var detail: String {
         switch self {
-        case .everywhere: "Basiques, dispo même en hard discount."
-        case .supermarket: "Rayon d'un grand supermarché."
-        case .specialty: "Bio et spécialisé acceptés."
+        case .everywhere: String(localized: "Basiques, dispo même en hard discount.")
+        case .supermarket: String(localized: "Rayon d'un grand supermarché.")
+        case .specialty: String(localized: "Bio et spécialisé acceptés.")
         }
     }
 }

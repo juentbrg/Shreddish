@@ -67,13 +67,13 @@ struct ProfileDraft: Equatable {
 extension ProfileValidationError {
     var message: String {
         switch self {
-        case .ageOutOfRange: "Âge accepté : de 18 à 90 ans. Shreddish ne convient pas aux mineurs."
-        case .heightOutOfRange: "Taille acceptée : de 120 à 230 cm."
-        case .weightOutOfRange: "Poids accepté : de 35 à 250 kg."
-        case .overrideOutOfRange(.proteinPerKg): "Protéines : de 1,2 à 3 g par kg."
-        case .overrideOutOfRange(.fatPerKg): "Lipides : de 0,6 à 1,5 g par kg."
-        case .overrideOutOfRange(.calorieAdjustment): "Ajustement calorique : de −30 % à +20 %."
-        case .trainingOutOfRange: "Entraînement : de 0 à 14 séances, de 15 à 240 minutes."
+        case .ageOutOfRange: String(localized: "Âge accepté : de 18 à 90 ans. Shreddish ne convient pas aux mineurs.")
+        case .heightOutOfRange: String(localized: "Taille acceptée : de 120 à 230 cm.")
+        case .weightOutOfRange: String(localized: "Poids accepté : de 35 à 250 kg.")
+        case .overrideOutOfRange(.proteinPerKg): String(localized: "Protéines : de 1,2 à 3 g par kg.")
+        case .overrideOutOfRange(.fatPerKg): String(localized: "Lipides : de 0,6 à 1,5 g par kg.")
+        case .overrideOutOfRange(.calorieAdjustment): String(localized: "Ajustement calorique : de −30 % à +20 %.")
+        case .trainingOutOfRange: String(localized: "Entraînement : de 0 à 14 séances, de 15 à 240 minutes.")
         }
     }
 }
@@ -148,13 +148,15 @@ struct TrainingSection: View {
     var body: some View {
         Section {
             Stepper(
-                "\(training.sessionsPerWeek) séance\(training.sessionsPerWeek > 1 ? "s" : "") par semaine",
+                training.sessionsPerWeek > 1
+                    ? String(localized: "\(training.sessionsPerWeek) séances par semaine")
+                    : String(localized: "\(training.sessionsPerWeek) séance par semaine"),
                 value: $training.sessionsPerWeek, in: TrainingLoad.sessionsRange
             )
             .accessibilityIdentifier("sessions")
             if training.sessionsPerWeek > 0 {
                 Stepper(
-                    "\(training.minutesPerSession) min par séance",
+                    String(localized: "\(training.minutesPerSession) min par séance"),
                     value: $training.minutesPerSession, in: TrainingLoad.minutesRange, step: 15
                 )
                 .accessibilityIdentifier("sessionMinutes")

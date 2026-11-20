@@ -47,7 +47,7 @@ struct MealEditView: View {
                 totalsSection
             }
             .themedList()
-            .navigationTitle(title)
+            .navigationTitle(LocalizedStringKey(title))
             .navigationBarTitleDisplayMode(.inline)
             .keyboardDoneButton()
             .toolbar {

@@ -170,8 +170,10 @@ struct SavedRecipeView: View {
                 .foregroundStyle(Theme.ink)
             FlowPills(items: ["\(recipe.prepMinutes) min", Format.euros(recipe.costEUR), Format.kcal(recipe.kcal)])
             Text(
-                "Protéines \(Format.grams(recipe.proteinG)) · Glucides \(Format.grams(recipe.carbsG))"
-                    + " · Lipides \(Format.grams(recipe.fatG))"
+                """
+                    Protéines \(Format.grams(recipe.proteinG)) · Glucides \(Format.grams(recipe.carbsG)) · Lipides \
+                    \(Format.grams(recipe.fatG))
+                    """
             )
                 .font(Theme.text(.footnote))
                 .foregroundStyle(Theme.ink)
@@ -198,7 +200,7 @@ struct RecipePicker: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            SectionTitle(title: "Recettes à replacer", trailing: picked.isEmpty ? nil : "\(picked.count) choisie(s)")
+            SectionTitle(title: "Recettes à replacer", trailing: picked.isEmpty ? nil : String(localized: "\(picked.count) choisie(s)"))
             Text("L'IA les place dans la semaine, quantités ajustées à tes cibles.")
                 .font(Theme.text(.footnote))
                 .foregroundStyle(Theme.muted)

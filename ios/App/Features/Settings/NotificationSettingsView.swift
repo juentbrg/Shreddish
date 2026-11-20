@@ -27,7 +27,7 @@ struct NotificationSettingsView: View {
                 if notifications.settings.mealsEnabled {
                     Picker("Moment", selection: $notifications.settings.mealLeadMinutes) {
                         ForEach(NotificationSettings.leadOptions, id: \.self) { minutes in
-                            Text(minutes == 0 ? "À l'heure" : "\(minutes) min avant").tag(minutes)
+                            Text(minutes == 0 ? String(localized: "À l'heure") : String(localized: "\(minutes) min avant")).tag(minutes)
                         }
                     }
                 }
@@ -60,7 +60,7 @@ struct NotificationSettingsView: View {
         _ title: String, toggle: String, enabled: Binding<Bool>, minutes: Binding<Int>, footer: String
     ) -> some View {
         Section {
-            Toggle(toggle, isOn: enabled)
+            Toggle(LocalizedStringKey(toggle), isOn: enabled)
             if enabled.wrappedValue {
                 DatePicker("Heure", selection: Binding(
                     get: {
@@ -76,11 +76,11 @@ struct NotificationSettingsView: View {
             }
         } header: {
             ListHeader {
-                Text(title)
+                Text(LocalizedStringKey(title))
             }
         } footer: {
             ListFooter {
-                Text(footer)
+                Text(LocalizedStringKey(footer))
             }
         }
     }

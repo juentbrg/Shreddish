@@ -21,7 +21,8 @@ struct HouseholdView: View {
                     Button {
                         editing = member
                     } label: {
-                        LabeledContent(member.name.isEmpty ? "Sans nom" : member.name, value: Format.portion(member.portion))
+                        LabeledContent(member.name.isEmpty ? String(localized: "Sans nom") : member.name,
+                            value: Format.portion(member.portion))
                             .foregroundStyle(Theme.ink)
                     }
                     .accessibilityIdentifier("member-\(member.name)")
@@ -38,8 +39,11 @@ struct HouseholdView: View {
                 }
             } footer: {
                 ListFooter {
-                    Text("Mêmes plats pour tout le monde. Courses et budget pour \(Format.portion(Household.portions(members))) "
-                        + "au total ; tes macros restent calculées pour ta portion.")
+                    Text("""
+                        Mêmes plats pour tout le monde. Courses et budget pour \
+                        \(Format.portion(Household.portions(members))) au total ; tes macros restent calculées pour ta \
+                        portion.
+                        """)
                 }
             }
         }
@@ -108,7 +112,7 @@ private struct MemberEditView: View {
                 }
             }
             .themedList()
-            .navigationTitle(member == nil ? "Nouvelle personne" : "Modifier")
+            .navigationTitle(member == nil ? String(localized: "Nouvelle personne") : String(localized: "Modifier"))
             .navigationBarTitleDisplayMode(.inline)
             .keyboardDoneButton()
             .toolbar {

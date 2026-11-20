@@ -197,7 +197,10 @@ struct PlanSwitcher: View {
                     select(plan.id)
                 } label: {
                     VStack(spacing: 1) {
-                        Text(plan.contains(today) ? "En cours" : plan.startDay > today ? "À venir" : "Terminée")
+                        Text(plan.contains(today)
+                            ? String(localized: "En cours")
+                            : plan.startDay > today
+                            ? String(localized: "À venir") : String(localized: "Terminée"))
                             .font(Theme.text(.subheadline, .bold))
                         Text("\(Format.shortDate(plan.startDay)) → \(Format.shortDate(plan.endDay))")
                             .font(Theme.text(.caption))
@@ -262,11 +265,11 @@ struct NewWeekSheet: View {
 
     private var effect: String {
         if chosen <= today {
-            return "Planning actuel archivé, journal conservé."
+            return String(localized: "Planning actuel archivé, journal conservé.")
         }
         let overlapped = activePlans.filter { $0.contains(chosen) || $0.startDay > chosen }
-        guard !overlapped.isEmpty else { return "Planning en cours inchangé." }
-        return "Jours prévus à partir de cette date remplacés."
+        guard !overlapped.isEmpty else { return String(localized: "Planning en cours inchangé.") }
+        return String(localized: "Jours prévus à partir de cette date remplacés.")
     }
 
     var body: some View {
@@ -297,7 +300,7 @@ struct NewWeekSheet: View {
                         }
                     }
                     DatePicker(
-                        "Autre date",
+                        String(localized: "Autre date"),
                         selection: Binding(
                             get: { chosen.startDate(calendar: .current) },
                             set: { startDay = LocalDay(date: $0, calendar: .current) }
@@ -436,7 +439,7 @@ struct DayStrip: View {
                     .background(isSelected ? Theme.green : Theme.card, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(Format.weekdayLong(day.day) + (day.day == today ? ", aujourd'hui" : ""))
+                .accessibilityLabel(Format.weekdayLong(day.day) + (day.day == today ? String(localized: ", aujourd'hui") : ""))
                 .accessibilityAddTraits(isSelected ? .isSelected : [])
                 .accessibilityIdentifier("\(idPrefix)\(day.offset)")
             }
@@ -496,7 +499,9 @@ struct WeekCostRow: View {
             if cost > preferences.weeklyBudget + 0.005 {
                 let beyond = cost > preferences.budgetCeiling + 0.005
                 WarningBadge(
-                    text: beyond ? "Au-dessus de la tolérance" : "Au-dessus du budget, dans la tolérance",
+                    text: beyond
+                        ? String(localized: "Au-dessus de la tolérance")
+                        : String(localized: "Au-dessus du budget, dans la tolérance"),
                     systemImage: "eurosign.circle.fill"
                 )
             }

@@ -45,7 +45,7 @@ struct PlanHistoryView: View {
                 NavigationLink {
                     WeekPlanList(plan: plan)
                         .themedList()
-                        .navigationTitle(plan.isCurrent ? "Semaine en cours" : "Ancienne semaine")
+                        .navigationTitle(plan.isCurrent ? String(localized: "Semaine en cours") : String(localized: "Ancienne semaine"))
                 } label: {
                     VStack(alignment: .leading) {
                         Text(Format.range(plan, calendar: model.clock.calendar))
@@ -63,7 +63,7 @@ struct PlanHistoryView: View {
             }
         }
         .confirmationDialog(
-            "Supprimer ce planning ?",
+            String(localized: "Supprimer ce planning ?"),
             isPresented: Binding(get: { pendingDeletion != nil }, set: { if !$0 { pendingDeletion = nil } }),
             titleVisibility: .visible
         ) {

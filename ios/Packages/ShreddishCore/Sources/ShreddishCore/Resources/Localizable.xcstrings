@@ -1,0 +1,622 @@
+{
+  "sourceLanguage": "fr",
+  "strings": {
+    " dans %lld min": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " in %lld Min."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " in %lld min"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " en %lld min"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " tra %lld min"
+          }
+        }
+      }
+    },
+    "%lld article à acheter sur ta liste.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld Artikel auf deiner Liste zu kaufen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld item to buy on your list."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld artículo por comprar en tu lista."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld articolo da comprare nella tua lista."
+          }
+        }
+      }
+    },
+    "%lld articles à acheter sur ta liste.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld Artikel auf deiner Liste zu kaufen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld items to buy on your list."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld artículos por comprar en tu lista."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld articoli da comprare nella tua lista."
+          }
+        }
+      }
+    },
+    "Au réveil, à jeun, pour suivre ton rythme.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nach dem Aufstehen, nüchtern, um dein Tempo zu verfolgen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When you wake up, before eating, to track your pace."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Al despertar, en ayunas, para seguir tu ritmo."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Al risveglio, a digiuno, per seguire il tuo ritmo."
+          }
+        }
+      }
+    },
+    "Batch cooking aujourd'hui": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Heute Meal Prep"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Batch cooking today"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Batch cooking hoy"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Batch cooking oggi"
+          }
+        }
+      }
+    },
+    "Clé API absente du build : renseigne OPENAI_API_KEY dans Config/Secrets.xcconfig.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "API-Schlüssel fehlt im Build: OPENAI_API_KEY in Config/Secrets.xcconfig setzen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "API key missing from the build: set OPENAI_API_KEY in Config/Secrets.xcconfig."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Falta la clave API en la compilación: define OPENAI_API_KEY en Config/Secrets.xcconfig."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chiave API assente nella build: imposta OPENAI_API_KEY in Config/Secrets.xcconfig."
+          }
+        }
+      }
+    },
+    "Clé API refusée par OpenAI : remplace-la dans Config/Secrets.xcconfig.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "API-Schlüssel von OpenAI abgelehnt: ersetze ihn in Config/Secrets.xcconfig."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "API key rejected by OpenAI: replace it in Config/Secrets.xcconfig."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clave API rechazada por OpenAI: cámbiala en Config/Secrets.xcconfig."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chiave API rifiutata da OpenAI: sostituiscila in Config/Secrets.xcconfig."
+          }
+        }
+      }
+    },
+    "Contraintes impossibles à respecter : %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vorgaben nicht einhaltbar: %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Constraints can't all be met: %@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restricciones imposibles de cumplir: %@"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vincoli impossibili da rispettare: %@"
+          }
+        }
+      }
+    },
+    "Courses de la semaine": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Einkauf der Woche"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This week's groceries"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La compra de la semana"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spesa della settimana"
+          }
+        }
+      }
+    },
+    "Dernier jour de ton planning": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Letzter Tag deines Plans"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last day of your plan"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Último día de tu plan"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ultimo giorno del tuo piano"
+          }
+        }
+      }
+    },
+    "Erreur inattendue : %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unerwarteter Fehler: %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unexpected error: %@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Error inesperado: %@"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Errore imprevisto: %@"
+          }
+        }
+      }
+    },
+    "Génération annulée.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erstellung abgebrochen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Generation cancelled."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Generación cancelada."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Generazione annullata."
+          }
+        }
+      }
+    },
+    "L'IA a renvoyé un planning invalide. Réessaie.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die KI hat einen ungültigen Plan geliefert. Versuch es erneut."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The AI returned an invalid plan. Try again."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La IA devolvió un plan no válido. Inténtalo de nuevo."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L'IA ha restituito un piano non valido. Riprova."
+          }
+        }
+      }
+    },
+    "OpenAI est indisponible (erreur %lld). Réessaie dans un instant.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenAI ist nicht erreichbar (Fehler %lld). Versuch es gleich noch mal."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenAI is unavailable (error %lld). Try again in a moment."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenAI no está disponible (error %lld). Inténtalo en un momento."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenAI non è disponibile (errore %lld). Riprova tra un attimo."
+          }
+        }
+      }
+    },
+    "OpenAI met trop de temps à répondre. Réessaie dans un instant.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenAI braucht zu lange. Versuch es gleich noch mal."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenAI is taking too long to respond. Try again in a moment."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenAI tarda demasiado en responder. Inténtalo en un momento."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenAI impiega troppo a rispondere. Riprova tra un attimo."
+          }
+        }
+      }
+    },
+    "Pas de connexion internet. Ton planning actuel reste disponible.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keine Internetverbindung. Dein aktueller Plan bleibt verfügbar."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No internet connection. Your current plan is still available."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sin conexión a internet. Tu plan actual sigue disponible."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nessuna connessione internet. Il tuo piano attuale resta disponibile."
+          }
+        }
+      }
+    },
+    "Pesée du matin": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Morgendliches Wiegen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Morning weigh-in"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pesaje de la mañana"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pesata del mattino"
+          }
+        }
+      }
+    },
+    "Planifie la suite pour demain.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plane für morgen weiter."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plan what's next for tomorrow."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Planifica lo siguiente para mañana."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pianifica il seguito per domani."
+          }
+        }
+      }
+    },
+    "Planifie la suite pour garder le rythme.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plane weiter, um dranzubleiben."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plan what's next to keep your momentum."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Planifica lo siguiente para mantener el ritmo."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pianifica il seguito per mantenere il ritmo."
+          }
+        }
+      }
+    },
+    "Quota OpenAI atteint ou trop de requêtes. Réessaie plus tard ou vérifie ton crédit.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenAI-Kontingent erreicht oder zu viele Anfragen. Versuch es später oder prüf dein Guthaben."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenAI quota reached or too many requests. Try again later or check your credit."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cuota de OpenAI alcanzada o demasiadas solicitudes. Inténtalo más tarde o revisa tu crédito."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quota OpenAI raggiunta o troppe richieste. Riprova più tardi o controlla il credito."
+          }
+        }
+      }
+    },
+    "Réponse incomplète de l'IA. Réessaie.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unvollständige KI-Antwort. Versuch es erneut."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Incomplete AI response. Try again."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Respuesta incompleta de la IA. Inténtalo de nuevo."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risposta incompleta dell'IA. Riprova."
+          }
+        }
+      }
+    },
+    "Ton planning se termine demain": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dein Plan endet morgen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your plan ends tomorrow"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu plan termina mañana"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il tuo piano finisce domani"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

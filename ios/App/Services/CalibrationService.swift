@@ -46,9 +46,9 @@ enum CalibrationService {
         let after = profile.targets(clock: clock)?.targetKcal
         guard let before, let after else { return nil }
         if before == after {
-            return "Tes pesées confirment ta cible : \(Format.kcal(Double(after)))."
+            return String(localized: "Tes pesées confirment ta cible : \(Format.kcal(Double(after))).")
         }
-        return "Cibles ajustées d'après tes pesées : \(Format.kcal(Double(before))) → \(Format.kcal(Double(after)))."
+        return String(localized: "Cibles ajustées d'après tes pesées : \(Format.kcal(Double(before))) → \(Format.kcal(Double(after))).")
     }
 }
 

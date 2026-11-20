@@ -65,14 +65,14 @@ final class SubscriptionStore {
                 await transaction.finish()
                 await refresh()
             case .success(.unverified):
-                purchaseError = "Achat non vérifié par Apple."
+                purchaseError = String(localized: "Achat non vérifié par Apple.")
             case .pending, .userCancelled:
                 break
             @unknown default:
                 break
             }
         } catch {
-            purchaseError = "Achat impossible : réessaie plus tard."
+            purchaseError = String(localized: "Achat impossible : réessaie plus tard.")
         }
     }
 

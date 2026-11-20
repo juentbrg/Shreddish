@@ -101,11 +101,11 @@ struct EditableListSection: View {
             }
         } header: {
             ListHeader {
-                Text(title)
+                Text(LocalizedStringKey(title))
             }
         } footer: {
             ListFooter {
-                if let footer { Text(footer) }
+                if let footer { Text(LocalizedStringKey(footer)) }
             }
         }
     }

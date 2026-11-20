@@ -55,7 +55,7 @@ struct NotificationPlannerTests {
         settings.planNextEnabled = false
         let result = reminders(settings, meals: [slot(today, 1, "12:30")], now: at(today, 10))
         #expect(result.first?.date == at(today, 12, 15))
-        #expect(result.first?.title == "Déjeuner dans 15 min · 12:30")
+        #expect(result.first?.title == "Déjeuner" + String(localized: " dans \(15) min", bundle: CoreResources.bundle) + " · 12:30")
     }
 
     @Test func weighInSkipsWeighedDaysAndPastTimes() {
@@ -75,7 +75,7 @@ struct NotificationPlannerTests {
         let result = reminders(settings, plans: plans, now: at(today, 9))
         let reminder = result.first { $0.kind == .planNext }
         #expect(reminder?.date == at(today.adding(days: 1), 18))
-        #expect(reminder?.title == "Ton planning se termine demain")
+        #expect(reminder?.title == String(localized: "Ton planning se termine demain", bundle: CoreResources.bundle))
     }
 
     @Test func planNextOnLastDayWhenTheDayBeforeIsPast() {
@@ -94,7 +94,7 @@ struct NotificationPlannerTests {
         let result = reminders(settings, plans: [plan(start: start, sessions: [session], unchecked: 3)], now: at(today, 9))
         #expect(result.map(\.kind) == [.prep, .shopping])
         #expect(result.allSatisfy { $0.date == at(start, 10) })
-        #expect(result.last?.body == "3 articles à acheter sur ta liste.")
+        #expect(result.last?.body == String(localized: "\(3) articles à acheter sur ta liste.", bundle: CoreResources.bundle))
         #expect(result.first?.dayKey == start.key)
     }
 

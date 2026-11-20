@@ -61,7 +61,7 @@ struct OpenFoodFactsClient: Sendable {
         }
         let names = [product["product_name_fr"], product["product_name"]].compactMap { $0 as? String }.filter { !$0.isEmpty }
         let brand = (product["brands"] as? String)?.split(separator: ",").first.map(String.init)
-        let name = [names.first ?? "Produit \(barcode)", brand].compactMap(\.self).joined(separator: " · ")
+        let name = [names.first ?? String(localized: "Produit \(barcode)"), brand].compactMap(\.self).joined(separator: " · ")
         return PackagedFood(
             barcode: barcode, name: name,
             per100g: MacroTotals(kcal: kcal, proteinG: protein ?? 0, carbsG: carbs ?? 0, fatG: fat ?? 0),

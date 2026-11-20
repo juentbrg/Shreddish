@@ -158,7 +158,8 @@ final class AppModel {
             if error == .offline || (error == .timeout && !network.isOnline) {
                 // Hors ligne : rien n'est perdu, l'action repart au retour du réseau (spec 017, FR-1702).
                 pending = PendingRun(message: message, context: context, action: action)
-                warningMessage = "Hors ligne : « \(message.replacingOccurrences(of: "…", with: "")) » reprendra au retour du réseau."
+                let action = message.replacingOccurrences(of: "…", with: "")
+                warningMessage = String(localized: "Hors ligne : « \(action) » reprendra au retour du réseau.")
             } else {
                 errorMessage = error.userMessage
             }
@@ -211,21 +212,23 @@ final class AppModel {
             }
         }
         var parts: [String] = []
-        if offTarget > 0 { parts.append("\(offTarget) jour(s) à plus de 10 % de ta cible") }
-        if unverified > 0 { parts.append("\(unverified) repas aux macros estimées par l'IA") }
+        if offTarget > 0 { parts.append(String(localized: "\(offTarget) jour(s) à plus de 10 % de ta cible")) }
+        if unverified > 0 { parts.append(String(localized: "\(unverified) repas aux macros estimées par l'IA")) }
         if let budget = budgetText(overCeiling: overCeiling, overBudget: overBudget) { parts.append(budget) }
-        return parts.isEmpty ? nil : parts.joined(separator: " · ") + ". Signalé(s) dans le planning."
+        return parts.isEmpty ? nil : String(localized: "\(parts.joined(separator: " · ")). Signalé(s) dans le planning.")
     }
 
     private static func budgetText(
         overCeiling: (cost: Double, limit: Double)?, overBudget: (cost: Double, budget: Double)?
     ) -> String? {
         if let overCeiling {
-            return "courses estimées à \(Format.euros(overCeiling.cost)), au-dessus du plafond de \(Format.euros(overCeiling.limit))"
+            let cost = Format.euros(overCeiling.cost)
+            let limit = Format.euros(overCeiling.limit)
+            return String(localized: "courses estimées à \(cost), au-dessus du plafond de \(limit)")
         }
         if let overBudget {
             let cost = Format.euros(overBudget.cost)
-            return "courses estimées à \(cost) pour \(Format.euros(overBudget.budget)) de budget (dans la tolérance)"
+            return String(localized: "courses estimées à \(cost) pour \(Format.euros(overBudget.budget)) de budget (dans la tolérance)")
         }
         return nil
     }

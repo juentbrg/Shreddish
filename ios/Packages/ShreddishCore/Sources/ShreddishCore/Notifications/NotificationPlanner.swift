@@ -140,7 +140,7 @@ public enum NotificationPlanner {
         meals.compactMap { meal in
             guard meal.status == .planned, let minutes = SupplementPlacement.minutes(meal.time),
                   let date = window.upcoming(meal.day, minutes - lead) else { return nil }
-            let leadText = lead > 0 ? " dans \(lead) min" : ""
+            let leadText = lead > 0 ? String(localized: " dans \(lead) min", bundle: .module) : ""
             return PlannedReminder(
                 id: "meal-\(meal.day.key)-\(meal.order)", kind: .meal, date: date,
                 title: "\(meal.typeLabel)\(leadText) · \(meal.time ?? "")", body: meal.name,
@@ -154,8 +154,8 @@ public enum NotificationPlanner {
             let day = window.today.adding(days: offset)
             guard !weighed.contains(day), let date = window.upcoming(day, minutes) else { return nil }
             return PlannedReminder(
-                id: "weighin-\(day.key)", kind: .weighIn, date: date, title: "Pesée du matin",
-                body: "Au réveil, à jeun, pour suivre ton rythme."
+                id: "weighin-\(day.key)", kind: .weighIn, date: date, title: String(localized: "Pesée du matin", bundle: .module),
+                body: String(localized: "Au réveil, à jeun, pour suivre ton rythme.", bundle: .module)
             )
         }
     }
@@ -166,13 +166,14 @@ public enum NotificationPlanner {
         let id = "plannext-\(end.key)"
         if let date = window.upcoming(end.adding(days: -1), minutes) {
             return PlannedReminder(
-                id: id, kind: .planNext, date: date, title: "Ton planning se termine demain",
-                body: "Planifie la suite pour garder le rythme."
+                id: id, kind: .planNext, date: date, title: String(localized: "Ton planning se termine demain", bundle: .module),
+                body: String(localized: "Planifie la suite pour garder le rythme.", bundle: .module)
             )
         }
         guard let date = window.upcoming(end, minutes) else { return nil }
         return PlannedReminder(
-            id: id, kind: .planNext, date: date, title: "Dernier jour de ton planning", body: "Planifie la suite pour demain."
+            id: id, kind: .planNext, date: date, title: String(localized: "Dernier jour de ton planning",
+                bundle: .module), body: String(localized: "Planifie la suite pour demain.", bundle: .module)
         )
     }
 
@@ -183,7 +184,8 @@ public enum NotificationPlanner {
                 guard let date = window.upcoming(day, minutes) else { return nil }
                 return PlannedReminder(
                     id: "prep-\(day.key)-\(session.index)", kind: .prep, date: date,
-                    title: "Batch cooking aujourd'hui", body: "\(session.title) · \(session.durationMinutes) min",
+                    title: String(localized: "Batch cooking aujourd'hui",
+                        bundle: .module), body: "\(session.title) · \(session.durationMinutes) min",
                     dayKey: plan.startDay.key
                 )
             }
@@ -195,9 +197,17 @@ public enum NotificationPlanner {
             let count = plan.uncheckedItems
             guard count > 0, let date = window.upcoming(plan.startDay, minutes) else { return nil }
             return PlannedReminder(
-                id: "shopping-\(plan.startDay.key)", kind: .shopping, date: date, title: "Courses de la semaine",
-                body: "\(count) article\(count > 1 ? "s" : "") à acheter sur ta liste."
+                id: "shopping-\(plan.startDay.key)", kind: .shopping, date: date,
+                title: String(localized: "Courses de la semaine", bundle: .module),
+                body: count > 1
+                    ? String(localized: "\(count) articles à acheter sur ta liste.", bundle: .module)
+                    : String(localized: "\(count) article à acheter sur ta liste.", bundle: .module)
             )
         }
     }
+}
+
+/// Ressources du paquet (traductions), pour les tests et l'app.
+public enum CoreResources {
+    public static var bundle: Bundle { .module }
 }

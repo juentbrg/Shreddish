@@ -13,14 +13,14 @@ enum AIConsent {
 
     /// Données envoyées, affichées avant l'accord.
     static let sentData = [
-        "Tes cibles : calories, protéines, glucides, lipides et ton objectif",
-        "Tes préférences : budget, allergies, régimes, aliments aimés ou exclus, équipement, compléments, horaires",
-        "Les noms et quantités d'ingrédients des repas à rédiger",
+        String(localized: "Tes cibles : calories, protéines, glucides, lipides et ton objectif"),
+        String(localized: "Tes préférences : budget, allergies, régimes, aliments aimés ou exclus, équipement, compléments, horaires"),
+        String(localized: "Les noms et quantités d'ingrédients des repas à rédiger"),
     ]
     /// Données jamais envoyées.
     static let neverSent = [
-        "Ton âge, ton sexe, ta taille, ton poids",
-        "Ton journal, tes pesées, tes mensurations, tes photos",
-        "Tes données Apple Santé",
+        String(localized: "Ton âge, ton sexe, ta taille, ton poids"),
+        String(localized: "Ton journal, tes pesées, tes mensurations, tes photos"),
+        String(localized: "Tes données Apple Santé"),
     ]
 }

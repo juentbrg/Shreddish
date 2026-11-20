@@ -9,10 +9,10 @@ struct PaywallView: View {
     @State private var buying = false
 
     private let benefits = [
-        ("fork.knife", "Une semaine de menus calés sur tes cibles, chaque semaine"),
-        ("cart", "Courses au prix réel, paquets entiers, sans gaspillage"),
-        ("person.2", "Tout le foyer avec un seul abonnement"),
-        ("chart.line.downtrend.xyaxis", "Calibration sur tes pesées, suivi de tes progrès"),
+        ("fork.knife", String(localized: "Une semaine de menus calés sur tes cibles, chaque semaine")),
+        ("cart", String(localized: "Courses au prix réel, paquets entiers, sans gaspillage")),
+        ("person.2", String(localized: "Tout le foyer avec un seul abonnement")),
+        ("chart.line.downtrend.xyaxis", String(localized: "Calibration sur tes pesées, suivi de tes progrès")),
     ]
 
     var body: some View {
@@ -41,7 +41,7 @@ struct PaywallView: View {
                             if store.isSubscribed { dismiss() }
                         }
                     } label: {
-                        Text(buying ? "…" : "Essayer 7 jours gratuitement")
+                        Text(buying ? "…" : String(localized: "Essayer 7 jours gratuitement"))
                     }
                     .buttonStyle(PillButtonStyle())
                     .disabled(store.products.isEmpty || buying)
@@ -49,8 +49,10 @@ struct PaywallView: View {
                     if let error = store.purchaseError {
                         Text(error).font(Theme.text(.footnote)).foregroundStyle(Theme.tomato)
                     }
-                    Text("Sans engagement : résilie à tout moment dans les réglages de ton identifiant Apple, au moins "
-                        + "24 h avant la fin de l'essai pour ne rien payer.")
+                    Text("""
+                        Sans engagement : résilie à tout moment dans les réglages de ton identifiant Apple, au moins \
+                        24 h avant la fin de l'essai pour ne rien payer.
+                        """)
                         .font(Theme.text(.caption))
                         .foregroundStyle(Theme.muted)
                     HStack {
@@ -79,7 +81,9 @@ struct PaywallView: View {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(product.displayName).font(Theme.text(.headline, .semibold))
-                    Text(yearly ? "\(product.displayPrice) par an · 7 jours offerts" : "\(product.displayPrice) par mois · 7 jours offerts")
+                    Text(yearly
+                        ? String(localized: "\(product.displayPrice) par an · 7 jours offerts")
+                        : String(localized: "\(product.displayPrice) par mois · 7 jours offerts"))
                         .font(Theme.text(.subheadline))
                         .foregroundStyle(Theme.muted)
                 }

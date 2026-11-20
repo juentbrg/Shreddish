@@ -17,9 +17,11 @@ struct CalibrationView: View {
                 settingsSection(profile, outcome: outcome)
                 Section {
                     Text(
-                        "Sur les 4 dernières semaines, l'app compare ce que tu as mangé (jours entièrement cochés "
-                            + "dans le journal) à l'évolution de ton poids : 1 kg ≈ 7 700 kcal. La dépense réelle "
-                            + "en découle. Chaque semaine, la cible avance de la moitié de l'écart, 150 kcal au plus."
+                        """
+                            Sur les 4 dernières semaines, l'app compare ce que tu as mangé (jours entièrement cochés \
+                            dans le journal) à l'évolution de ton poids : 1 kg ≈ 7 700 kcal. La dépense réelle en \
+                            découle. Chaque semaine, la cible avance de la moitié de l'écart, 150 kcal au plus.
+                            """
                     )
                     .font(Theme.text(.footnote))
                     .foregroundStyle(Theme.muted)
@@ -66,7 +68,7 @@ struct CalibrationView: View {
         case let .implausible(observed):
             ThemedSection("Estimation écartée") {
                 Label(
-                    "Dépense de \(Format.kcal(observed)), trop loin de la formule : extras oubliés ?",
+                    String(localized: "Dépense de \(Format.kcal(observed)), trop loin de la formule : extras oubliés ?"),
                     systemImage: "exclamationmark.triangle.fill"
                 )
                 .foregroundStyle(Theme.tomato)
@@ -81,7 +83,7 @@ struct CalibrationView: View {
         return Section {
             Toggle("Ajuster automatiquement chaque semaine", isOn: $profile.isAutoCalibrationOn)
             LabeledContent(
-                "Ajustement actuel",
+                String(localized: "Ajustement actuel"),
                 value: "\((profile.tdeeAdjustmentKcal ?? 0) >= 0 ? "+" : "−") \(Format.kcal(abs(profile.tdeeAdjustmentKcal ?? 0)))"
             )
             .accessibilityIdentifier("currentAdjustment")
@@ -114,7 +116,7 @@ struct CalibrationView: View {
     private func progressRow(_ title: String, value: Int, total: Int) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
-                Text(title)
+                Text(LocalizedStringKey(title))
                 Spacer()
                 Text("\(min(value, total)) / \(total)").monospacedDigit().foregroundStyle(Theme.muted)
             }

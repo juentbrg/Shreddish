@@ -11,8 +11,11 @@ struct AIConsentView: View {
         NavigationStack {
             List {
                 Section {
-                    Text("Pour composer tes menus et rédiger les recettes, Shreddish envoie une partie de tes données à OpenAI. "
-                        + "OpenAI ne les conserve pas au-delà de la réponse et ne s'en sert pas pour entraîner ses modèles.")
+                    Text("""
+                        Pour composer tes menus et rédiger les recettes, Shreddish envoie une partie de tes données à \
+                        OpenAI. OpenAI ne les conserve pas au-delà de la réponse et ne s'en sert pas pour entraîner \
+                        ses modèles.
+                        """)
                 }
                 ThemedSection("Envoyé") {
                     ForEach(AIConsent.sentData, id: \.self) { Label($0, systemImage: "arrow.up.circle") }
@@ -33,8 +36,10 @@ struct AIConsentView: View {
                         .listRowBackground(Color.clear)
                 } footer: {
                     ListFooter {
-                        Text("Sans accord, l'app fonctionne sauf la génération des menus et des recettes. "
-                            + "Retirable dans Réglages → Confidentialité.")
+                        Text("""
+                            Sans accord, l'app fonctionne sauf la génération des menus et des recettes. Retirable dans \
+                            Réglages → Confidentialité.
+                            """)
                     }
                 }
             }
@@ -77,8 +82,10 @@ struct PrivacySettingsView: View {
                 }
             } footer: {
                 ListFooter {
-                    Text("Fichier JSON lisible : profil, préférences, plannings, journal, pesées, mensurations, recettes. "
-                        + "Les photos restent sur ton iPhone.")
+                    Text("""
+                        Fichier JSON lisible : profil, préférences, plannings, journal, pesées, mensurations, \
+                        recettes. Les photos restent sur ton iPhone.
+                        """)
                 }
             }
         }
@@ -100,7 +107,7 @@ private struct LegalText: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         .paperBackground()
-        .navigationTitle(title)
+        .navigationTitle(LocalizedStringKey(title))
         .navigationBarTitleDisplayMode(.inline)
     }
 }
@@ -153,7 +160,7 @@ enum DataExport {
 
 /// Textes juridiques. À faire relire par un juriste avant publication.
 enum LegalTexts {
-    static let privacy = """
+    static let privacy = String(localized: """
     Shreddish garde tes données sur ton iPhone. Aucun compte, aucune publicité, aucun traceur.
 
     Données envoyées à OpenAI, seulement après ton accord : tes cibles nutritionnelles, ton objectif, tes préférences \
@@ -166,9 +173,9 @@ enum LegalTexts {
 
     Tes droits (RGPD) : exporter tes données (Réglages → Confidentialité), les supprimer (Réglages → Supprimer toutes \
     mes données), retirer ton accord à l'envoi à OpenAI à tout moment.
-    """
+    """)
 
-    static let terms = """
+    static let terms = String(localized: """
     Shreddish aide à planifier des repas selon des cibles calculées par des formules reconnues (Mifflin-St Jeor). \
     Ce n'est ni un dispositif médical ni un avis médical.
 
@@ -180,5 +187,5 @@ enum LegalTexts {
 
     L'abonnement se gère dans les réglages de ton identifiant Apple ; l'essai gratuit se convertit sauf résiliation \
     au moins 24 heures avant sa fin.
-    """
+    """)
 }

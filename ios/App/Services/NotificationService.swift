@@ -37,8 +37,8 @@ final class NotificationService: NSObject {
         super.init()
         guard let center else { return }
         center.delegate = self
-        let eaten = UNNotificationAction(identifier: Self.eatenAction, title: "Mangé")
-        let skipped = UNNotificationAction(identifier: Self.skippedAction, title: "Sauté")
+        let eaten = UNNotificationAction(identifier: Self.eatenAction, title: String(localized: "Mangé"))
+        let skipped = UNNotificationAction(identifier: Self.skippedAction, title: String(localized: "Sauté"))
         center.setNotificationCategories([
             UNNotificationCategory(identifier: Self.mealCategory, actions: [eaten, skipped], intentIdentifiers: []),
         ])

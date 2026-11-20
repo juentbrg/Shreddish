@@ -88,8 +88,8 @@ struct WeightEntrySection: View {
         } footer: {
             ListFooter {
                 if let last = entries.last {
-                    Text("Dernière pesée : \(Format.number(last.weightKg)) kg, \(Format.day(last.day, calendar: model.clock.calendar)). "
-                        + "Une par jour, le matin à jeun.")
+                    let day = Format.day(last.day, calendar: model.clock.calendar)
+                    Text("Dernière pesée : \(Format.number(last.weightKg)) kg, \(day). Une par jour, le matin à jeun.")
                 } else {
                     Text("Une pesée par jour, le matin à jeun.")
                 }
@@ -159,13 +159,15 @@ struct WeightTrendSection: View {
         if let rate = WeightTrend.weeklyLossRate(points) {
             ThemedSection("Rythme") {
                 LabeledContent(
-                    rate >= 0 ? "Perte moyenne" : "Prise moyenne",
+                    rate >= 0 ? String(localized: "Perte moyenne") : String(localized: "Prise moyenne"),
                     value: "\(Format.number(abs(rate), digits: 2)) % / semaine"
                 )
                 if let goal, WeightTrend.isTooFast(points, goal: goal) {
                     Label(
-                        "Rythme rapide : plus de 1 % du poids par semaine. "
-                            + "Risque de perte musculaire, pense à remonter un peu les calories.",
+                        """
+                            Rythme rapide : plus de 1 % du poids par semaine. Risque de perte musculaire, pense à \
+                            remonter un peu les calories.
+                            """,
                         systemImage: "exclamationmark.triangle.fill"
                     )
                     .foregroundStyle(Theme.tomato)

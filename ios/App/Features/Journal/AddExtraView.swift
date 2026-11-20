@@ -38,10 +38,10 @@ struct AddExtraView: View {
                     TextField("Quantité (optionnel)", text: $quantity)
                 }
                 Section {
-                    numberField("Calories (kcal)", text: $kcal, id: "extraKcal")
-                    numberField("Protéines (g)", text: $protein, id: "extraProtein")
-                    numberField("Glucides (g)", text: $carbs, id: "extraCarbs")
-                    numberField("Lipides (g)", text: $fat, id: "extraFat")
+                    numberField(String(localized: "Calories (kcal)"), text: $kcal, id: "extraKcal")
+                    numberField(String(localized: "Protéines (g)"), text: $protein, id: "extraProtein")
+                    numberField(String(localized: "Glucides (g)"), text: $carbs, id: "extraCarbs")
+                    numberField(String(localized: "Lipides (g)"), text: $fat, id: "extraFat")
                 } footer: {
                     ListFooter {
                         if kcal.isEmpty, macros.kcal > 0 {
@@ -68,7 +68,7 @@ struct AddExtraView: View {
     }
 
     private func numberField(_ title: String, text: Binding<String>, id: String) -> some View {
-        LabeledContent(title) {
+        LabeledContent(LocalizedStringKey(title)) {
             TextField("0", text: text)
                 .keyboardType(.decimalPad)
                 .multilineTextAlignment(.trailing)

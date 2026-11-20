@@ -59,7 +59,7 @@ targets:
         CFBundleShortVersionString: "$(MARKETING_VERSION)"
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         CFBundleDevelopmentRegion: fr
-        CFBundleLocalizations: [fr]
+        CFBundleLocalizations: [fr, en, es, de, it]
         UILaunchScreen: {}
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
         ITSAppUsesNonExemptEncryption: false

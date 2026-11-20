@@ -2,9 +2,10 @@ import Foundation
 import ShreddishCore
 import SwiftUI
 
-/// Formats d'affichage en français.
+/// Formats d'affichage dans la langue de l'appareil.
 enum Format {
-    static let locale = Locale(identifier: "fr_FR")
+    /// Langue et région de l'appareil (spec 017, FR-1712).
+    static var locale: Locale { .autoupdatingCurrent }
 
     static func kcal(_ value: Double) -> String {
         "\(Int(value.rounded()).formatted(.number.locale(locale))) kcal"
@@ -29,9 +30,9 @@ enum Format {
 
     static func quantity(_ value: Double, unit: MeasureUnit) -> String {
         switch unit {
-        case .g: value >= 1000 ? "\(number(value / 1000, digits: 2)) kg" : "\(Int(value.rounded())) g"
-        case .ml: value >= 1000 ? "\(number(value / 1000, digits: 2)) l" : "\(Int(value.rounded())) ml"
-        case .piece: "× \(number(value))"
+        case .g: value >= 1000 ? String(localized: "\(number(value / 1000, digits: 2)) kg") : "\(Int(value.rounded())) g"
+        case .ml: value >= 1000 ? String(localized: "\(number(value / 1000, digits: 2)) l") : "\(Int(value.rounded())) ml"
+        case .piece: String(localized: "× \(number(value))")
         }
     }
 
@@ -39,7 +40,7 @@ enum Format {
     static func packing(_ packing: Packing, quantity: Double, unit: MeasureUnit) -> String {
         guard let size = packing.packSize, packing.packCount > 0 else { return Self.quantity(quantity, unit: unit) }
         let pack = unit == .piece ? number(size) : Self.quantity(size, unit: unit)
-        return "\(packing.packCount) × \(pack)"
+        return String(localized: "\(packing.packCount) × \(pack)")
     }
 
     static func day(_ day: LocalDay, calendar: Calendar, style: Date.FormatStyle? = nil) -> String {
@@ -85,22 +86,23 @@ enum Format {
     static func range(_ plan: WeeklyPlan, calendar: Calendar) -> String {
         let start = day(plan.startDay, calendar: calendar).lowercased()
         let end = day(plan.endDay, calendar: calendar).lowercased()
-        return "Du \(start) au \(end)"
+        return String(localized: "Du \(start) au \(end)")
     }
 
     /// Part d'un repas mangé : « Mangé en entier », « Mangé aux ¾ ».
     static func fraction(_ value: Double) -> String {
         switch value {
-        case 0.75: "Mangé aux ¾"
-        case 0.5: "Mangé à moitié"
-        case 0.25: "Mangé au ¼"
-        default: "Mangé en entier"
+        case 0.75: String(localized: "Mangé aux ¾")
+        case 0.5: String(localized: "Mangé à moitié")
+        case 0.25: String(localized: "Mangé au ¼")
+        default: String(localized: "Mangé en entier")
         }
     }
 
     /// « 1 portion », « 2,75 portions ».
     static func portion(_ value: Double) -> String {
-        "\(number(value, digits: 2)) portion\(value > 1 ? "s" : "")"
+        let count = number(value, digits: 2)
+        return value > 1 ? String(localized: "\(count) portions") : String(localized: "\(count) portion")
     }
 
     /// « 19:30 » depuis des minutes après minuit.
@@ -110,7 +112,7 @@ enum Format {
 
     /// « 16 h 30 », « 16 h ».
     static func duration(_ minutes: Int) -> String {
-        minutes % 60 == 0 ? "\(minutes / 60) h" : "\(minutes / 60) h \(String(format: "%02d", minutes % 60))"
+        minutes % 60 == 0 ? String(localized: "\(minutes / 60) h") : "\(minutes / 60) h \(String(format: "%02d", minutes % 60))"
     }
 
     /// Analyse un nombre saisi avec virgule ou point.
@@ -126,27 +128,27 @@ extension String {
 // MARK: - Libellés
 
 extension Sex {
-    var label: String { self == .male ? "Homme" : "Femme" }
+    var label: String { self == .male ? String(localized: "Homme") : "Femme" }
 }
 
 extension ActivityLevel {
     var label: String {
         switch self {
-        case .sedentary: "Sédentaire"
-        case .light: "Légèrement actif"
-        case .moderate: "Modérément actif"
-        case .active: "Actif"
-        case .veryActive: "Très actif"
+        case .sedentary: String(localized: "Sédentaire")
+        case .light: String(localized: "Légèrement actif")
+        case .moderate: String(localized: "Modérément actif")
+        case .active: String(localized: "Actif")
+        case .veryActive: String(localized: "Très actif")
         }
     }
 
     var detail: String {
         switch self {
-        case .sedentary: "Bureau, peu ou pas de sport"
-        case .light: "Sport 1 à 3 fois par semaine"
-        case .moderate: "Sport 3 à 5 fois par semaine"
-        case .active: "Sport 6 à 7 fois par semaine"
-        case .veryActive: "Sport intense quotidien ou métier physique"
+        case .sedentary: String(localized: "Bureau, peu ou pas de sport")
+        case .light: String(localized: "Sport 1 à 3 fois par semaine")
+        case .moderate: String(localized: "Sport 3 à 5 fois par semaine")
+        case .active: String(localized: "Sport 6 à 7 fois par semaine")
+        case .veryActive: String(localized: "Sport intense quotidien ou métier physique")
         }
     }
 }
@@ -154,19 +156,19 @@ extension ActivityLevel {
 extension DailyActivity {
     var label: String {
         switch self {
-        case .sedentary: "Sédentaire"
-        case .light: "Peu actif"
-        case .active: "Actif"
-        case .veryActive: "Très actif"
+        case .sedentary: String(localized: "Sédentaire")
+        case .light: String(localized: "Peu actif")
+        case .active: String(localized: "Actif")
+        case .veryActive: String(localized: "Très actif")
         }
     }
 
     var detail: String {
         switch self {
-        case .sedentary: "Bureau, moins de 5 000 pas."
-        case .light: "5 000 à 7 500 pas."
-        case .active: "7 500 à 10 000 pas, ou souvent debout."
-        case .veryActive: "Plus de 10 000 pas, ou métier physique."
+        case .sedentary: String(localized: "Bureau, moins de 5 000 pas.")
+        case .light: String(localized: "5 000 à 7 500 pas.")
+        case .active: String(localized: "7 500 à 10 000 pas, ou souvent debout.")
+        case .veryActive: String(localized: "Plus de 10 000 pas, ou métier physique.")
         }
     }
 }
@@ -174,17 +176,17 @@ extension DailyActivity {
 extension TrainingIntensity {
     var label: String {
         switch self {
-        case .light: "Légère"
-        case .moderate: "Modérée"
-        case .intense: "Intense"
+        case .light: String(localized: "Légère")
+        case .moderate: String(localized: "Modérée")
+        case .intense: String(localized: "Intense")
         }
     }
 
     var detail: String {
         switch self {
-        case .light: "Yoga, mobilité, muscu légère."
-        case .moderate: "Muscu classique, vélo, course tranquille."
-        case .intense: "Muscu à l'échec, escalade, HIIT, combat."
+        case .light: String(localized: "Yoga, mobilité, muscu légère.")
+        case .moderate: String(localized: "Muscu classique, vélo, course tranquille.")
+        case .intense: String(localized: "Muscu à l'échec, escalade, HIIT, combat.")
         }
     }
 }
@@ -192,13 +194,13 @@ extension TrainingIntensity {
 extension Diet {
     var label: String {
         switch self {
-        case .vegetarian: "Végétarien"
-        case .vegan: "Vegan"
-        case .pescatarian: "Pescétarien"
-        case .halal: "Halal"
-        case .kosher: "Casher"
-        case .glutenFree: "Sans gluten"
-        case .lactoseFree: "Sans lactose"
+        case .vegetarian: String(localized: "Végétarien")
+        case .vegan: String(localized: "Vegan")
+        case .pescatarian: String(localized: "Pescétarien")
+        case .halal: String(localized: "Halal")
+        case .kosher: String(localized: "Casher")
+        case .glutenFree: String(localized: "Sans gluten")
+        case .lactoseFree: String(localized: "Sans lactose")
         }
     }
 }
@@ -206,9 +208,9 @@ extension Diet {
 extension Goal {
     var label: String {
         switch self {
-        case .cut: "Sèche"
-        case .bulk: "Prise de masse"
-        case .recomp: "Recomposition"
+        case .cut: String(localized: "Sèche")
+        case .bulk: String(localized: "Prise de masse")
+        case .recomp: String(localized: "Recomposition")
         }
     }
 }
@@ -216,10 +218,10 @@ extension Goal {
 extension MealType {
     var label: String {
         switch self {
-        case .breakfast: "Petit-déjeuner"
-        case .lunch: "Déjeuner"
-        case .dinner: "Dîner"
-        case .snack: "Collation"
+        case .breakfast: String(localized: "Petit-déjeuner")
+        case .lunch: String(localized: "Déjeuner")
+        case .dinner: String(localized: "Dîner")
+        case .snack: String(localized: "Collation")
         }
     }
 
@@ -236,13 +238,13 @@ extension MealType {
 extension Aisle {
     var label: String {
         switch self {
-        case .fruitsLegumes: "Fruits et légumes"
-        case .viandePoisson: "Viande et poisson"
-        case .cremerie: "Crèmerie"
-        case .epicerie: "Épicerie"
-        case .surgeles: "Surgelés"
-        case .boulangerie: "Boulangerie"
-        case .autre: "Autre"
+        case .fruitsLegumes: String(localized: "Fruits et légumes")
+        case .viandePoisson: String(localized: "Viande et poisson")
+        case .cremerie: String(localized: "Crèmerie")
+        case .epicerie: String(localized: "Épicerie")
+        case .surgeles: String(localized: "Surgelés")
+        case .boulangerie: String(localized: "Boulangerie")
+        case .autre: String(localized: "Autre")
         }
     }
 }
@@ -293,7 +295,7 @@ struct TargetGauge: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
-                Text(title).font(Theme.text(.subheadline))
+                Text(LocalizedStringKey(title)).font(Theme.text(.subheadline))
                 Spacer()
                 Text("\(format(value)) / \(format(target))")
                     .font(Theme.text(.subheadline).monospacedDigit())

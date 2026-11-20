@@ -107,11 +107,11 @@ struct QuickAddView: View {
             let product = try await model.packagedFoods.product(barcode: barcode)
             portion = PortionChoice(product: product)
         } catch .notFound {
-            scanError = "Produit inconnu d'Open Food Facts. Cherche-le dans la table ou saisis-le."
+            scanError = String(localized: "Produit inconnu d'Open Food Facts. Cherche-le dans la table ou saisis-le.")
         } catch .incomplete {
-            scanError = "Valeurs nutritionnelles manquantes pour ce produit. Saisis-le à la main."
+            scanError = String(localized: "Valeurs nutritionnelles manquantes pour ce produit. Saisis-le à la main.")
         } catch {
-            scanError = "Pas de connexion : cherche l'aliment dans la table Ciqual."
+            scanError = String(localized: "Pas de connexion : cherche l'aliment dans la table Ciqual.")
         }
     }
 }

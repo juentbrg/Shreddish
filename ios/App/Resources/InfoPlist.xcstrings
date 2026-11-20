@@ -1,0 +1,146 @@
+{
+  "sourceLanguage": "fr",
+  "strings": {
+    "CFBundleDisplayName": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shreddish"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shreddish"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shreddish"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shreddish"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shreddish"
+          }
+        }
+      }
+    },
+    "NSCameraUsageDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Den Barcode eines Lebensmittels scannen, um es ins Tagebuch einzutragen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scan a food's barcode to add it to your log."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escanear el código de barras de un alimento para añadirlo al diario."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scanner le code-barres d'un aliment pour l'ajouter au journal."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scansionare il codice a barre di un alimento per aggiungerlo al diario."
+          }
+        }
+      }
+    },
+    "NSHealthShareUsageDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dein Gewicht und deinen Aktivitätsumsatz lesen, um deine Ziele zu verfeinern, wenn du Apple Health aktivierst."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Read your weight and active energy to fine-tune your targets, if you turn on Apple Health."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leer tu peso y tu gasto activo para afinar tus objetivos, si activas Salud."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lire ton poids et ta dépense active pour affiner tes cibles, si tu actives Apple Santé."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leggere il peso e il dispendio attivo per affinare gli obiettivi, se attivi Salute."
+          }
+        }
+      }
+    },
+    "NSHealthUpdateUsageDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Zufuhr aus deinem Tagebuch in Apple Health speichern, wenn du es aktivierst."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save your log's intake to Apple Health, if you turn it on."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guardar la ingesta de tu diario en Salud, si lo activas."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enregistrer les apports de ton journal dans Apple Santé, si tu l'actives."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registrare gli apporti del diario in Salute, se lo attivi."
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}
