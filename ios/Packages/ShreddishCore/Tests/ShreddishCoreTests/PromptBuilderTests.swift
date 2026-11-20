@@ -68,7 +68,7 @@ struct PromptBuilderTests {
             "training_sessions_per_week", "previous_attempt_feedback", "reference_prices_eur_per_kg", "pack_sizes",
             "ingredients_to_use", "quantity", "unit", "recipes_to_include", "ingredients",
             "protein_g_per_serving", "serving_g", "kind", "kcal_per_serving", "carbs_g_per_serving",
-            "fat_g_per_serving", "dose", "doses_per_day", "eating_window",
+            "fat_g_per_serving", "dose", "doses_per_day", "eating_window", "diets",
         ]
         for text in texts {
             let keys = Self.allKeys(try JSONSerialization.jsonObject(with: Data(text.utf8)))
@@ -188,5 +188,20 @@ extension PromptBuilderTests {
         #expect(!text.contains("Faire revenir"))
         let keys = Self.allKeys(try JSONSerialization.jsonObject(with: Data(text.utf8)))
         for forbidden in ["age", "weight", "sex", "height", "steps"] { #expect(!keys.contains(forbidden)) }
+    }
+}
+
+/// Plats lus au fil de la réponse (spec 017, FR-1717).
+struct LiveMealsTests {
+    @Test func completeMealsAreReadFromPartialJSON() {
+        let partial = #"{"days":[{"day_offset":0,"meals":[{"type":"lunch","name":"Poulet \"maison\" riz","ingredients":[{"name":"Riz"#
+            + #"}]},{"type":"dinner","name":"Dahl"#
+        #expect(LiveMeals.names(in: partial) == [#"Poulet "maison" riz"#])
+    }
+
+    @Test func keyOrderDoesNotMatter() {
+        let partial = #"{"days":[{"meals":[{"cost_eur":1,"ingredients":[{"name":"Riz"}],"name":"Poulet riz","type":"lunch"},"#
+            + #"{"carbs_g":3,"name":"Skyr"#
+        #expect(LiveMeals.names(in: partial) == ["Poulet riz"])
     }
 }

@@ -86,7 +86,17 @@ struct JournalDayView: View {
                 ForEach(day.sortedMeals) { meal in
                     MealStatusRow(meal: meal) { status in
                         meal.setStatus(meal.status == status ? .planned : status, at: model.clock.now)
+                        meal.eatenFraction = nil
                         try? context.save()
+                    }
+                    .contextMenu {
+                        ForEach([1.0, 0.75, 0.5, 0.25], id: \.self) { fraction in
+                            Button(Format.fraction(fraction)) {
+                                meal.setStatus(.eaten, at: model.clock.now)
+                                meal.eatenFraction = fraction == 1 ? nil : fraction
+                                try? context.save()
+                            }
+                        }
                     }
                 }
             }
@@ -112,7 +122,7 @@ struct JournalDayView: View {
                     for index in offsets { context.delete(extras[index]) }
                     try? context.save()
                 }
-                Button("Ajouter un extra", systemImage: "plus") { showAddExtra = true }
+                Button("Ajouter un aliment", systemImage: "plus") { showAddExtra = true }
                     .accessibilityIdentifier("addExtra")
             } header: {
                 ListHeader {
@@ -120,12 +130,12 @@ struct JournalDayView: View {
                 }
             } footer: {
                 ListFooter {
-                    Text("Tout ce qui n'était pas prévu.")
+                    Text("Tout ce qui n'était pas prévu : recherche, code-barres, favoris.")
                 }
             }
         }
         .sheet(isPresented: $showAddExtra) {
-            AddExtraView(day: day)
+            QuickAddView(day: day)
         }
     }
 }
@@ -143,7 +153,8 @@ struct MealStatusRow: View {
                 Text(meal.name)
                     .font(Theme.text(.subheadline, .semibold))
                     .strikethrough(meal.status == .skipped)
-                Text(Format.kcal(meal.kcal))
+                Text(meal.eatenFraction.map { "\(Format.kcal(meal.eatenMacros.kcal)) · \(Format.fraction($0).lowercased())" }
+                    ?? Format.kcal(meal.kcal))
                     .font(Theme.text(.caption))
                     .foregroundStyle(Theme.muted)
             }

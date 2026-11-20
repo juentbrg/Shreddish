@@ -89,6 +89,13 @@ public enum PlanStore {
         return replacement
     }
 
+    /// Repas modifié par l'utilisateur (spec 017) : contenu remplacé, courses recalculées.
+    public static func updateMeal(_ meal: Meal, with dto: MealDTO, in context: ModelContext) throws {
+        meal.apply(dto)
+        if let plan = meal.day?.plan { rebuildShoppingList(for: plan, in: context) }
+        try context.save()
+    }
+
     /// Reconstruit la liste de courses depuis le planning ; coches conservées par clé.
     public static func rebuildShoppingList(for plan: WeeklyPlan, in context: ModelContext) {
         let checked = Set(plan.shoppingItems.filter(\.isChecked).map(\.key))
@@ -101,9 +108,16 @@ public enum PlanStore {
 
     static func shoppingLines(for plan: WeeklyPlan, in context: ModelContext) -> [ShoppingLine] {
         let owned = (try? context.fetch(FetchDescriptor<Preferences>()))?.first?.supplementList ?? []
+        let ingredients = plan.days.flatMap { $0.meals.flatMap(\.ingredients) }
         return ShoppingListBuilder.build(
-            from: plan.days.flatMap { $0.meals.flatMap(\.ingredients) }, owned: owned, pantry: plan.pantry
+            from: Household.scaled(ingredients, portions: Household.portions(in: context)), owned: owned, pantry: plan.pantry
         )
+    }
+
+    /// Courses des plannings actifs recalculées (foyer modifié), coches conservées.
+    public static func rebuildActiveShoppingLists(in context: ModelContext) {
+        for plan in activePlans(in: context) { rebuildShoppingList(for: plan, in: context) }
+        try? context.save()
     }
 
     /// Reconstruit une liste faite par une version antérieure (ex. œufs en double avant la spec 012).

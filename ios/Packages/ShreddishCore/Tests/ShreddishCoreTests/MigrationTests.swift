@@ -163,12 +163,7 @@ struct MigrationTests {
             let schema = Schema(versionedSchema: SchemaV7.self)
             let container = try ModelContainer(for: schema, configurations: [ModelConfiguration(schema: schema, url: url)])
             let context = container.mainContext
-            let targets = try NutritionCalculator.targets(for: NutritionCalculatorTests.man)
-            try PlanStore.saveWeek(
-                WeekPlanDTO(prepSessions: [], days: [DayPlanDTO(dayOffset: 0, meals: [meal(name: "Poulet riz")])]),
-                startDay: LocalDay(year: 2026, month: 11, day: 15), targets: targets, createdAt: .now,
-                pantry: [ingredient("Riz", 300)], in: context
-            )
+            Self.insertV7Plan(mealName: "Poulet riz", pantry: [ingredient("Riz", 300)], in: context)
         }
         let container = try ShreddishStore.makeContainer(url: url)
         let context = container.mainContext
@@ -194,11 +189,7 @@ struct MigrationTests {
             preferences.trainingTimeMinutes = 18 * 60
             preferences.supplementInfoData = Data("{}".utf8)
             context.insert(preferences)
-            let targets = try NutritionCalculator.targets(for: NutritionCalculatorTests.man)
-            try PlanStore.saveWeek(
-                WeekPlanDTO(prepSessions: [], days: [DayPlanDTO(dayOffset: 0, meals: [meal(name: "Poulet riz")])]),
-                startDay: LocalDay(year: 2026, month: 11, day: 15), targets: targets, createdAt: .now, in: context
-            )
+            Self.insertV7Plan(mealName: "Poulet riz", pantry: [], in: context)
             context.insert(SavedRecipe(meal: meal(name: "Chili"), savedAt: .now))
             try context.save()
         }
@@ -211,6 +202,93 @@ struct MigrationTests {
         #expect(preferences.eatingWindow == nil)
         #expect(try context.fetch(FetchDescriptor<WeeklyPlan>()).first?.days.first?.meals.first?.name == "Poulet riz")
         #expect(try context.fetch(FetchDescriptor<SavedRecipe>()).first?.name == "Chili")
+    }
+
+    /// Spec 017 : base V9 ouverte en V10, foyer vide, données intactes.
+    @Test func v9StoreMigratesToV10WithoutDataLoss() throws {
+        let directory = FileManager.default.temporaryDirectory.appending(path: "shreddish-migration-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let url = directory.appending(path: "store.sqlite")
+        do {
+            let schema = Schema(versionedSchema: SchemaV9.self)
+            let container = try ModelContainer(for: schema, configurations: [ModelConfiguration(schema: schema, url: url)])
+            let context = container.mainContext
+            let preferences = SchemaV9.Preferences()
+            preferences.eatingWindowStartMinutes = EatingWindow.default.startMinutes
+            preferences.eatingWindowEndMinutes = EatingWindow.default.endMinutes
+            context.insert(preferences)
+            Self.insertV7Plan(mealName: "Poulet riz", pantry: [], in: context)
+            try context.save()
+        }
+        let container = try ShreddishStore.makeContainer(url: url)
+        let context = container.mainContext
+        #expect(try context.fetch(FetchDescriptor<Preferences>()).first?.eatingWindow == EatingWindow.default)
+        #expect(try context.fetch(FetchDescriptor<WeeklyPlan>()).first?.days.first?.meals.first?.name == "Poulet riz")
+        #expect(try context.fetch(FetchDescriptor<HouseholdMember>()).isEmpty)
+    }
+
+    /// Spec 017 : base V10 (foyer) ouverte en V11, régimes vides, membres conservés.
+    @Test func v10StoreMigratesToV11WithoutDataLoss() throws {
+        let directory = FileManager.default.temporaryDirectory.appending(path: "shreddish-migration-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let url = directory.appending(path: "store.sqlite")
+        do {
+            let schema = Schema(versionedSchema: SchemaV10.self)
+            let container = try ModelContainer(for: schema, configurations: [ModelConfiguration(schema: schema, url: url)])
+            let context = container.mainContext
+            let preferences = SchemaV9.Preferences()
+            preferences.mealsPerDay = 3
+            context.insert(preferences)
+            context.insert(HouseholdMember(name: "Léa", portion: 0.75))
+            Self.insertV7Plan(mealName: "Poulet riz", pantry: [], in: context)
+            try context.save()
+        }
+        let container = try ShreddishStore.makeContainer(url: url)
+        let context = container.mainContext
+        let preferences = try #require(try context.fetch(FetchDescriptor<Preferences>()).first)
+        #expect(preferences.mealsPerDay == 3)
+        #expect(preferences.diets.isEmpty)
+        #expect(try context.fetch(FetchDescriptor<HouseholdMember>()).first?.portion == 0.75)
+        let meal = try #require(try context.fetch(FetchDescriptor<Meal>()).first)
+        #expect(meal.name == "Poulet riz")
+        #expect(meal.eatenFraction == nil)
+        #expect(try context.fetch(FetchDescriptor<QuickFood>()).isEmpty)
+    }
+
+    /// Spec 017 : base V11 ouverte en V12, mensurations et photos vides, journal rapide conservé.
+    @Test func v11StoreMigratesToV12WithoutDataLoss() throws {
+        let directory = FileManager.default.temporaryDirectory.appending(path: "shreddish-migration-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let url = directory.appending(path: "store.sqlite")
+        do {
+            let schema = Schema(versionedSchema: SchemaV11.self)
+            let container = try ModelContainer(for: schema, configurations: [ModelConfiguration(schema: schema, url: url)])
+            container.mainContext.insert(QuickFood(name: "Banane", per100g: .zero, grams: 120, usedAt: .now))
+            try container.mainContext.save()
+        }
+        let container = try ShreddishStore.makeContainer(url: url)
+        let context = container.mainContext
+        #expect(try context.fetch(FetchDescriptor<QuickFood>()).first?.name == "Banane")
+        #expect(try context.fetch(FetchDescriptor<BodyMeasurement>()).isEmpty)
+        #expect(try context.fetch(FetchDescriptor<ProgressPhoto>()).isEmpty)
+    }
+
+    /// Planning à la forme V7 à V10 (figée) : un jour, un repas, une ligne de courses.
+    static func insertV7Plan(mealName: String, pantry: [IngredientDTO], in context: ModelContext) {
+        let plan = SchemaV7.WeeklyPlan(startDayKey: 20_261_115, createdAt: .now)
+        plan.pantryData = pantry.isEmpty ? nil : try? JSONEncoder().encode(pantry)
+        context.insert(plan)
+        let day = SchemaV7.DayPlan(dayKey: 20_261_115, offset: 0)
+        plan.days.append(day)
+        let meal = SchemaV7.Meal(order: 0)
+        meal.name = mealName
+        meal.ingredientsData = (try? JSONEncoder().encode([ingredient("Riz", 80)])) ?? Data()
+        day.meals.append(meal)
+        plan.shoppingItems.append(SchemaV7.ShoppingItem(name: "Riz", key: "riz|g"))
+        try? context.save()
     }
 
     /// Copie de la vraie base de l'iPhone (`tools/backup/backup.sh`) : `SHREDDISH_REAL_STORE=<dossier>`.

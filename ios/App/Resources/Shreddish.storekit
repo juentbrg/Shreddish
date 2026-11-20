@@ -1,0 +1,57 @@
+{
+  "identifier" : "4C1E7A1B",
+  "nonRenewingSubscriptions" : [],
+  "products" : [],
+  "settings" : {
+    "_applicationInternalID" : "",
+    "_developerTeamID" : "",
+    "_failTransactionsEnabled" : false,
+    "_locale" : "fr_FR",
+    "_storefront" : "FRA",
+    "_storeKitErrors" : []
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "21500001",
+      "localizations" : [
+        { "description" : "Menus, recettes et courses calés sur tes cibles", "displayName" : "Shreddish", "locale" : "fr_FR" }
+      ],
+      "name" : "Shreddish",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [],
+          "codeOffers" : [],
+          "displayPrice" : "9.99",
+          "familyShareable" : true,
+          "groupNumber" : 2,
+          "internalID" : "21500002",
+          "introductoryOffer" : { "internalID" : "21500004", "paymentMode" : "free", "subscriptionPeriod" : "P1W" },
+          "localizations" : [ { "description" : "Accès complet, sans engagement", "displayName" : "Mensuel", "locale" : "fr_FR" } ],
+          "productID" : "app.shreddish.monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Mensuel",
+          "subscriptionGroupID" : "21500001",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : []
+        },
+        {
+          "adHocOffers" : [],
+          "codeOffers" : [],
+          "displayPrice" : "69.99",
+          "familyShareable" : true,
+          "groupNumber" : 1,
+          "internalID" : "21500003",
+          "introductoryOffer" : { "internalID" : "21500005", "paymentMode" : "free", "subscriptionPeriod" : "P1W" },
+          "localizations" : [ { "description" : "Accès complet, 5,83 € par mois", "displayName" : "Annuel", "locale" : "fr_FR" } ],
+          "productID" : "app.shreddish.yearly",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Annuel",
+          "subscriptionGroupID" : "21500001",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : []
+        }
+      ]
+    }
+  ],
+  "version" : { "major" : 4, "minor" : 0 }
+}

@@ -105,8 +105,9 @@ private struct AisleFilter: View {
                 .font(Theme.text(.subheadline, isSelected ? .semibold : .regular))
                 .foregroundStyle(isSelected ? Theme.paper : Theme.ink)
                 .padding(.horizontal, 14)
-                .frame(minHeight: 40)
+                .frame(minHeight: 44)
                 .background(isSelected ? Theme.ink : color, in: Capsule())
+                .contentShape(Capsule())
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(isSelected ? .isSelected : [])

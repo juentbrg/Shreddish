@@ -12,6 +12,7 @@ struct PreferencesView: View {
             if let preferences = allPreferences.first {
                 MealsSection(preferences: preferences)
                 FastingSection(preferences: preferences)
+                DietSection(preferences: preferences)
                 BudgetSection(preferences: preferences)
                 StoreSection(preferences: preferences)
                 FoodsSections(preferences: preferences)
@@ -50,6 +51,35 @@ private struct MealsSection: View {
                 Text(
                     "Collations incluses : 4 = 3 repas + 1 collation."
                 )
+            }
+        }
+    }
+}
+
+/// Régimes cumulables (spec 017, FR-1703).
+private struct DietSection: View {
+    @Bindable var preferences: Preferences
+
+    var body: some View {
+        Section {
+            ForEach(Diet.allCases, id: \.self) { diet in
+                Toggle(diet.label, isOn: Binding(
+                    get: { preferences.diets.contains(diet) },
+                    set: { on in
+                        var diets = preferences.diets.filter { $0 != diet }
+                        if on { diets.append(diet) }
+                        preferences.diets = Diet.allCases.filter(diets.contains)
+                    }
+                ))
+                .accessibilityIdentifier("diet-\(diet.rawValue)")
+            }
+        } header: {
+            ListHeader {
+                Text("Régime")
+            }
+        } footer: {
+            ListFooter {
+                Text("Cumulables. Respectés dans chaque ingrédient, comme les allergies.")
             }
         }
     }

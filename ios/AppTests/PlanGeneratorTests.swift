@@ -153,6 +153,7 @@ struct PlanGeneratorTests {
         let plan = try #require(PlanStore.currentPlan(in: context))
         #expect(plan.sortedDays.flatMap(\.meals).allSatisfy { $0.needsRecipe })
 
+        AIConsent.grant()
         let recipes = RecipeGenerator(client: OpenAIClient(transport: transport), keyStore: InMemoryKeyStore(key: "sk-test"))
         recipes.fillMissing(in: context)
         await recipes.waitUntilIdle()
@@ -275,6 +276,20 @@ struct PlanGeneratorTests {
         #expect(input.contains("recipes_to_include"))
         #expect(input.contains("Curry de pois chiches"))
         #expect(!input.contains("Faire revenir"))
+    }
+
+    /// Foyer (spec 017) : l'IA prévoit une portion avec la part du budget, les courses couvrent le foyer.
+    @Test func householdSplitsTheBudgetAndScalesShopping() async throws {
+        preferences.weeklyBudgetEUR = 100
+        context.insert(HouseholdMember(name: "Léa", portion: 1))
+        let transport = ScriptedTransport([.output(try weekText())])
+        try await generator(transport).generateWeek(profile: profile, preferences: preferences, in: context)
+        let body = try #require(try JSONSerialization.jsonObject(with: transport.requests[0].httpBody ?? Data()) as? [String: Any])
+        let input = try #require(body["input"] as? String)
+        #expect(input.contains("\"weekly_budget_eur\":50"))
+        let plan = try #require(PlanStore.currentPlan(in: context))
+        let perPortion = plan.days.flatMap(\.meals).reduce(0) { $0 + $1.costEUR }
+        #expect(plan.shoppingSummary.checkoutEur > perPortion * 1.5)
     }
 
     @Test func missingKeyThrowsWithoutNetwork() async throws {

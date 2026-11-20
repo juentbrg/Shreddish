@@ -39,6 +39,20 @@ public final class SavedRecipe {
 
     public var type: MealType { MealType(rawValue: typeRaw) ?? .lunch }
 
+    /// Contenu remplacé par une recette modifiée (spec 017).
+    public func apply(_ meal: MealDTO) {
+        typeRaw = meal.type.rawValue
+        name = meal.name
+        ingredientsData = (try? JSONEncoder().encode(meal.ingredients)) ?? Data()
+        steps = meal.steps
+        prepMinutes = meal.prepMinutes
+        costEUR = meal.costEur
+        kcal = meal.kcal
+        proteinG = meal.proteinG
+        carbsG = meal.carbsG
+        fatG = meal.fatG
+    }
+
     public var ingredients: [IngredientDTO] {
         (try? JSONDecoder().decode([IngredientDTO].self, from: ingredientsData)) ?? []
     }

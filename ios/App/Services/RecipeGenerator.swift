@@ -45,6 +45,8 @@ final class RecipeGenerator {
     }
 
     private func pump(_ context: ModelContext) {
+        // Rien n'est envoyé à OpenAI sans consentement (spec 017).
+        guard AIConsent.isGranted else { return }
         while inFlight.count < Self.maxConcurrent, !queue.isEmpty {
             start(queue.removeFirst(), in: context)
         }

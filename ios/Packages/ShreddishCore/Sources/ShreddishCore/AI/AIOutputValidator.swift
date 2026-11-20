@@ -20,6 +20,8 @@ public struct GenerationConstraints: Sendable, Equatable {
     public var enforceVariety = true
     /// Jeûne intermittent (spec 015) : heures des repas ramenées dans la fenêtre.
     public var eatingWindow: EatingWindow?
+    /// Régimes (spec 017) : ingrédient interdit fatal, comme une allergie.
+    public var diets: [Diet] = []
 
     public init(
         targets: MacroTotals, mealsPerDay: Int, maxPrepMinutes: Int, weeklyBudgetEur: Double, budgetTolerance: Double,
@@ -67,6 +69,7 @@ public enum ValidationIssue: Equatable, Sendable {
     case prepTooLong(meal: String, minutes: Int)
     case excludedFood(meal: String, food: String)
     case allergen(meal: String, food: String)
+    case dietViolation(meal: String, food: String, diet: String)
     case prepSessionCount(Int)
     case orphanPrepSessionRef(meal: String, ref: Int)
     /// Garde-fous (spec 010) : quantité, prix ou coût impossibles, plat trop répété.
@@ -310,6 +313,9 @@ public enum AIOutputValidator {
         }
         if let food = excludedFood(in: meal, excluded: constraints.excludedFoods) {
             result.fatal.append(.excludedFood(meal: name, food: food))
+        }
+        if let violation = Diet.violation(in: meal, diets: constraints.diets) {
+            result.fatal.append(.dietViolation(meal: name, food: violation.food, diet: violation.diet.rawValue))
         }
         clearSupplementCosts(&meal, owned: constraints.ownedSupplements, name: name, result: &result)
         if let time = meal.time, !isValidTime(time) {

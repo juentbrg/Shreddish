@@ -64,6 +64,8 @@ public enum TargetWarning: String, Codable, Sendable, Equatable {
     case fatReduced = "fat_reduced"
     /// Glucides à 0 : protéines + lipides minimum dépassent déjà la cible.
     case carbsAtZero = "carbs_at_zero"
+    /// IMC sous 18,5 : pas de déficit, cible à l'entretien (spec 017, FR-1714).
+    case underweightNoDeficit = "underweight_no_deficit"
 }
 
 /// Étapes du calcul, affichées à l'utilisateur (FR-005). Valeurs non arrondies.

@@ -10,13 +10,15 @@ enum Theme {
     static let paper = Color(light: 0xF5F1E8, dark: 0x121713)
     static let card = Color(light: 0xFFFFFF, dark: 0x1E2520)
     static let ink = Color(light: 0x1E2A22, dark: 0xEEF0EA)
-    static let muted = Color(light: 0x5D6A61, dark: 0xA3AEA6)
+    static let muted = Color(light: 0x4F5B53, dark: 0xB1BBB4)
     static let line = Color(light: 0xEFEAE0, dark: 0x2C342E)
     static let green = Color(light: 0x2E6B4A, dark: 0x7FC29B)
     static let onGreen = Color(light: 0xF5F1E8, dark: 0x0F1A13)
     static let greenSoft = Color(light: 0xDCEBDD, dark: 0x22382A)
     static let tomato = Color(light: 0xC8461F, dark: 0xF08A63)
     static let tomatoSoft = Color(light: 0xF7DCD2, dark: 0x45281E)
+    /// Texte d'alerte sur fond `tomatoSoft` : contraste AA (spec 017, FR-1713).
+    static let tomatoInk = Color(light: 0x9A3214, dark: 0xF7B094)
     static let wheat = Color(light: 0xF3E3C3, dark: 0x40341C)
     static let wheatInk = Color(light: 0x8A5A12, dark: 0xE9C27A)
     static let sky = Color(light: 0xDCE6F0, dark: 0x1F2E3D)
@@ -27,8 +29,12 @@ enum Theme {
         .custom("Bricolage Grotesque", size: size, relativeTo: style).weight(weight)
     }
 
+    /// Taille de base du style à la taille de texte standard : `relativeTo` l'agrandit ensuite une seule fois
+    /// selon le réglage de l'utilisateur (Dynamic Type, spec 017, FR-1713).
     static func text(_ style: Font.TextStyle = .body, _ weight: Font.Weight = .regular) -> Font {
-        .custom("DM Sans", size: UIFont.preferredFont(forTextStyle: style.uiKit).pointSize, relativeTo: style).weight(weight)
+        let standard = UITraitCollection(preferredContentSizeCategory: .large)
+        let size = UIFont.preferredFont(forTextStyle: style.uiKit, compatibleWith: standard).pointSize
+        return .custom("DM Sans", size: size, relativeTo: style).weight(weight)
     }
 
     /// Navigation et barre d'onglets aux couleurs et polices du thème.
@@ -261,5 +267,33 @@ struct ThemedSection<Content: View>: View {
         } header: {
             ListHeader { Text(title) }
         }
+    }
+}
+
+/// État vide aux couleurs du thème (contraste AA, contrairement au gris système de ContentUnavailableView).
+struct EmptyState: View {
+    let title: String
+    let systemImage: String
+    let message: String
+
+    var body: some View {
+        VStack(spacing: 10) {
+            Image(systemName: systemImage)
+                .font(.system(size: 44))
+                .foregroundStyle(Theme.green)
+                .accessibilityHidden(true)
+            Text(title)
+                .font(Theme.display(22, .bold, relativeTo: .title2))
+                .foregroundStyle(Theme.ink)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+            Text(message)
+                .font(Theme.text(.subheadline))
+                .foregroundStyle(Theme.muted)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(32)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }

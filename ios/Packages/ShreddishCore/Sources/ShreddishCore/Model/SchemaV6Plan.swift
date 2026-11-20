@@ -130,10 +130,7 @@ public enum SchemaV7: VersionedSchema {
     public static let versionIdentifier = Schema.Version(7, 0, 0)
 
     public static var models: [any PersistentModel.Type] {
-        [
-            Profile.self, SchemaV6.Preferences.self, WeeklyPlan.self, DayPlan.self, Meal.self,
-            ExtraEntry.self, ShoppingItem.self, WeightEntry.self,
-        ]
+        [Profile.self, SchemaV6.Preferences.self, WeightEntry.self] + SchemaV7.planModels
     }
 }
 
@@ -149,9 +146,71 @@ public enum SchemaV9: VersionedSchema {
     public static let versionIdentifier = Schema.Version(9, 0, 0)
 
     public static var models: [any PersistentModel.Type] {
+        [Profile.self, SchemaV9.Preferences.self, WeightEntry.self, SavedRecipe.self] + SchemaV7.planModels
+    }
+
+    /// Forme V9 et V10 des préférences, figée (spec 017 ajoute les régimes). Ne jamais modifier.
+    @Model
+    public final class Preferences {
+        public var mealsPerDay: Int
+        public var maxPrepMinutes: Int
+        public var dailyBudgetEUR: Double
+        public var excludedFoods: [String]
+        public var likedFoods: [String]
+        public var equipment: [String]
+        public var batchCooking: Bool
+        public var aiModel: String
+        public var weeklyBudgetEUR: Double?
+        public var budgetTolerance: Double?
+        public var allergies: [String]?
+        public var ingredientAvailabilityRaw: String?
+        public var storeRaw: String?
+        public var customStoreName: String?
+        public var supplements: [String]?
+        public var trainingTimeMinutes: Int?
+        public var city: String?
+        public var supplementInfoData: Data?
+        public var eatingWindowStartMinutes: Int?
+        public var eatingWindowEndMinutes: Int?
+
+        public init() {
+            mealsPerDay = 4
+            maxPrepMinutes = 20
+            dailyBudgetEUR = 8
+            excludedFoods = []
+            likedFoods = []
+            equipment = []
+            batchCooking = false
+            aiModel = "gpt-6-luna"
+            weeklyBudgetEUR = 56
+            budgetTolerance = 0.1
+        }
+    }
+}
+
+/// Schéma V10 (spec 017) : membres du foyer.
+public enum SchemaV10: VersionedSchema {
+    public static let versionIdentifier = Schema.Version(10, 0, 0)
+
+    public static var models: [any PersistentModel.Type] { SchemaV9.models + [HouseholdMember.self] }
+}
+
+/// Schéma V11 (spec 017) : régimes, repas mangé en partie, aliments rapides du journal.
+public enum SchemaV11: VersionedSchema {
+    public static let versionIdentifier = Schema.Version(11, 0, 0)
+
+    public static var models: [any PersistentModel.Type] {
         [
             Profile.self, Preferences.self, WeeklyPlan.self, DayPlan.self, Meal.self,
-            ExtraEntry.self, ShoppingItem.self, WeightEntry.self, SavedRecipe.self,
+            ExtraEntry.self, ShoppingItem.self, WeightEntry.self, SavedRecipe.self, HouseholdMember.self,
+            QuickFood.self,
         ]
     }
+}
+
+/// Schéma V12 (spec 017) : mensurations et photos de progrès.
+public enum SchemaV12: VersionedSchema {
+    public static let versionIdentifier = Schema.Version(12, 0, 0)
+
+    public static var models: [any PersistentModel.Type] { SchemaV11.models + [BodyMeasurement.self, ProgressPhoto.self] }
 }

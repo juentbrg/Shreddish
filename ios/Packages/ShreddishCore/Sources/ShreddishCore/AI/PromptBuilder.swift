@@ -20,13 +20,15 @@ public struct PromptPreferences: Codable, Sendable, Equatable {
     public var trainingSessionsPerWeek: Int?
     /// Jeûne intermittent (spec 015) : fenêtre de repas « HH:mm-HH:mm ».
     public var eatingWindow: String?
+    /// Régimes (spec 017).
+    public var diets: [Diet]?
 
     public init(
         mealsPerDay: Int, maxPrepMinutes: Int, weeklyBudgetEur: Double, budgetTolerance: Double,
         allergies: [String], dislikedFoods: [String], likedFoods: [String], equipment: [String],
         batchCooking: Bool, ingredientAvailability: IngredientAvailability,
         ownedSupplements: [OwnedSupplement] = [], trainingTime: String? = nil, trainingSessionsPerWeek: Int? = nil,
-        eatingWindow: String? = nil
+        eatingWindow: String? = nil, diets: [Diet]? = nil
     ) {
         self.mealsPerDay = mealsPerDay
         self.maxPrepMinutes = maxPrepMinutes
@@ -42,6 +44,7 @@ public struct PromptPreferences: Codable, Sendable, Equatable {
         self.trainingTime = trainingTime
         self.trainingSessionsPerWeek = trainingSessionsPerWeek
         self.eatingWindow = eatingWindow
+        self.diets = diets
     }
 }
 
@@ -271,6 +274,23 @@ public enum PromptBuilder {
         return String(bytes: data, encoding: .utf8) ?? "{}"
     }
 
+    /// Jeûne intermittent (spec 015), règle du prompt système.
+    static let fastingRules = """
+        - eating_window : jeûne intermittent, tous les repas entre ces deux heures (premier et dernier repas \
+        inclus). Pas de breakfast si la fenêtre commence après 10:00 : le premier repas est un lunch, \
+        complète avec des snacks. Répartis les apports sur la fenêtre, repas du soir pas plus lourd que le déjeuner.
+        """
+
+    /// Régimes (spec 017), règle du prompt système.
+    static let dietRules = """
+        - diets : régimes cumulés, à respecter dans chaque ingrédient (vegetarian : ni viande ni poisson ; vegan : \
+        aucun produit animal, ni œuf, lait, fromage, miel, whey ; pescatarian : poisson oui, viande non ; halal : \
+        ni porc ni alcool ; kosher : ni porc ni fruits de mer, jamais viande et laitage dans le même repas ; \
+        gluten_free : ni blé, pâtes, pain, semoule, avoine, sauf version « sans gluten » ; lactose_free : laitages \
+        « sans lactose » ou végétaux). Protéines de substitution : œufs, tofu, tempeh, légumineuses, seitan si \
+        autorisé, selon ingredient_availability.
+        """
+
     /// Prompt système : règles imposées à l'IA (contracts/ai-requests.md). Enums, unités et format d'heure sont
     /// imposés par le schéma strict ; tirets et rayons sont corrigés par l'application.
     public static func systemInstructions() -> String {
@@ -285,6 +305,7 @@ public enum PromptBuilder {
         - allergies : aucun de ces aliments, ni trace, ni dérivé, ni ingrédient qui en contient souvent \
         (ex. arachide → beurre de cacahuète, huile d'arachide ; lait → beurre, fromage, crème).
         - disliked_foods : jamais, sous aucune forme.
+        \(dietRules)
         - Exactement meals_per_day repas par jour, collations incluses (types : breakfast, lunch, dinner, snack).
         - Macros par jour : kcal à ±5 % de targets.kcal, protéines ≥ targets.protein_g, glucides et lipides \
         à ±10 % de targets.carbs_g et targets.fat_g. Ne compense jamais un manque de protéines par des glucides.
@@ -311,8 +332,8 @@ public enum PromptBuilder {
         - ingredients_to_use : ingrédients déjà chez l'utilisateur (quantités disponibles au plus), à utiliser \
         en priorité cette semaine, les plus périssables dans les premiers jours. L'application les déduit des \
         courses.
-        - recipes_to_include : recettes que l'utilisateur veut revoir. Place chacune une fois sur la période \
-        demandée, à son type de repas, avec le même nom et les mêmes ingrédients ; ajuste seulement les \
+        - recipes_to_include : recettes que l'utilisateur veut revoir. Place chacune une fois sur les jours \
+        générés, à son type de repas, avec le même nom et les mêmes ingrédients ; ajuste seulement les \
         quantités si les cibles l'exigent.
         - ingredient_availability : "everywhere" = uniquement des ingrédients basiques trouvables dans tout \
         supermarché et en hard discount (Lidl, Aldi), aucun produit de niche (tempeh, seitan, spiruline, levure \
@@ -332,9 +353,7 @@ public enum PromptBuilder {
         l'entraînement ; sans heure connue, suppose une séance en fin de journée.
         - time : heure conseillée « HH:mm » de chaque repas, cohérente sur la journée (petit-déjeuner 7:00-9:00, \
         déjeuner 12:00-13:30, dîner 19:00-21:00, collation selon l'entraînement).
-        - eating_window : jeûne intermittent, tous les repas entre ces deux heures (premier et dernier repas \
-        inclus). Pas de breakfast si la fenêtre commence après 10:00 : le premier repas est un lunch, \
-        complète avec des snacks. Répartis les apports sur la fenêtre, repas du soir pas plus lourd que le déjeuner.
+        \(fastingRules)
         - Quantités en g, ml ou piece, pesées crues / non cuites. unit "piece" seulement pour ce qui se compte \
         (œufs, fruits, tortillas), avec piece_g = poids d'une pièce en g ; sinon piece_g = null. cost_eur = \
         coût de la quantité utilisée, recalculé par l'application depuis unit_price_eur.
@@ -343,7 +362,8 @@ public enum PromptBuilder {
         vraiment de plat, pas seulement de nom : la même association protéine principale + féculent (ex. \
         poulet + riz, thon + pâtes) au plus 2 fois par semaine sur les déjeuners et dîners.
         - Privilégie liked_foods.
-        - day_offset 0 = jour de génération ; une semaine couvre les jours 0 à 6.
+        - task "week" : toujours les 7 jours, day_offset 0 à 6 (0 = jour de génération). La période est fixe : \
+        jamais un motif d'infeasible.
         - batch_cooking vrai : 1 ou 2 prep_sessions (index 0, 1), et les repas issus d'une session ont \
         prep_session_ref = index de la session. batch_cooking faux : prep_sessions vide, prep_session_ref null.
         - task "day" : régénère uniquement le jour day_offset, différent de avoid_meal_names.

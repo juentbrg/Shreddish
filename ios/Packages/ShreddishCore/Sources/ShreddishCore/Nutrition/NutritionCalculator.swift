@@ -56,7 +56,10 @@ public enum ProfileValidationError: Error, Equatable, Sendable {
 
 /// Calcul déterministe des cibles (constitution II, research R7). Jamais délégué à l'IA.
 public enum NutritionCalculator {
-    public static let ageRange = 16...90
+    /// Aucun programme pour les mineurs (spec 017, FR-1714).
+    public static let ageRange = 18...90
+    /// IMC sous lequel aucun déficit n'est appliqué.
+    public static let underweightBMI = 18.5
     public static let heightRange = 120.0...230.0
     public static let weightRange = 35.0...250.0
     public static let proteinPerKgRange = 1.2...3.0
@@ -85,6 +88,12 @@ public enum NutritionCalculator {
         if let training = input.training, !training.isValid {
             throw .trainingOutOfRange
         }
+    }
+
+    /// Indice de masse corporelle.
+    public static func bmi(_ input: ProfileInput) -> Double {
+        let meters = input.heightCm / 100
+        return input.weightKg / (meters * meters)
     }
 
     /// Métabolisme de base, Mifflin-St Jeor.
@@ -129,13 +138,16 @@ public enum NutritionCalculator {
 
         let bmr = bmr(input)
         let tdee = tdee(input)
-        let adjustment = input.calorieAdjustment ?? input.goal.defaultCalorieAdjustment
+        let requested = input.calorieAdjustment ?? input.goal.defaultCalorieAdjustment
+        let underweight = bmi(input) < underweightBMI && requested < 0
+        let adjustment = underweight ? 0 : requested
         let adjusted = tdee * (1 + adjustment)
         let floor = floorKcal(input)
         let floorApplied = adjusted < floor
         let kcal = max(adjusted, floor)
 
         var warnings: [TargetWarning] = floorApplied ? [.floorApplied] : []
+        if underweight { warnings.append(.underweightNoDeficit) }
 
         let proteinPerKg = input.proteinPerKg ?? input.goal.defaultProteinPerKg
         let protein = input.weightKg * proteinPerKg

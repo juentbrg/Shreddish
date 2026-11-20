@@ -86,7 +86,8 @@ public struct NutritionResolver: Sendable {
 
     /// Repas avec codes Ciqual, macros et prix recalculés. Repas incomplet (ingrédient non trouvé ou pièce
     /// sans poids) : macros de l'IA conservées, renvoyé dans `unverified` ; prix recalculés quand même.
-    public func resolve(_ meal: MealDTO) -> (meal: MealDTO, verified: Bool) {
+    /// `keepCodes` : codes déjà choisis (aliment pris dans Ciqual par l'utilisateur, spec 017) conservés.
+    public func resolve(_ meal: MealDTO, keepCodes: Bool = false) -> (meal: MealDTO, verified: Bool) {
         var meal = meal
         var total = MacroTotals.zero
         var verified = true
@@ -98,7 +99,8 @@ public struct NutritionResolver: Sendable {
             }
             let key = Self.key(ingredient.name)
             // Hors cache : rapprochement sûr, ou meilleur candidat si l'IA n'a pas tranché.
-            let code = cache.code(for: key) ?? {
+            let chosen = keepCodes ? ingredient.foodCode : nil
+            let code = chosen ?? cache.code(for: key) ?? {
                 switch FoodMatcher.match(ingredient.name, in: catalog) {
                 case let .confident(food): food.code
                 case let .ambiguous(foods): foods.first?.code

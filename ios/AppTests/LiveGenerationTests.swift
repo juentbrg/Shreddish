@@ -89,6 +89,7 @@ struct LiveGenerationTests {
 
     @Test(.timeLimit(.minutes(10)))
     func realWeekMeetsTargets() async throws {
+        AIConsent.grant()
         let container = try ShreddishStore.makeContainer(inMemory: true)
         let context = container.mainContext
         let clock = SystemClock()
@@ -151,6 +152,49 @@ struct LiveGenerationTests {
         if let path = ProcessInfo.processInfo.environment["SHREDDISH_LIVE_REPORT"] {
             try report.json().write(to: URL(fileURLWithPath: path))
         }
+    }
+}
+
+/// Génération réelle en flux : les plats arrivent avant la fin (spec 017, FR-1717).
+@MainActor
+@Suite(.enabled(if: ProcessInfo.processInfo.environment["SHREDDISH_LIVE_STREAM"] == "1" && BundledKeyStore().read() != nil))
+struct LiveStreamingTests {
+    final class Seen: @unchecked Sendable {
+        private let lock = NSLock()
+        private var counts: [Int] = []
+        private(set) var sample = ""
+        func add(_ count: Int, _ text: String) {
+            lock.withLock {
+                counts.append(count)
+                if sample.count < 400 { sample = String(text.prefix(400)) }
+            }
+        }
+        var all: [Int] { lock.withLock { counts } }
+    }
+
+    @Test(.timeLimit(.minutes(5)))
+    func weekStreamsMealNames() async throws {
+        AIConsent.grant()
+        let container = try ShreddishStore.makeContainer(inMemory: true)
+        let context = container.mainContext
+        let birth = Calendar.current.date(byAdding: .year, value: -30, to: .now)!
+        let profile = Profile(sex: .male, birthDate: birth, heightCm: 180, weightKg: 80, activity: .moderate, goal: .cut)
+        let preferences = Preferences()
+        context.insert(profile)
+        context.insert(preferences)
+        let seen = Seen()
+        let generator = PlanGenerator(
+            client: OpenAIClient(transport: URLSessionTransport()), keyStore: BundledKeyStore(), clock: SystemClock()
+        )
+        let started = Date()
+        try await generator.generateWeek(profile: profile, preferences: preferences, in: context) { text in
+            seen.add(LiveMeals.names(in: text).count, text)
+        }
+        let counts = seen.all
+        print("LIVE STREAM \(Int(Date().timeIntervalSince(started))) s, premiers plats après \(counts.firstIndex { $0 > 0 } ?? -1) deltas, "
+            + "max \(counts.max() ?? 0) plats, \(counts.count) deltas, début : \(seen.sample)")
+        #expect((counts.max() ?? 0) >= 20)
+        #expect(PlanStore.currentPlan(in: context)?.sortedDays.count == 7)
     }
 }
 

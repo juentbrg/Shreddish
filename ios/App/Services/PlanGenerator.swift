@@ -36,21 +36,34 @@ final class PlanGenerator {
         var pantry: [IngredientDTO] = []
         /// Recettes sauvegardées à replacer (spec 014).
         var recipes: [MealDTO] = []
+        /// Texte de la semaine reçu en flux (spec 017, FR-1717).
+        var onText: (@Sendable (String) -> Void)?
     }
 
-    private func context(profile: Profile, preferences: Preferences) throws(AIError) -> Context {
+    /// `portions` : foyer (spec 017) ; l'IA prévoit une portion, avec la part du budget correspondante.
+    private func context(profile: Profile, preferences: Preferences, portions: Double) throws(AIError) -> Context {
         guard let key = keyStore.read() else { throw .missingKey }
         guard let targets = profile.targets(clock: clock) else { throw .unexpected("Profil invalide") }
         let model = preferences.aiModel.trimmingCharacters(in: .whitespaces)
         var promptPreferences = preferences.promptPreferences
         promptPreferences.trainingSessionsPerWeek = profile.training?.sessionsPerWeek
+        promptPreferences.weeklyBudgetEur /= portions
+        var constraints = preferences.constraints(targets: targets.macros)
+        constraints.weeklyBudgetEur /= portions
         return Context(
             apiKey: key, targets: targets, goal: profile.goal, preferences: promptPreferences,
-            constraints: preferences.constraints(targets: targets.macros),
+            constraints: constraints,
             model: model.isEmpty ? AIConfig.defaultModel : model,
             resolver: NutritionResolver(cache: matchCache, supplements: preferences.ownedSupplementDetails),
             oil: Self.allowedOil(preferences.constraints(targets: targets.macros))
         )
+    }
+
+    /// Budget d'une portion : budget du foyer ÷ portions.
+    static func perPortion(_ constraints: GenerationConstraints, _ portions: Double) -> GenerationConstraints {
+        var constraints = constraints
+        constraints.weeklyBudgetEur /= portions
+        return constraints
     }
 
     // MARK: Semaine
@@ -60,12 +73,17 @@ final class PlanGenerator {
     @discardableResult
     func generateWeek(
         profile: Profile, preferences: Preferences, startDay: LocalDay? = nil, pantry: [IngredientDTO] = [],
-        recipes: [MealDTO] = [], in store: ModelContext
+        recipes: [MealDTO] = [], in store: ModelContext, onText: (@Sendable (String) -> Void)? = nil
     ) async throws(AIError) -> [ValidationIssue] {
         let startDay = max(startDay ?? clock.today, clock.today)
-        var ctx = try context(profile: profile, preferences: preferences)
+        if let kcal = profile.targets(clock: clock)?.targetKcal {
+            Household.refreshPortions(in: store, mainKcal: kcal, clock: clock)
+        }
+        let portions = Household.portions(in: store)
+        var ctx = try context(profile: profile, preferences: preferences, portions: portions)
         ctx.pantry = Self.resolvedPantry(pantry, resolver: ctx.resolver)
         ctx.recipes = recipes
+        ctx.onText = onText
         let week: ValidationResult<WeekPlanDTO>
         do {
             week = try await requestWeek(ctx)
@@ -100,7 +118,7 @@ final class PlanGenerator {
             )
             let data = try await client.generate(
                 kind: .week, instructions: PromptBuilder.systemInstructions(), input: input,
-                model: ctx.model, apiKey: ctx.apiKey
+                model: ctx.model, apiKey: ctx.apiKey, onText: ctx.onText
             )
             let result = AIOutputValidator.validate(week: try AIResponseDecoder.decodeWeek(data), constraints: ctx.constraints)
             guard result.isValid else { throw AIError.invalidOutput(String(describing: result.fatal)) }
@@ -192,16 +210,18 @@ final class PlanGenerator {
         _ day: DayPlan, profile: Profile, preferences: Preferences, in store: ModelContext
     ) async throws(AIError) -> [ValidationIssue] {
         guard let plan = day.plan else { throw .unexpected("Jour sans planning") }
-        var ctx = try context(profile: profile, preferences: preferences)
+        let portions = Household.portions(in: store)
+        var ctx = try context(profile: profile, preferences: preferences, portions: portions)
         ctx = Context(
             apiKey: ctx.apiKey, targets: plan.targets ?? ctx.targets, goal: ctx.goal, preferences: ctx.preferences,
-            constraints: preferences.constraints(targets: (plan.targets ?? ctx.targets).macros), model: ctx.model,
+            constraints: Self.perPortion(preferences.constraints(targets: (plan.targets ?? ctx.targets).macros), portions),
+            model: ctx.model,
             resolver: ctx.resolver, oil: ctx.oil, pantry: plan.pantry
         )
         let avoid = plan.days.flatMap(\.meals).map(\.name)
         let otherDaysCost = plan.days.filter { $0.persistentModelID != day.persistentModelID }.reduce(0) { $0 + $1.plannedCostEUR }
         let limit = BudgetMath.dayLimit(
-            weeklyBudget: preferences.weeklyBudget, tolerance: preferences.tolerance, otherDaysCost: otherDaysCost
+            weeklyBudget: preferences.weeklyBudget / portions, tolerance: preferences.tolerance, otherDaysCost: otherDaysCost
         )
         let result = try await requestDay(
             ctx, offset: day.offset, avoid: avoid, prepSessions: Set(plan.prepSessions.map(\.index)), costLimit: limit
@@ -221,16 +241,17 @@ final class PlanGenerator {
         _ meal: Meal, profile: Profile, preferences: Preferences, in store: ModelContext
     ) async throws(AIError) -> [ValidationIssue] {
         guard let day = meal.day, let plan = day.plan else { throw .unexpected("Repas sans planning") }
-        let base = try context(profile: profile, preferences: preferences)
+        let portions = Household.portions(in: store)
+        let base = try context(profile: profile, preferences: preferences, portions: portions)
         let targets = plan.targets ?? base.targets
         let others = day.sortedMeals.filter { $0.persistentModelID != meal.persistentModelID }.map(\.dto)
         let otherDaysCost = plan.days.filter { $0.persistentModelID != day.persistentModelID }.reduce(0) { $0 + $1.plannedCostEUR }
         let dayLimit = BudgetMath.dayLimit(
-            weeklyBudget: preferences.weeklyBudget, tolerance: preferences.tolerance, otherDaysCost: otherDaysCost
+            weeklyBudget: preferences.weeklyBudget / portions, tolerance: preferences.tolerance, otherDaysCost: otherDaysCost
         )
         let mealLimit = BudgetMath.mealLimit(dayLimit: dayLimit, otherMealsCost: others.reduce(0) { $0 + $1.costEur })
         let avoid = plan.days.flatMap(\.meals).map(\.name)
-        let constraints = preferences.constraints(targets: targets.macros, costLimitEur: mealLimit)
+        let constraints = Self.perPortion(preferences.constraints(targets: targets.macros, costLimitEur: mealLimit), portions)
         let sessionIndexes = Set(plan.prepSessions.map(\.index))
         let type = meal.type
         let dayOffset = day.offset

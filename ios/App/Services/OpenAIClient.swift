@@ -13,8 +13,10 @@ struct OpenAIClient: Sendable {
     let transport: any AITransport
 
     /// Envoie une requête de génération et renvoie le texte JSON produit par le modèle.
+    /// `onText` : texte reçu jusqu'ici, en flux, si le transport le permet (spec 017, FR-1717).
     func generate(
-        kind: ResponseSchemas.Kind, instructions: String, input: String, model: String, apiKey: String
+        kind: ResponseSchemas.Kind, instructions: String, input: String, model: String, apiKey: String,
+        onText: (@Sendable (String) -> Void)? = nil
     ) async throws(AIError) -> Data {
         var body: [String: Any] = [
             "model": model,
@@ -44,8 +46,65 @@ struct OpenAIClient: Sendable {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = payload
 
+        if let onText, let streaming = transport as? URLSessionTransport {
+            var streamed = body
+            streamed["stream"] = true
+            request.httpBody = try? JSONSerialization.data(withJSONObject: streamed)
+            return try await stream(request, transport: streaming, onText: onText)
+        }
         let data = try await send(request)
         return try Self.outputText(from: data)
+    }
+
+    /// Événement du flux : delta de texte ajouté, refus ou échec retenus.
+    private static func read(event line: String, text: inout String, failure: inout AIError?, onText: (String) -> Void) {
+        guard let event = (try? JSONSerialization.jsonObject(with: Data(line.utf8))) as? [String: Any] else { return }
+        switch event["type"] as? String {
+        case "response.output_text.delta":
+            text += event["delta"] as? String ?? ""
+            onText(text)
+        case "response.refusal.delta", "response.incomplete":
+            failure = .incomplete
+        case "response.failed", "error":
+            failure = .server(status: 500)
+        default:
+            break
+        }
+    }
+
+    /// Statut HTTP traduit en erreur lisible.
+    static func check(status: Int, body: Data?) throws(AIError) {
+        switch status {
+        case 200..<300: return
+        case 401, 403: throw .invalidKey
+        case 429: throw .rateLimited
+        case 500...: throw .server(status: status)
+        default: throw .unexpected(body.flatMap(apiErrorMessage) ?? "HTTP \(status)")
+        }
+    }
+
+    /// Lecture en flux : deltas de texte cumulés, fin sur `response.completed`.
+    private func stream(
+        _ request: URLRequest, transport: URLSessionTransport, onText: @Sendable (String) -> Void
+    ) async throws(AIError) -> Data {
+        var text = ""
+        var failure: AIError?
+        let result: (Data?, HTTPURLResponse)
+        do {
+            result = try await transport.streamLines(request) { line in
+                Self.read(event: line, text: &text, failure: &failure, onText: onText)
+            }
+        } catch let error as URLError {
+            throw Self.map(error)
+        } catch is CancellationError {
+            throw .cancelled
+        } catch {
+            throw .unexpected(error.localizedDescription)
+        }
+        try Self.check(status: result.1.statusCode, body: result.0)
+        if let failure { throw failure }
+        guard !text.isEmpty else { throw .invalidOutput("Aucun texte dans la réponse") }
+        return Data(text.utf8)
     }
 
     private func send(_ request: URLRequest) async throws(AIError) -> Data {

@@ -14,6 +14,7 @@ struct WeekView: View {
     @State private var confirmDelete = false
     @State private var selectedPlanID: UUID?
     @State private var path = NavigationPath()
+    @State private var sharing = false
 
     private var activePlans: [WeeklyPlan] { plans.sorted { $0.startDay < $1.startDay } }
 
@@ -47,6 +48,14 @@ struct WeekView: View {
             .navigationDestination(for: PrepRoute.self) { route in
                 if let plan = activePlans.first(where: { $0.startDayKey == route.planStartKey }) {
                     PrepSessionView(sessions: plan.prepSessions, startDay: plan.startDay)
+                }
+            }
+            .sheet(isPresented: $sharing) {
+                if let plan = shownPlan {
+                    ShareCardSheet(
+                        title: "Ma semaine",
+                        card: WeekShareCard(plan: plan, budget: allPreferences.first?.weeklyBudget ?? 0)
+                    )
                 }
             }
             .onAppear(perform: openDeepLink)
@@ -108,6 +117,8 @@ struct WeekView: View {
                     Button("Planifier une semaine", systemImage: "calendar.badge.plus") { showNewWeek = true }
                         .disabled(model.isBusy || !model.hasAPIKey)
                         .accessibilityIdentifier("newWeek")
+                    Button("Partager ma semaine", systemImage: "square.and.arrow.up") { sharing = true }
+                        .accessibilityIdentifier("shareWeek")
                     Button("Supprimer ce planning", systemImage: "trash", role: .destructive) { confirmDelete = true }
                         .disabled(model.isBusy)
                         .accessibilityIdentifier("deletePlan")
@@ -154,12 +165,13 @@ struct WeekView: View {
         guard let profile = profiles.first, let preferences = allPreferences.first else { return }
         let generator = model.generator
         let context = context
+        let live = model.liveMealsHandler
         selectedPlanID = nil
         Task {
             await model.run("Préparation de ta semaine…", recipesIn: context) { () async throws(AIError) -> [ValidationIssue] in
                 let warnings = try await generator.generateWeek(
                     profile: profile, preferences: preferences, startDay: start, pantry: pantry,
-                    recipes: recipes.map(\.dto), in: context
+                    recipes: recipes.map(\.dto), in: context, onText: live
                 )
                 // Recettes replacées : plus en attente.
                 for recipe in recipes { recipe.isQueued = false }

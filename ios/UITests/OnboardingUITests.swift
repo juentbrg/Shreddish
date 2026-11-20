@@ -6,7 +6,7 @@ final class OnboardingUITests: XCTestCase {
         continueAfterFailure = false
     }
 
-    private func launch(_ extra: [String] = []) -> XCUIApplication {
+    func launch(_ extra: [String] = []) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = ["-uitest"] + extra
         app.launch()
@@ -14,7 +14,7 @@ final class OnboardingUITests: XCTestCase {
     }
 
     /// Ferme le clavier puis fait défiler jusqu'à l'élément (formulaire plus long que l'écran).
-    private func reveal(_ element: XCUIElement, in app: XCUIApplication) {
+    func reveal(_ element: XCUIElement, in app: XCUIApplication) {
         if app.buttons["keyboardDone"].exists { app.buttons["keyboardDone"].tap() }
         var attempts = 0
         while !(element.exists && element.isHittable) && attempts < 8 {
@@ -23,7 +23,7 @@ final class OnboardingUITests: XCTestCase {
         }
     }
 
-    private func onboard(_ app: XCUIApplication) {
+    func onboard(_ app: XCUIApplication) {
         app.buttons["acceptDisclaimer"].tap()
         let height = app.textFields["height"]
         XCTAssertTrue(height.waitForExistence(timeout: 5))

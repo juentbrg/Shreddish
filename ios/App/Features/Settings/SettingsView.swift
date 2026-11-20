@@ -10,10 +10,20 @@ struct SettingsView: View {
     var body: some View {
         List {
             Section {
+                NavigationLink("Abonnement") { PaywallView() }
+                    .accessibilityIdentifier("subscriptionSettings")
+            }
+            Section {
                 NavigationLink("Préférences repas") { PreferencesView() }
                     .accessibilityIdentifier("preferencesSettings")
+                NavigationLink("Mon foyer") { HouseholdView() }
+                    .accessibilityIdentifier("householdSettings")
                 NavigationLink("Notifications") { NotificationSettingsView() }
                     .accessibilityIdentifier("notificationSettings")
+                NavigationLink("Apple Santé") { HealthSettingsView() }
+                    .accessibilityIdentifier("healthSettings")
+                NavigationLink("Confidentialité") { PrivacySettingsView() }
+                    .accessibilityIdentifier("privacySettings")
             }
             Section {
                 NavigationLink("Modifier mon profil") { ProfileEditView() }

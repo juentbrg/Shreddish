@@ -88,6 +88,21 @@ enum Format {
         return "Du \(start) au \(end)"
     }
 
+    /// Part d'un repas mangé : « Mangé en entier », « Mangé aux ¾ ».
+    static func fraction(_ value: Double) -> String {
+        switch value {
+        case 0.75: "Mangé aux ¾"
+        case 0.5: "Mangé à moitié"
+        case 0.25: "Mangé au ¼"
+        default: "Mangé en entier"
+        }
+    }
+
+    /// « 1 portion », « 2,75 portions ».
+    static func portion(_ value: Double) -> String {
+        "\(number(value, digits: 2)) portion\(value > 1 ? "s" : "")"
+    }
+
     /// « 19:30 » depuis des minutes après minuit.
     static func clock(_ minutes: Int) -> String {
         String(format: "%02d:%02d", minutes / 60 % 24, minutes % 60)
@@ -174,6 +189,20 @@ extension TrainingIntensity {
     }
 }
 
+extension Diet {
+    var label: String {
+        switch self {
+        case .vegetarian: "Végétarien"
+        case .vegan: "Vegan"
+        case .pescatarian: "Pescétarien"
+        case .halal: "Halal"
+        case .kosher: "Casher"
+        case .glutenFree: "Sans gluten"
+        case .lactoseFree: "Sans lactose"
+        }
+    }
+}
+
 extension Goal {
     var label: String {
         switch self {
@@ -231,6 +260,7 @@ struct MacroLine: View {
         Text("\(Format.kcal(macros.kcal)) · P \(protein) · G \(carbs) · L \(fat)")
             .font(Theme.text(.footnote))
             .foregroundStyle(Theme.muted)
+            .fixedSize(horizontal: false, vertical: true)
             .accessibilityLabel(
                 "\(Format.kcal(macros.kcal)), protéines \(protein), glucides \(carbs), lipides \(fat)"
             )
@@ -245,7 +275,7 @@ struct WarningBadge: View {
     var body: some View {
         Label(text, systemImage: systemImage)
             .font(Theme.text(.caption, .semibold))
-            .foregroundStyle(Theme.tomato)
+            .foregroundStyle(Theme.tomatoInk)
             .labelStyle(.titleAndIcon)
             .padding(.horizontal, 10)
             .padding(.vertical, 6)

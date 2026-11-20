@@ -21,4 +21,20 @@ struct URLSessionTransport: AITransport {
         guard let http = response as? HTTPURLResponse else { throw URLError(.badServerResponse) }
         return (data, http)
     }
+
+    /// Réponse en flux (server-sent events) : chaque ligne `data:` transmise dès réception (spec 017).
+    /// Statut HTTP en erreur : corps complet renvoyé pour lire le message d'erreur.
+    func streamLines(_ request: URLRequest, onLine: (String) -> Void) async throws -> (Data?, HTTPURLResponse) {
+        let (bytes, response) = try await session.bytes(for: request)
+        guard let http = response as? HTTPURLResponse else { throw URLError(.badServerResponse) }
+        guard (200..<300).contains(http.statusCode) else {
+            var body = Data()
+            for try await byte in bytes { body.append(byte) }
+            return (body, http)
+        }
+        for try await line in bytes.lines where line.hasPrefix("data:") {
+            onLine(String(line.dropFirst(5)).trimmingCharacters(in: .whitespaces))
+        }
+        return (nil, http)
+    }
 }

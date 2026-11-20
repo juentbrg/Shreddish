@@ -10,18 +10,29 @@ struct NutritionValidationTests {
         try NutritionCalculator.validate(Self.valid)
     }
 
-    @Test(arguments: [15, 91])
+    @Test(arguments: [15, 17, 91])
     func ageOutOfRange(age: Int) {
         var input = Self.valid
         input.age = age
         #expect(throws: ProfileValidationError.ageOutOfRange) { try NutritionCalculator.validate(input) }
     }
 
-    @Test(arguments: [16, 90])
+    @Test(arguments: [18, 90])
     func ageBoundsAccepted(age: Int) throws {
         var input = Self.valid
         input.age = age
         try NutritionCalculator.validate(input)
+    }
+
+    /// Spec 017 : IMC sous 18,5, aucune sèche : cible à l'entretien et avertissement.
+    @Test func underweightGetsNoDeficit() throws {
+        var input = Self.valid
+        input.weightKg = 52
+        input.heightCm = 180
+        input.goal = .cut
+        let targets = try NutritionCalculator.targets(for: input)
+        #expect(targets.warnings.contains(.underweightNoDeficit))
+        #expect(Double(targets.targetKcal) >= NutritionCalculator.tdee(input).rounded() - 1)
     }
 
     @Test(arguments: [30.0, 119.9, 230.1])

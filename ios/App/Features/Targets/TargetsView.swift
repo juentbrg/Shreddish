@@ -51,6 +51,8 @@ struct TargetsView: View {
             }
             Section {
                 NavigationLink("Modifier mon profil") { ProfileEditView() }
+                NavigationLink("Mes progrès") { BodyProgressView() }
+                    .accessibilityIdentifier("bodyProgress")
                 NavigationLink("Ajuster les macros") { MacroSettingsView() }
                 NavigationLink {
                     CalibrationView()
@@ -132,6 +134,8 @@ extension TargetWarning {
     var message: String {
         switch self {
         case .floorApplied: "Cible ramenée au plancher de sécurité : descendre plus bas n'est pas conseillé."
+        case .underweightNoDeficit:
+            "IMC sous 18,5 : pas de déficit calorique, cible à l'entretien. Parles-en à un médecin avant une sèche."
         case .fatReduced: "Lipides abaissés (minimum 0,6 g/kg) pour garder des glucides."
         case .carbsAtZero: "Protéines et lipides couvrent déjà toute la cible : glucides à 0. Revois tes réglages."
         }
@@ -187,12 +191,10 @@ struct TargetsHeroCard: View {
         VStack(alignment: .leading, spacing: 14) {
             VStack(alignment: .leading, spacing: 2) {
                 Text("\(goal.label) · par jour")
-                    .font(Theme.text(.footnote))
-                    .opacity(0.85)
+                    .font(Theme.text(.footnote, .medium))
                 Text(Format.kcal(Double(targets.targetKcal)))
                     .font(Theme.display(38, .heavy, relativeTo: .largeTitle))
-                    .minimumScaleFactor(0.7)
-                    .lineLimit(1)
+                    .fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier("targetKcal")
             }
             HStack(spacing: 8) {

@@ -67,7 +67,7 @@ struct ProfileDraft: Equatable {
 extension ProfileValidationError {
     var message: String {
         switch self {
-        case .ageOutOfRange: "Âge accepté : de 16 à 90 ans."
+        case .ageOutOfRange: "Âge accepté : de 18 à 90 ans. Shreddish ne convient pas aux mineurs."
         case .heightOutOfRange: "Taille acceptée : de 120 à 230 cm."
         case .weightOutOfRange: "Poids accepté : de 35 à 250 kg."
         case .overrideOutOfRange(.proteinPerKg): "Protéines : de 1,2 à 3 g par kg."

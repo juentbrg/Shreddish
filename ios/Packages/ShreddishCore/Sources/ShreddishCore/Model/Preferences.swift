@@ -59,6 +59,9 @@ public final class Preferences {
     /// Jeûne intermittent : premier et dernier repas, en minutes depuis minuit ; nil = pas de fenêtre.
     public var eatingWindowStartMinutes: Int?
     public var eatingWindowEndMinutes: Int?
+    // Spec 017 (SchemaV11).
+    /// Régimes `Diet` cumulés ; nil = aucun.
+    public var dietsRaw: [String]?
 
     public init() {
         mealsPerDay = 4
@@ -137,6 +140,11 @@ public final class Preferences {
         }
     }
 
+    public var diets: [Diet] {
+        get { (dietsRaw ?? []).compactMap(Diet.init(rawValue:)) }
+        set { dietsRaw = newValue.isEmpty ? nil : newValue.map(\.rawValue) }
+    }
+
     public var availability: IngredientAvailability {
         get { ingredientAvailabilityRaw.flatMap(IngredientAvailability.init(rawValue:)) ?? .everywhere }
         set { ingredientAvailabilityRaw = newValue.rawValue }
@@ -147,7 +155,8 @@ public final class Preferences {
             mealsPerDay: mealsPerDay, maxPrepMinutes: maxPrepMinutes, weeklyBudgetEur: weeklyBudget,
             budgetTolerance: tolerance, allergies: allergyList, dislikedFoods: excludedFoods, likedFoods: likedFoods,
             equipment: equipment, batchCooking: batchCooking, ingredientAvailability: availability,
-            ownedSupplements: ownedSupplementDetails, trainingTime: trainingTimeLabel, eatingWindow: eatingWindow?.label
+            ownedSupplements: ownedSupplementDetails, trainingTime: trainingTimeLabel, eatingWindow: eatingWindow?.label,
+            diets: diets.isEmpty ? nil : diets
         )
     }
 
@@ -159,6 +168,7 @@ public final class Preferences {
             ownedSupplements: supplementList
         )
         constraints.eatingWindow = eatingWindow
+        constraints.diets = diets
         return constraints
     }
 }

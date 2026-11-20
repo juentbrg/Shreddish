@@ -4,24 +4,43 @@ import SwiftUI
 
 /// Recettes sauvegardées depuis les repas qui ont plu, à replacer dans une semaine suivante (spec 014).
 struct RecipesView: View {
+    @Environment(AppModel.self) private var model
     @Environment(\.modelContext) private var context
     @Query(sort: \SavedRecipe.savedAt, order: .reverse) var recipes: [SavedRecipe]
+    @State private var creating = false
+
+    /// Recette perso vide (spec 017, FR-1705).
+    static let blank = MealDTO(
+        type: .lunch, name: "", ingredients: [], steps: [""], prepMinutes: 15, costEur: 0,
+        kcal: 0, proteinG: 0, carbsG: 0, fatG: 0, prepSessionRef: nil, time: nil
+    )
 
     var body: some View {
         NavigationStack {
             Group {
                 if recipes.isEmpty {
-                    ContentUnavailableView {
-                        Label("Aucune recette sauvegardée", systemImage: "bookmark")
-                    } description: {
-                        Text("Un repas t'a plu ? Ouvre-le et touche le signet pour le garder ici.")
-                    }
+                    EmptyState(
+                        title: "Aucune recette sauvegardée", systemImage: "bookmark",
+                        message: "Un repas t'a plu ? Ouvre-le et touche le signet pour le garder ici, ou crée ta recette."
+                    )
                     .paperBackground()
                 } else {
                     list
                 }
             }
             .navigationTitle("Recettes")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Créer une recette", systemImage: "plus") { creating = true }
+                        .accessibilityIdentifier("createRecipe")
+                }
+            }
+            .sheet(isPresented: $creating) {
+                MealEditView(meal: Self.blank, title: "Nouvelle recette") { meal in
+                    context.insert(SavedRecipe(meal: meal, savedAt: model.clock.now))
+                    try? context.save()
+                }
+            }
         }
     }
 
@@ -95,6 +114,7 @@ struct SavedRecipeView: View {
     @Query var allPreferences: [Preferences]
     @Bindable var recipe: SavedRecipe
     @State private var confirmDelete = false
+    @State private var editing = false
 
     var body: some View {
         ScrollView {
@@ -119,6 +139,18 @@ struct SavedRecipeView: View {
         .paperBackground()
         .navigationBarTitleDisplayMode(.inline)
         .onChange(of: recipe.isQueued) { try? context.save() }
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button("Modifier", systemImage: "pencil") { editing = true }
+                    .accessibilityIdentifier("editRecipe")
+            }
+        }
+        .sheet(isPresented: $editing) {
+            MealEditView(meal: recipe.dto, title: "Modifier la recette") { meal in
+                recipe.apply(meal)
+                try? context.save()
+            }
+        }
         .confirmationDialog("Retirer cette recette ?", isPresented: $confirmDelete, titleVisibility: .visible) {
             Button("Retirer", role: .destructive) {
                 context.delete(recipe)

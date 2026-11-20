@@ -23,11 +23,20 @@ struct RootView: View {
                     model.calibrateIfDue(context: context)
                     await model.notifications.requestAuthorizationIfNeeded()
                     await model.notifications.reschedule()
+                    await model.health.sync(container: context.container, clock: model.clock)
                 }
                 .onChange(of: scenePhase) { _, phase in
-                    if phase == .active { model.calibrateIfDue(context: context) }
+                    if phase == .active {
+                        model.calibrateIfDue(context: context)
+                        Task { await model.health.sync(container: context.container, clock: model.clock) }
+                    }
                     // Rappels recalculés à l'ouverture et à la sortie : plannings, coches et pesées à jour.
                     if phase != .inactive { Task { await model.notifications.reschedule() } }
+                }
+                .onChange(of: model.network.isOnline) { _, online in
+                    guard online else { return }
+                    model.recipes.fillMissing(in: context)
+                    Task { await model.resumePending() }
                 }
         }
     }
@@ -53,9 +62,22 @@ struct RootView: View {
         }
         .overlay {
             if let message = model.busyMessage {
-                BusyOverlay(message: message)
+                BusyOverlay(message: message, liveMeals: model.liveMeals)
             }
         }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            if !model.network.isOnline {
+                Label("Hors ligne : planning, journal et courses restent disponibles", systemImage: "wifi.slash")
+                    .font(Theme.text(.caption, .semibold))
+                    .foregroundStyle(Theme.ink)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 6)
+                    .background(Theme.wheat)
+                    .accessibilityIdentifier("offlineBanner")
+            }
+        }
+        .sheet(isPresented: $model.needsAIConsent) { AIConsentView() }
+        .sheet(isPresented: $model.needsPaywall) { PaywallView() }
         .alert(
             "Génération impossible",
             isPresented: Binding(get: { model.errorMessage != nil }, set: { if !$0 { model.errorMessage = nil } })
@@ -69,6 +91,8 @@ struct RootView: View {
 
 struct BusyOverlay: View {
     let message: String
+    /// Plats déjà reçus (génération de la semaine en flux).
+    var liveMeals: [String] = []
 
     var body: some View {
         ZStack {
@@ -79,9 +103,27 @@ struct BusyOverlay: View {
                 Text(message)
                     .font(Theme.display(20, .bold, relativeTo: .headline))
                     .multilineTextAlignment(.center)
-                Text("Ça peut prendre jusqu'à une minute.")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+                if liveMeals.isEmpty {
+                    Text("Ça peut prendre jusqu'à une minute.")
+                        .font(Theme.text(.footnote))
+                        .foregroundStyle(Theme.muted)
+                } else {
+                    Text("\(liveMeals.count) plat\(liveMeals.count > 1 ? "s" : "") au menu")
+                        .font(Theme.text(.subheadline, .semibold))
+                        .foregroundStyle(Theme.green)
+                        .contentTransition(.numericText())
+                    VStack(alignment: .leading, spacing: 6) {
+                        ForEach(Array(liveMeals.suffix(5).enumerated()), id: \.element) { _, name in
+                            Label(name, systemImage: "checkmark.circle.fill")
+                                .font(Theme.text(.footnote))
+                                .foregroundStyle(Theme.ink)
+                                .lineLimit(1)
+                                .transition(.move(edge: .bottom).combined(with: .opacity))
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .animation(.snappy, value: liveMeals)
+                }
             }
             .padding(24)
             .background(Theme.card, in: RoundedRectangle(cornerRadius: 26, style: .continuous))

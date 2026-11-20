@@ -11,6 +11,10 @@ struct MealDetailView: View {
     @Query var allPreferences: [Preferences]
     let meal: Meal
     @Query var savedRecipes: [SavedRecipe]
+    @Query var members: [HouseholdMember]
+    /// Quantités pour tout le foyer plutôt que pour ta portion (spec 017).
+    @State private var forHousehold = false
+    @State private var editing = false
 
     private var owned: [String] { allPreferences.first?.supplementList ?? [] }
 
@@ -38,7 +42,17 @@ struct MealDetailView: View {
         }
         .paperBackground()
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $editing) {
+            MealEditView(meal: meal.dto) { dto in try? PlanStore.updateMeal(meal, with: dto, in: context) }
+        }
         .toolbar {
+            if meal.day?.plan?.isCurrent == true {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Modifier", systemImage: "pencil") { editing = true }
+                        .disabled(meal.needsRecipe)
+                        .accessibilityIdentifier("editMeal")
+                }
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 let isSaved = savedRecipes.contains { RecipeBook.key($0.name) == RecipeBook.key(meal.name) }
                 Button(isSaved ? "Retirer des recettes" : "Sauvegarder la recette", systemImage: isSaved ? "bookmark.fill" : "bookmark") {
@@ -81,8 +95,21 @@ struct MealDetailView: View {
         )
     }
 
-    private var ingredients: some View {
-        IngredientGrid(ingredients: meal.ingredients, owned: owned)
+    @ViewBuilder private var ingredients: some View {
+        let portions = Household.portions(members)
+        if !members.isEmpty {
+            Picker("Quantités", selection: $forHousehold) {
+                Text("Ma portion").tag(false)
+                Text("Foyer · \(Format.portion(portions))").tag(true)
+            }
+            .pickerStyle(.segmented)
+            .padding(.horizontal, 20)
+            .accessibilityIdentifier("householdQuantities")
+        }
+        IngredientGrid(
+            ingredients: forHousehold ? Household.scaled(meal.ingredients, portions: portions) : meal.ingredients,
+            owned: owned
+        )
     }
 
     @ViewBuilder private var steps: some View {

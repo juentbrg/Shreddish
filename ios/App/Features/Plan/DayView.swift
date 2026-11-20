@@ -8,6 +8,7 @@ struct DayContent: View {
     @Environment(\.modelContext) private var context
     @Query var profiles: [Profile]
     @Query var allPreferences: [Preferences]
+    @Query var members: [HouseholdMember]
     let day: DayPlan
     @State private var confirmRegenerate = false
 
@@ -17,7 +18,12 @@ struct DayContent: View {
         VStack(alignment: .leading, spacing: 18) {
             DayHeroCard(day: day, targets: day.plan?.targets)
             VStack(alignment: .leading, spacing: 10) {
-                SectionTitle(title: "Au menu", trailing: "\(Format.euros(day.plannedCostEUR)) la journée")
+                SectionTitle(
+                    title: "Au menu",
+                    trailing: members.isEmpty
+                        ? "\(Format.euros(day.plannedCostEUR)) la journée"
+                        : "\(Format.euros(day.plannedCostEUR * Household.portions(members))) pour le foyer"
+                )
                 ForEach(day.sortedMeals) { meal in
                     NavigationLink {
                         MealDetailView(meal: meal)
@@ -79,12 +85,10 @@ struct DayHeroCard: View {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Prévu ce jour")
-                        .font(Theme.text(.footnote))
-                        .opacity(0.85)
+                        .font(Theme.text(.footnote, .medium))
                     Text(Format.kcal(totals.kcal))
                         .font(Theme.display(38, .heavy, relativeTo: .largeTitle))
-                        .minimumScaleFactor(0.7)
-                        .lineLimit(1)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer()
                 if targets != nil {
@@ -117,10 +121,10 @@ struct MacroTile: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(title).font(Theme.text(.caption)).opacity(0.85)
+            Text(title).font(Theme.text(.caption, .medium))
             Text(Format.grams(value)).font(Theme.text(.headline, .bold))
             if let target {
-                Text("cible \(Int(target.rounded()))").font(Theme.text(.caption2)).opacity(0.8)
+                Text("cible \(Int(target.rounded()))").font(Theme.text(.caption2, .medium))
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -140,7 +144,7 @@ struct MealCard: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text([meal.time, meal.type.label].compactMap(\.self).joined(separator: " · "))
                     .font(Theme.text(.caption, isSnack ? .semibold : .regular))
-                    .foregroundStyle(isSnack ? Theme.tomato : Theme.muted)
+                    .foregroundStyle(isSnack ? Theme.tomatoInk : Theme.muted)
                 Text(meal.name)
                     .font(Theme.text(.subheadline, .semibold))
                     .foregroundStyle(Theme.ink)

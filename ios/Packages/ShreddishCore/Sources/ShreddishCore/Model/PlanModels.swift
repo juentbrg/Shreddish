@@ -94,7 +94,7 @@ public final class DayPlan {
     public var log: DayLog {
         DayLog(
             day: day,
-            meals: sortedMeals.map { LoggedMeal(macros: $0.macros, status: $0.status) },
+            meals: sortedMeals.map { LoggedMeal(macros: $0.eatenMacros, status: $0.status) },
             extras: sortedExtras.map(\.macros)
         )
     }
@@ -126,6 +126,8 @@ public final class Meal {
     public var statusChangedAt: Date?
     /// Position dans la journée.
     public var order: Int
+    /// Part mangée (spec 017, SchemaV11) : 0,5 = moitié ; nil = repas entier.
+    public var eatenFraction: Double?
     public var day: DayPlan?
 
     public init(dto: MealDTO, order: Int) {
@@ -160,6 +162,12 @@ public final class Meal {
         MacroTotals(kcal: kcal, proteinG: proteinG, carbsG: carbsG, fatG: fatG)
     }
 
+    /// Macros réellement mangées : repas entier ou part indiquée.
+    public var eatenMacros: MacroTotals {
+        guard let fraction = eatenFraction else { return macros }
+        return MacroTotals(kcal: kcal * fraction, proteinG: proteinG * fraction, carbsG: carbsG * fraction, fatG: fatG * fraction)
+    }
+
     /// Recette pas encore rédigée (spec 010).
     public var needsRecipe: Bool { steps.isEmpty }
 
@@ -174,6 +182,19 @@ public final class Meal {
     public func setStatus(_ status: MealStatus, at date: Date) {
         self.status = status
         statusChangedAt = date
+    }
+
+    /// Contenu remplacé par un repas modifié (spec 017) ; statut, heure, rang et session conservés.
+    public func apply(_ dto: MealDTO) {
+        name = dto.name
+        ingredientsData = (try? JSONEncoder().encode(dto.ingredients)) ?? Data()
+        steps = dto.steps
+        prepMinutes = dto.prepMinutes
+        costEUR = dto.costEur
+        kcal = dto.kcal
+        proteinG = dto.proteinG
+        carbsG = dto.carbsG
+        fatG = dto.fatG
     }
 }
 
