@@ -36,7 +36,7 @@ struct ReceiptSection: View {
             if let comparison {
                 LabeledContent("Payé en caisse", value: Format.euros(comparison.paidEUR))
                 Text(Self.verdict(comparison))
-                    .foregroundStyle(comparison.difference <= 0 ? Theme.green : Theme.tomatoInk)
+                    .foregroundStyle(comparison.difference <= 0 ? Theme.success : Theme.tomatoInk)
             }
             TextField(comparison == nil ? "Montant payé (€)" : "Corriger le montant (€)", text: $amount, axis: .vertical)
                 .keyboardType(.decimalPad)

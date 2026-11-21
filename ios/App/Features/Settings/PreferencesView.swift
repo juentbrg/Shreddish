@@ -172,9 +172,9 @@ private struct BudgetSection: View {
                     let isSelected = preferences.weeklyBudget == preset
                     Button("\(Int(preset)) €") { budget.wrappedValue = preset }
                         .font(Theme.text(.subheadline, .semibold))
-                        .foregroundStyle(isSelected ? Theme.onGreen : Theme.ink)
+                        .foregroundStyle(isSelected ? Theme.onAccent : Theme.ink)
                         .frame(maxWidth: .infinity, minHeight: 40)
-                        .background(isSelected ? Theme.green : Theme.paper, in: Capsule())
+                        .background(isSelected ? Theme.accent : Theme.paper, in: Capsule())
                         .buttonStyle(.borderless)
                         .accessibilityIdentifier("budgetPreset-\(Int(preset))")
                 }
@@ -232,8 +232,8 @@ private struct FoodsSections: View {
             suggestions: Suggestions.allergens
         )
         EditableListSection(
-            title: "Aliments que tu n'aimes pas", placeholder: "ex. thon", items: $preferences.excludedFoods,
-            footer: nil,
+            title: "Aliments bannis", placeholder: "ex. baguette", items: $preferences.excludedFoods,
+            footer: "Jamais proposés. Ajoute-en aussi par appui long sur un ingrédient ou un article de courses.",
             suggestions: Suggestions.foods
         )
         EditableListSection(title: "Aliments appréciés", placeholder: "ex. poulet", items: $preferences.likedFoods, footer: nil,

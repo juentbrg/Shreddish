@@ -92,11 +92,11 @@ struct PaywallView: View {
                     Text("−40 %").font(Theme.text(.caption, .bold)).padding(6).background(Theme.wheat, in: Capsule())
                 }
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .foregroundStyle(isSelected ? Theme.green : Theme.muted)
+                    .foregroundStyle(isSelected ? Theme.accent : Theme.muted)
             }
             .foregroundStyle(Theme.ink)
             .card()
-            .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).stroke(isSelected ? Theme.green : .clear, lineWidth: 2))
+            .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).stroke(isSelected ? Theme.accent : .clear, lineWidth: 2))
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("plan-\(product.id)")

@@ -2402,6 +2402,34 @@
         }
       }
     },
+    "Appui long sur un ingrédient pour ne plus jamais le voir dans tes plannings.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Long-press an ingredient to never see it in your plans again."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mantén pulsado un ingrediente para no volver a verlo en tus planes."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Halte eine Zutat gedrückt, um sie nie wieder in deinen Plänen zu sehen."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tieni premuto un ingrediente per non vederlo mai più nei tuoi piani."
+          }
+        }
+      }
+    },
     "Au menu": {
       "extractionState": "manual",
       "localizations": {
@@ -4081,6 +4109,12 @@
     },
     "Corriger le montant (€)": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Betrag korrigieren (€)"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -4091,12 +4125,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Corregir el importe (€)"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Betrag korrigieren (€)"
           }
         },
         "it": {
@@ -7810,6 +7838,12 @@
     },
     "Montant payé (€)": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bezahlter Betrag (€)"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -7820,12 +7854,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Importe pagado (€)"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bezahlter Betrag (€)"
           }
         },
         "it": {
@@ -8001,6 +8029,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nascita"
+          }
+        }
+      }
+    },
+    "Ne plus jamais proposer": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Never suggest again"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No volver a proponer"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie mehr vorschlagen"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Non proporre mai più"
           }
         }
       }
@@ -9633,6 +9689,90 @@
         }
       }
     },
+    "Plus jamais proposé dans tes plannings.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Never suggested in your plans again."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se volverá a proponer en tus planes."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wird in deinen Plänen nie mehr vorgeschlagen."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Non sarà mai più proposto nei tuoi piani."
+          }
+        }
+      }
+    },
+    "Plus jamais proposé dans tes plannings. %lld repas à venir en contiennent : remplace-les avec « Autre idée de repas ».": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Never suggested in your plans again. %lld upcoming meals contain it: replace them with \"Another meal idea\"."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se volverá a proponer en tus planes. %lld comidas próximas lo contienen: cámbialas con «Otra idea de comida»."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wird nie mehr vorgeschlagen. %lld kommende Mahlzeiten enthalten es: ersetze sie mit „Andere Mahlzeitidee“."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Non sarà mai più proposto. %lld pasti in arrivo lo contengono: sostituiscili con «Un'altra idea»."
+          }
+        }
+      }
+    },
+    "Plus jamais proposé dans tes plannings. Liste dans Réglages → Préférences.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Never suggested in your plans again. List in Settings → Preferences."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se volverá a proponer en tus planes. Lista en Ajustes → Preferencias."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wird nie mehr vorgeschlagen. Liste unter Einstellungen → Vorlieben."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Non sarà mai più proposto. Elenco in Impostazioni → Preferenze."
+          }
+        }
+      }
+    },
     "Plus tard": {
       "localizations": {
         "de": {
@@ -10084,6 +10224,7 @@
       }
     },
     "Prix médians en France, paquets entiers": {
+      "extractionState": "stale",
       "localizations": {
         "de": {
           "stringUnit": {
@@ -10107,6 +10248,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Prezzi mediani in Francia, confezioni intere"
+          }
+        }
+      }
+    },
+    "Prix médians en France, paquets entiers. Appui long sur un article pour le bannir.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Median prices in France, whole packs. Long-press an item to ban it."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Precios medianos en Francia, paquetes enteros. Mantén pulsado un artículo para vetarlo."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Medianpreise in Frankreich, ganze Packungen. Artikel gedrückt halten, um ihn zu sperren."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prezzi mediani in Francia, confezioni intere. Tieni premuto un articolo per escluderlo."
           }
         }
       }
@@ -12351,19 +12520,131 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Current week"
+            "value": "This week"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Semana actual"
+            "value": "Semana en curso"
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
             "value": "Settimana in corso"
+          }
+        }
+      }
+    },
+    "Semaine passée": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vergangene Woche"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Past week"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Semana pasada"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Settimana passata"
+          }
+        }
+      }
+    },
+    "Semaine précédente": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vorherige Woche"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Previous week"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Semana anterior"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Settimana precedente"
+          }
+        }
+      }
+    },
+    "Semaine suivante": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nächste Woche"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next week"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Semana siguiente"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Settimana successiva"
+          }
+        }
+      }
+    },
+    "Semaine à venir": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kommende Woche"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Upcoming week"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Próxima semana"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Settimana prossima"
           }
         }
       }
@@ -13268,6 +13549,7 @@
       }
     },
     "Terminée": {
+      "extractionState": "stale",
       "localizations": {
         "de": {
           "stringUnit": {
@@ -14883,6 +15165,34 @@
         }
       }
     },
+    "« %@ » banni": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\"%@\" banned"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "«%@» vetado"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "„%@“ gesperrt"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "«%@» escluso"
+          }
+        }
+      }
+    },
     "À l'heure": {
       "localizations": {
         "de": {
@@ -14941,6 +15251,7 @@
       }
     },
     "À venir": {
+      "extractionState": "stale",
       "localizations": {
         "de": {
           "stringUnit": {
@@ -15311,6 +15622,93 @@
           "stringUnit": {
             "state": "translated",
             "value": "≈ %@ per sessione."
+          }
+        }
+      }
+    },
+    "Aliments bannis": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Banned foods"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alimentos vetados"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gesperrte Lebensmittel"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alimenti esclusi"
+          }
+        }
+      }
+    },
+    "ex. baguette": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "e.g. baguette"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "p. ej. baguette"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "z. B. Baguette"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "es. baguette"
+          }
+        }
+      }
+    },
+    "Jamais proposés. Ajoute-en aussi par appui long sur un ingrédient ou un article de courses.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Never suggested. You can also add some by long-pressing an ingredient or a grocery item."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nunca se proponen. También puedes añadirlos manteniendo pulsado un ingrediente o un artículo de la compra."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Werden nie vorgeschlagen. Du kannst auch eine Zutat oder einen Einkaufsartikel gedrückt halten."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mai proposti. Puoi aggiungerne anche tenendo premuto un ingrediente o un articolo della spesa."
           }
         }
       }

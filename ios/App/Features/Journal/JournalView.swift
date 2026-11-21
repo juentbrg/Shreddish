@@ -161,7 +161,7 @@ struct MealStatusRow: View {
                     .foregroundStyle(Theme.muted)
             }
             Spacer()
-            statusButton(.eaten, symbol: "checkmark.circle.fill", label: "Mangé", tint: Theme.green)
+            statusButton(.eaten, symbol: "checkmark.circle.fill", label: "Mangé", tint: Theme.success)
             statusButton(.skipped, symbol: "xmark.circle.fill", label: "Sauté", tint: Theme.muted)
         }
     }

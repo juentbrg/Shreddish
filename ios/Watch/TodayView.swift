@@ -105,7 +105,7 @@ private struct WeightEntryView: View {
                 store.logWeight((kg * 10).rounded() / 10)
                 dismiss()
             }
-            .tint(.green)
+            .tint(Color(red: 0.94, green: 0.54, blue: 0.39))
         }
         .navigationTitle("Pesée")
     }

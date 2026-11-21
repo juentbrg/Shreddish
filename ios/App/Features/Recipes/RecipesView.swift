@@ -96,7 +96,7 @@ struct RecipeCard: View {
             Spacer(minLength: 0)
             if recipe.isQueued {
                 Image(systemName: "calendar.badge.clock")
-                    .foregroundStyle(Theme.green)
+                    .foregroundStyle(Theme.accent)
                     .accessibilityLabel("Pour la semaine prochaine")
             }
         }
@@ -124,7 +124,7 @@ struct SavedRecipeView: View {
                     Label("Pour la semaine prochaine", systemImage: "calendar.badge.plus")
                         .font(Theme.text(.body, .semibold))
                 }
-                .tint(Theme.green)
+                .tint(Theme.accent)
                 .card()
                 .padding(.horizontal, 20)
                 .accessibilityIdentifier("queueRecipe")
@@ -164,7 +164,7 @@ struct SavedRecipeView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text(recipe.type.label)
                 .font(Theme.text(.subheadline, .semibold))
-                .foregroundStyle(Theme.green)
+                .foregroundStyle(recipe.type.tileColors.ink)
             Text(recipe.name)
                 .font(Theme.display(30, .heavy, relativeTo: .largeTitle))
                 .foregroundStyle(Theme.ink)
@@ -187,7 +187,7 @@ struct SavedRecipeView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             UnevenRoundedRectangle(bottomLeadingRadius: 32, bottomTrailingRadius: 32, style: .continuous)
-                .fill(Theme.greenSoft)
+                .fill(recipe.type.tileColors.background)
                 .ignoresSafeArea(edges: .top)
         )
     }
@@ -212,7 +212,7 @@ struct RecipePicker: View {
                     HStack(spacing: 12) {
                         Image(systemName: isPicked ? "checkmark.circle.fill" : "circle")
                             .font(.title3)
-                            .foregroundStyle(isPicked ? Theme.green : Theme.muted)
+                            .foregroundStyle(isPicked ? Theme.accent : Theme.muted)
                         MealTile(type: recipe.type)
                         VStack(alignment: .leading, spacing: 2) {
                             Text(recipe.name).font(Theme.text(.subheadline, .semibold))

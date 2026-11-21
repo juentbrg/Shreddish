@@ -15,6 +15,8 @@ struct MealDetailView: View {
     /// Quantités pour tout le foyer plutôt que pour ta portion (spec 017).
     @State private var forHousehold = false
     @State private var editing = false
+    /// Aliment tout juste banni : propose de remplacer ce repas.
+    @State private var banned: String?
 
     private var owned: [String] { allPreferences.first?.supplementList ?? [] }
 
@@ -69,7 +71,7 @@ struct MealDetailView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text([meal.type.label, meal.time].compactMap(\.self).joined(separator: " · "))
                 .font(Theme.text(.subheadline, .semibold))
-                .foregroundStyle(Theme.green)
+                .foregroundStyle(meal.type.tileColors.ink)
             Text(meal.name)
                 .font(Theme.display(30, .heavy, relativeTo: .largeTitle))
                 .foregroundStyle(Theme.ink)
@@ -91,7 +93,7 @@ struct MealDetailView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             UnevenRoundedRectangle(bottomLeadingRadius: 32, bottomTrailingRadius: 32, style: .continuous)
-                .fill(Theme.greenSoft)
+                .fill(meal.type.tileColors.background)
                 .ignoresSafeArea(edges: .top)
         )
     }
@@ -110,7 +112,29 @@ struct MealDetailView: View {
         IngredientGrid(
             ingredients: forHousehold ? Household.scaled(meal.ingredients, portions: portions) : meal.ingredients,
             owned: owned
-        )
+        ) { food in
+            guard let preferences = allPreferences.first else { return }
+            preferences.ban(food)
+            try? context.save()
+            banned = food
+        }
+        .alert(
+            String(localized: "« \(banned ?? "") » banni"),
+            isPresented: Binding(get: { banned != nil }, set: { if !$0 { banned = nil } })
+        ) {
+            if meal.day?.plan?.isCurrent == true, meal.status == .planned {
+                Button("Remplacer ce repas") {
+                    MealReplacement.run(
+                        meal: meal, profile: profiles.first, preferences: allPreferences.first, model: model, context: context
+                    )
+                    dismiss()
+                }
+                .disabled(model.isBusy)
+            }
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Plus jamais proposé dans tes plannings. Liste dans Réglages → Préférences.")
+        }
     }
 
     @ViewBuilder private var steps: some View {
@@ -150,6 +174,8 @@ struct MealDetailView: View {
 struct IngredientGrid: View {
     let ingredients: [IngredientDTO]
     let owned: [String]
+    /// Bannir un ingrédient (appui long) ; `nil` : pas de menu.
+    var onBan: ((String) -> Void)?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -166,14 +192,27 @@ struct IngredientGrid: View {
                                 + " · " + (isOwned ? String(localized: "possédé") : Format.euros(ingredient.costEur))
                         )
                         .font(Theme.text(.caption))
-                        .foregroundStyle(isOwned ? Theme.green : Theme.muted)
+                        .foregroundStyle(isOwned ? Theme.success : Theme.muted)
                     }
                     .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 10)
                     .background(Theme.card, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                     .accessibilityElement(children: .combine)
+                    .contextMenu {
+                        if let onBan {
+                            Button("Ne plus jamais proposer", systemImage: "nosign", role: .destructive) {
+                                onBan(ingredient.name)
+                            }
+                        }
+                    }
+                    .accessibilityAction(named: "Ne plus jamais proposer") { onBan?(ingredient.name) }
                 }
+            }
+            if onBan != nil {
+                Text("Appui long sur un ingrédient pour ne plus jamais le voir dans tes plannings.")
+                    .font(Theme.text(.caption))
+                    .foregroundStyle(Theme.muted)
             }
         }
         .padding(.horizontal, 20)
@@ -204,9 +243,9 @@ struct RecipeSteps: View {
                     HStack(alignment: .top, spacing: 12) {
                         Text("\(index + 1)")
                             .font(Theme.display(15, .bold, relativeTo: .headline))
-                            .foregroundStyle(Theme.onGreen)
+                            .foregroundStyle(Theme.onAccent)
                             .frame(width: 28, height: 28)
-                            .background(Theme.green, in: Circle())
+                            .background(Theme.accent, in: Circle())
                         Text(text)
                             .font(Theme.text(.body))
                             .foregroundStyle(Theme.ink)
@@ -244,7 +283,7 @@ struct RecipeSteps: View {
                 HStack(spacing: 6) {
                     ForEach(all.indices, id: \.self) { dot in
                         Capsule()
-                            .fill(dot == index ? Theme.green : Theme.line)
+                            .fill(dot == index ? Theme.accent : Theme.line)
                             .frame(width: dot == index ? 22 : 6, height: 6)
                     }
                 }

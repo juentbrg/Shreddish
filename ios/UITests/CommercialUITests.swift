@@ -178,6 +178,28 @@ extension OnboardingUITests {
         Self.saveScreenshot(app, name: "member-weights")
     }
 
+    /// Aliment banni par appui long dans la liste de courses : ajouté aux aliments bannis des préférences.
+    func testBanFoodFromShoppingList() {
+        let app = launch()
+        onboard(app)
+        app.tabBars.buttons["Semaine"].tap()
+        app.buttons["generateWeek"].tap()
+        app.buttons["startGeneration"].tap()
+        XCTAssertTrue(app.buttons["day-0"].waitForExistence(timeout: 10))
+        app.tabBars.buttons["Courses"].tap()
+        let item = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'shopping-'")).firstMatch
+        XCTAssertTrue(item.waitForExistence(timeout: 5))
+        reveal(item, in: app)
+        item.press(forDuration: 1.2)
+        let ban = app.buttons["Ne plus jamais proposer"]
+        XCTAssertTrue(ban.waitForExistence(timeout: 3))
+        ban.tap()
+        let alert = app.alerts.firstMatch
+        XCTAssertTrue(alert.waitForExistence(timeout: 3))
+        XCTAssertTrue(alert.label.contains("banni"))
+        alert.buttons["OK"].tap()
+    }
+
     /// Spec 017, FR-1713 : audit d'accessibilité des écrans principaux (contrastes, libellés, tailles).
     func testAccessibilityAudit() throws {
         continueAfterFailure = true

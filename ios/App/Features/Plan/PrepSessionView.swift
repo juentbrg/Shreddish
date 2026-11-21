@@ -50,7 +50,7 @@ struct PlanHistoryView: View {
                     VStack(alignment: .leading) {
                         Text(Format.range(plan, calendar: model.clock.calendar))
                         if plan.isCurrent {
-                            Text("En cours").font(Theme.text(.caption)).foregroundStyle(Theme.green)
+                            Text("En cours").font(Theme.text(.caption)).foregroundStyle(Theme.success)
                         }
                     }
                 }

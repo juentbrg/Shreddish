@@ -113,7 +113,7 @@ struct BusyOverlay: View {
                 } else {
                     Text(liveMeals.count > 1 ? "\(liveMeals.count) plats au menu" : "\(liveMeals.count) plat au menu")
                         .font(Theme.text(.subheadline, .semibold))
-                        .foregroundStyle(Theme.green)
+                        .foregroundStyle(Theme.accent)
                         .contentTransition(.numericText())
                     VStack(alignment: .leading, spacing: 6) {
                         ForEach(Array(liveMeals.suffix(5).enumerated()), id: \.element) { _, name in

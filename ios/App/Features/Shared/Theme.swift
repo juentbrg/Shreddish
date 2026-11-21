@@ -7,14 +7,11 @@ import UIKit
 enum Theme {
     // MARK: Couleurs
 
-    static let paper = Color(light: 0xF5F1E8, dark: 0x121713)
-    static let card = Color(light: 0xFFFFFF, dark: 0x1E2520)
-    static let ink = Color(light: 0x1E2A22, dark: 0xEEF0EA)
-    static let muted = Color(light: 0x4F5B53, dark: 0xB1BBB4)
-    static let line = Color(light: 0xEFEAE0, dark: 0x2C342E)
-    static let green = Color(light: 0x2E6B4A, dark: 0x7FC29B)
-    static let onGreen = Color(light: 0xF5F1E8, dark: 0x0F1A13)
-    static let greenSoft = Color(light: 0xDCEBDD, dark: 0x22382A)
+    static let paper = Color(light: 0xF5F1E8, dark: 0x131514)
+    static let card = Color(light: 0xFFFFFF, dark: 0x1F2220)
+    static let ink = Color(light: 0x1E2A22, dark: 0xEFEEEA)
+    static let muted = Color(light: 0x4F5B53, dark: 0xAEB2AE)
+    static let line = Color(light: 0xEFEAE0, dark: 0x2C2F2D)
     static let tomato = Color(light: 0xC8461F, dark: 0xF08A63)
     static let tomatoSoft = Color(light: 0xF7DCD2, dark: 0x45281E)
     /// Texte d'alerte sur fond `tomatoSoft` : contraste AA (spec 017, FR-1713).
@@ -22,6 +19,29 @@ enum Theme {
     static let wheat = Color(light: 0xF3E3C3, dark: 0x40341C)
     static let wheatInk = Color(light: 0x8A5A12, dark: 0xE9C27A)
     static let sky = Color(light: 0xDCE6F0, dark: 0x1F2E3D)
+
+    // « Couleurs du marché » : tomate en couleur de marque (sélection, actions), vert réservé au
+    // « réussi / dans la cible », une teinte par macro et par moment du repas.
+    static let accent = Color(light: 0xB9471F, dark: 0xF08A63)
+    static let onAccent = Color(light: 0xFFF8F0, dark: 0x1E0F08)
+    static let success = Color(light: 0x1D5536, dark: 0x8ED1A8)
+    static let successSoft = Color(light: 0xDDEFE2, dark: 0x22382A)
+    static let protein = MacroPalette(
+        soft: Color(light: 0xFBE3D9, dark: 0x3A2420), ink: Color(light: 0x8E2E12, dark: 0xF7B094),
+        bar: Color(light: 0xD9532B, dark: 0xF08A63)
+    )
+    static let carbs = MacroPalette(
+        soft: Color(light: 0xFCEFCF, dark: 0x3A3020), ink: Color(light: 0x7A5205, dark: 0xE9C27A),
+        bar: Color(light: 0xE0A021, dark: 0xE9C27A)
+    )
+    static let fat = MacroPalette(
+        soft: Color(light: 0xDEE8F5, dark: 0x1F2E3D), ink: Color(light: 0x234C7E, dark: 0xA9C9F2),
+        bar: Color(light: 0x4A7FC1, dark: 0x8FB8EC)
+    )
+    static let plum = MacroPalette(
+        soft: Color(light: 0xEBE3F6, dark: 0x2E2540), ink: Color(light: 0x5B3E86, dark: 0xC4AEEA),
+        bar: Color(light: 0x7B5BB0, dark: 0xC4AEEA)
+    )
 
     // MARK: Polices
 
@@ -55,6 +75,13 @@ enum Theme {
     private static func uiFont(_ name: String, size: CGFloat) -> UIFont {
         UIFont(name: name, size: size) ?? .systemFont(ofSize: size, weight: .bold)
     }
+}
+
+/// Trio de teintes d'une catégorie : fond doux, texte lisible dessus, barre de progression.
+struct MacroPalette {
+    let soft: Color
+    let ink: Color
+    let bar: Color
 }
 
 extension Color {
@@ -159,10 +186,10 @@ struct PillButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(Theme.text(.body, prominent ? .bold : .semibold))
-            .foregroundStyle(prominent ? Theme.onGreen : Theme.ink)
+            .foregroundStyle(prominent ? Theme.onAccent : Theme.ink)
             .frame(maxWidth: .infinity, minHeight: 52)
             .padding(.horizontal, 16)
-            .background(prominent ? Theme.green : Theme.card, in: Capsule())
+            .background(prominent ? Theme.accent : Theme.card, in: Capsule())
             .opacity(configuration.isPressed ? 0.8 : 1)
     }
 }
@@ -175,10 +202,10 @@ struct CompactButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(Theme.text(.subheadline, .semibold))
-            .foregroundStyle(prominent ? Theme.onGreen : Theme.ink)
+            .foregroundStyle(prominent ? Theme.onAccent : Theme.ink)
             .padding(.horizontal, 14)
             .frame(minHeight: 36)
-            .background(prominent ? Theme.green : Theme.paper, in: Capsule())
+            .background(prominent ? Theme.accent : Theme.paper, in: Capsule())
             .opacity(isEnabled ? (configuration.isPressed ? 0.8 : 1) : 0.4)
     }
 }
@@ -187,9 +214,10 @@ extension MealType {
     /// Fond et encre de l'icône du repas.
     var tileColors: (background: Color, ink: Color) {
         switch self {
-        case .breakfast, .dinner: (Theme.wheat, Theme.wheatInk)
-        case .lunch: (Theme.greenSoft, Theme.green)
-        case .snack: (Theme.tomatoSoft, Theme.tomato)
+        case .breakfast: (Theme.carbs.soft, Theme.carbs.ink)
+        case .lunch: (Theme.successSoft, Theme.success)
+        case .snack: (Theme.protein.soft, Theme.protein.ink)
+        case .dinner: (Theme.plum.soft, Theme.plum.ink)
         }
     }
 }
@@ -280,7 +308,7 @@ struct EmptyState: View {
         VStack(spacing: 10) {
             Image(systemName: systemImage)
                 .font(.system(size: 44))
-                .foregroundStyle(Theme.green)
+                .foregroundStyle(Theme.accent)
                 .accessibilityHidden(true)
             Text(LocalizedStringKey(title))
                 .font(Theme.display(22, .bold, relativeTo: .title2))

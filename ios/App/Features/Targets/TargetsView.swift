@@ -65,7 +65,7 @@ struct TargetsView: View {
             if let message = model.calibrationMessage {
                 Section {
                     Label(message, systemImage: "scalemass.fill")
-                        .foregroundStyle(Theme.green)
+                        .foregroundStyle(Theme.success)
                         .accessibilityIdentifier("calibrationMessage")
                 }
             }
@@ -183,7 +183,7 @@ struct ProfileEditView: View {
     }
 }
 
-/// Carte verte de l'objectif : kcal par jour et macros (même style que la carte du jour).
+/// Carte de l'objectif : kcal par jour et macros (même style que la carte du jour).
 struct TargetsHeroCard: View {
     let goal: Goal
     let targets: NutritionTargets
@@ -193,20 +193,24 @@ struct TargetsHeroCard: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text("\(goal.label) · par jour")
                     .font(Theme.text(.footnote, .medium))
+                    .foregroundStyle(Theme.muted)
                 Text(Format.kcal(Double(targets.targetKcal)))
                     .font(Theme.display(38, .heavy, relativeTo: .largeTitle))
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier("targetKcal")
             }
+            MacroSplitBar(
+                proteinG: Double(targets.proteinG), carbsG: Double(targets.carbsG), fatG: Double(targets.fatG)
+            )
             HStack(spacing: 8) {
-                MacroTile(title: "Protéines", value: Double(targets.proteinG), target: nil)
-                MacroTile(title: "Glucides", value: Double(targets.carbsG), target: nil)
-                MacroTile(title: "Lipides", value: Double(targets.fatG), target: nil)
+                MacroTile(title: "Protéines", value: Double(targets.proteinG), target: nil, palette: Theme.protein)
+                MacroTile(title: "Glucides", value: Double(targets.carbsG), target: nil, palette: Theme.carbs)
+                MacroTile(title: "Lipides", value: Double(targets.fatG), target: nil, palette: Theme.fat)
             }
         }
-        .foregroundStyle(Theme.onGreen)
+        .foregroundStyle(Theme.ink)
         .padding(18)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Theme.green, in: RoundedRectangle(cornerRadius: 26, style: .continuous))
+        .background(Theme.card, in: RoundedRectangle(cornerRadius: 26, style: .continuous))
     }
 }

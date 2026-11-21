@@ -8,6 +8,8 @@ struct WeekView: View {
     @Environment(\.modelContext) private var context
     @Query(filter: #Predicate<WeeklyPlan> { $0.isCurrent }, sort: \WeeklyPlan.createdAt, order: .reverse)
     var plans: [WeeklyPlan]
+    @Query(filter: #Predicate<WeeklyPlan> { !$0.isCurrent }, sort: \WeeklyPlan.createdAt, order: .reverse)
+    var pastPlans: [WeeklyPlan]
     @Query var profiles: [Profile]
     @Query var allPreferences: [Preferences]
     @State private var showNewWeek = false
@@ -18,8 +20,13 @@ struct WeekView: View {
 
     private var activePlans: [WeeklyPlan] { plans.sorted { $0.startDay < $1.startDay } }
 
+    /// Semaines parcourables : historique (sans chevauchement, avant les plannings actifs) puis plannings actifs.
+    private var weeks: [WeeklyPlan] {
+        PlanStore.browsableWeeks(active: activePlans, history: pastPlans)
+    }
+
     private var shownPlan: WeeklyPlan? {
-        activePlans.first { $0.id == selectedPlanID } ?? PlanStore.focusPlan(activePlans, today: model.clock.today)
+        weeks.first { $0.id == selectedPlanID } ?? PlanStore.focusPlan(activePlans, today: model.clock.today)
     }
 
     var body: some View {
@@ -27,13 +34,18 @@ struct WeekView: View {
             Group {
                 if let plan = shownPlan {
                     VStack(spacing: 0) {
-                        if activePlans.count > 1 {
-                            PlanSwitcher(plans: activePlans, selected: plan, today: model.clock.today) { selectedPlanID = $0 }
-                                .padding(.horizontal, 20)
-                                .padding(.bottom, 8)
+                        WeekNavigator(
+                            weeks: weeks, selected: plan, today: model.clock.today,
+                            planNext: canPlanAfter(plan) ? { showNewWeek = true } : nil
+                        ) { id in
+                            withAnimation(.snappy) { selectedPlanID = id }
                         }
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 8)
                         WeekPlanList(plan: plan, planNext: canPlanAfter(plan) ? { showNewWeek = true } : nil)
                             .id(plan.id)
+                            .transition(.opacity)
+                            .simultaneousGesture(weekSwipe(from: plan))
                     }
                     .paperBackground()
                 } else {
@@ -156,6 +168,18 @@ struct WeekView: View {
         }
     }
 
+    /// Balayage horizontal : semaine précédente (vers la droite) ou suivante (vers la gauche).
+    private func weekSwipe(from plan: WeeklyPlan) -> some Gesture {
+        DragGesture(minimumDistance: 40).onEnded { value in
+            let dx = value.translation.width
+            guard abs(dx) > 80, abs(dx) > abs(value.translation.height) * 2,
+                  let index = weeks.firstIndex(where: { $0.id == plan.id }) else { return }
+            let target = dx < 0 ? index + 1 : index - 1
+            guard weeks.indices.contains(target) else { return }
+            withAnimation(.snappy) { selectedPlanID = weeks[target].id }
+        }
+    }
+
     /// Bouton « Planifier la suite » : seulement sous le dernier planning actif, s'il n'est pas terminé.
     private func canPlanAfter(_ plan: WeeklyPlan) -> Bool {
         model.hasAPIKey && !model.isBusy && plan.id == activePlans.last?.id && plan.endDay >= model.clock.today
@@ -183,36 +207,69 @@ struct WeekView: View {
 }
 
 /// Bascule entre semaine en cours et semaine à venir.
-struct PlanSwitcher: View {
-    let plans: [WeeklyPlan]
+struct WeekNavigator: View {
+    let weeks: [WeeklyPlan]
     let selected: WeeklyPlan
     let today: LocalDay
+    /// Planifier la semaine suivante, proposé au bout de la dernière semaine.
+    var planNext: (() -> Void)?
     let select: (UUID) -> Void
 
+    private var index: Int { weeks.firstIndex { $0.id == selected.id } ?? 0 }
+
+    private var status: String {
+        selected.contains(today)
+            ? String(localized: "Semaine en cours")
+            : selected.startDay > today ? String(localized: "Semaine à venir") : String(localized: "Semaine passée")
+    }
+
     var body: some View {
-        HStack(spacing: 6) {
-            ForEach(plans) { plan in
-                let isSelected = plan.id == selected.id
-                Button {
-                    select(plan.id)
-                } label: {
-                    VStack(spacing: 1) {
-                        Text(plan.contains(today)
-                            ? String(localized: "En cours")
-                            : plan.startDay > today
-                            ? String(localized: "À venir") : String(localized: "Terminée"))
-                            .font(Theme.text(.subheadline, .bold))
-                        Text("\(Format.shortDate(plan.startDay)) → \(Format.shortDate(plan.endDay))")
-                            .font(Theme.text(.caption))
-                    }
-                    .foregroundStyle(isSelected ? Theme.paper : Theme.ink)
-                    .frame(maxWidth: .infinity, minHeight: 50)
-                    .background(isSelected ? Theme.ink : Theme.card, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        HStack(spacing: 8) {
+            arrow("chevron.left", label: "Semaine précédente", id: "previousWeek", target: index - 1)
+            VStack(spacing: 1) {
+                Text(status)
+                    .font(Theme.text(.caption, .bold))
+                    .foregroundStyle(selected.contains(today) ? Theme.accent : Theme.muted)
+                    .accessibilityIdentifier("weekStatus")
+                Text("\(Format.shortDate(selected.startDay)) → \(Format.shortDate(selected.endDay))")
+                    .font(Theme.text(.subheadline, .semibold))
+                    .foregroundStyle(Theme.ink)
+            }
+            .frame(maxWidth: .infinity)
+            if index == weeks.count - 1, let planNext {
+                Button(action: planNext) {
+                    Image(systemName: "plus")
+                        .font(.body.weight(.semibold))
+                        .frame(width: 44, height: 44)
+                        .foregroundStyle(Theme.onAccent)
+                        .background(Theme.accent, in: Circle())
                 }
                 .buttonStyle(.plain)
-                .accessibilityAddTraits(isSelected ? .isSelected : [])
+                .accessibilityLabel("Planifier la semaine suivante")
+                .accessibilityIdentifier("navPlanNext")
+            } else {
+                arrow("chevron.right", label: "Semaine suivante", id: "nextWeek", target: index + 1)
             }
         }
+        .padding(6)
+        .background(Theme.card, in: Capsule())
+    }
+
+    private func arrow(_ symbol: String, label: LocalizedStringKey, id: String, target: Int) -> some View {
+        let enabled = weeks.indices.contains(target)
+        return Button {
+            if enabled { select(weeks[target].id) }
+        } label: {
+            Image(systemName: symbol)
+                .font(.body.weight(.semibold))
+                .frame(width: 44, height: 44)
+                .foregroundStyle(enabled ? Theme.ink : Theme.muted.opacity(0.4))
+                .background(Theme.paper, in: Circle())
+        }
+        .buttonStyle(.plain)
+        .disabled(!enabled)
+        .accessibilityLabel(label)
+        .accessibilityIdentifier(id)
     }
 }
 
@@ -287,11 +344,11 @@ struct NewWeekSheet: View {
                                     Text(label).font(Theme.text(.subheadline, .semibold))
                                     Text(Format.weekdayLong(day)).font(Theme.text(.caption))
                                 }
-                                .foregroundStyle(isSelected ? Theme.onGreen : Theme.ink)
+                                .foregroundStyle(isSelected ? Theme.onAccent : Theme.ink)
                                 .frame(maxWidth: .infinity, minHeight: 56, alignment: .leading)
                                 .padding(.horizontal, 12)
                                 .background(
-                                    isSelected ? Theme.green : Theme.card,
+                                    isSelected ? Theme.accent : Theme.card,
                                     in: RoundedRectangle(cornerRadius: 16, style: .continuous)
                                 )
                             }
@@ -431,12 +488,12 @@ struct DayStrip: View {
                         Text("\(day.day.day)")
                             .font(Theme.display(19, .bold, relativeTo: .headline))
                         Circle()
-                            .fill(day.day == today ? (isSelected ? Theme.onGreen : Theme.tomato) : .clear)
+                            .fill(day.day == today ? (isSelected ? Theme.onAccent : Theme.accent) : .clear)
                             .frame(width: 5, height: 5)
                     }
-                    .foregroundStyle(isSelected ? Theme.onGreen : Theme.ink)
+                    .foregroundStyle(isSelected ? Theme.onAccent : Theme.ink)
                     .frame(maxWidth: .infinity, minHeight: 60)
-                    .background(isSelected ? Theme.green : Theme.card, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .background(isSelected ? Theme.accent : Theme.card, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(Format.weekdayLong(day.day) + (day.day == today ? String(localized: ", aujourd'hui") : ""))
@@ -492,7 +549,7 @@ struct WeekCostRow: View {
             }
             let budget = Format.euros(preferences.weeklyBudget)
             ProgressView(value: min(cost, preferences.budgetCeiling), total: max(preferences.budgetCeiling, 1))
-                .tint(cost > preferences.weeklyBudget + 0.005 ? Theme.tomato : Theme.green)
+                .tint(cost > preferences.weeklyBudget + 0.005 ? Theme.tomato : Theme.success)
             Text("Budget \(budget) · tolérance \(Format.percent(preferences.tolerance))")
                 .font(Theme.text(.caption))
                 .foregroundStyle(Theme.muted)

@@ -16,18 +16,18 @@ struct WeekShareCard: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Ma semaine")
                 .font(Theme.display(30, .heavy, relativeTo: .largeTitle))
-                .foregroundStyle(Theme.onGreen)
+                .foregroundStyle(Theme.onAccent)
             if let targets = plan.targets {
                 Text("\(Format.kcal(Double(targets.targetKcal))) par jour · \(targets.proteinG) g de protéines")
                     .font(Theme.text(.subheadline, .semibold))
-                    .foregroundStyle(Theme.onGreen.opacity(0.9))
+                    .foregroundStyle(Theme.onAccent.opacity(0.9))
             }
             VStack(alignment: .leading, spacing: 8) {
                 ForEach(plan.sortedDays) { day in
                     VStack(alignment: .leading, spacing: 1) {
                         Text(Format.weekdayLong(day.day).capitalized)
                             .font(Theme.text(.caption, .bold))
-                            .foregroundStyle(Theme.green)
+                            .foregroundStyle(Theme.accent)
                         Text(day.sortedMeals.filter { $0.type != .snack }.map(\.name).joined(separator: " · "))
                             .font(Theme.text(.caption))
                             .foregroundStyle(Theme.ink)
@@ -41,13 +41,13 @@ struct WeekShareCard: View {
             let cost = plan.shoppingSummary.weekCostEur
             Text("\(Format.euros(cost)) de courses pour la semaine\(cost <= budget ? String(localized: ", dans le budget") : "")")
                 .font(Theme.text(.subheadline, .semibold))
-                .foregroundStyle(Theme.onGreen)
+                .foregroundStyle(Theme.onAccent)
             Spacer(minLength: 0)
             ShareWatermark()
         }
         .padding(22)
         .frame(width: ShareCardSize.width, height: ShareCardSize.height, alignment: .topLeading)
-        .background(Theme.green)
+        .background(Theme.accent)
     }
 }
 
@@ -61,7 +61,7 @@ struct ProgressShareCard: View {
         VStack(alignment: .leading, spacing: 14) {
             Text("30 jours de sèche")
                 .font(Theme.display(30, .heavy, relativeTo: .largeTitle))
-                .foregroundStyle(Theme.onGreen)
+                .foregroundStyle(Theme.onAccent)
             if let before, let after {
                 HStack(spacing: 8) {
                     photo(before, label: "Avant")
@@ -87,7 +87,7 @@ struct ProgressShareCard: View {
         }
         .padding(22)
         .frame(width: ShareCardSize.width, height: ShareCardSize.height, alignment: .topLeading)
-        .background(Theme.green)
+        .background(Theme.accent)
     }
 
     private func stat(_ value: String, _ label: String) -> some View {
@@ -102,7 +102,7 @@ struct ProgressShareCard: View {
             Image(uiImage: image).resizable().scaledToFill()
                 .frame(width: 150, height: 200)
                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-            Text(label).font(Theme.text(.caption, .bold)).foregroundStyle(Theme.onGreen)
+            Text(label).font(Theme.text(.caption, .bold)).foregroundStyle(Theme.onAccent)
         }
     }
 }
@@ -118,14 +118,14 @@ struct ReceiptShareCard: View {
         VStack(alignment: .leading, spacing: 14) {
             Text("Mes courses de sèche")
                 .font(Theme.display(30, .heavy, relativeTo: .largeTitle))
-                .foregroundStyle(Theme.onGreen)
+                .foregroundStyle(Theme.onAccent)
             VStack(alignment: .leading, spacing: 12) {
                 row("Estimé par l'app", Format.euros(comparison.estimatedEUR), muted: true)
                 row("Payé en caisse", Format.euros(comparison.paidEUR), muted: false)
                 Divider().overlay(Theme.line)
                 Text(ReceiptSection.verdict(comparison))
                     .font(Theme.text(.headline, .bold))
-                    .foregroundStyle(comparison.difference <= 0 ? Theme.green : Theme.tomatoInk)
+                    .foregroundStyle(comparison.difference <= 0 ? Theme.accent : Theme.tomatoInk)
                 if comparison.budgetEUR > 0 {
                     Text(comparison.withinBudget
                         ? String(localized: "Dans le budget de \(Format.euros(comparison.budgetEUR)).")
@@ -142,10 +142,10 @@ struct ReceiptShareCard: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(Format.euros(perMeal))
                         .font(Theme.display(56, .heavy, relativeTo: .largeTitle))
-                        .foregroundStyle(Theme.onGreen)
+                        .foregroundStyle(Theme.onAccent)
                     Text("par repas, \(meals) repas planifiés")
                         .font(Theme.text(.subheadline, .semibold))
-                        .foregroundStyle(Theme.onGreen.opacity(0.9))
+                        .foregroundStyle(Theme.onAccent.opacity(0.9))
                 }
             }
             Spacer(minLength: 0)
@@ -153,7 +153,7 @@ struct ReceiptShareCard: View {
         }
         .padding(22)
         .frame(width: ShareCardSize.width, height: ShareCardSize.height, alignment: .topLeading)
-        .background(Theme.green)
+        .background(Theme.accent)
     }
 
     private func row(_ label: LocalizedStringKey, _ value: String, muted: Bool) -> some View {
@@ -171,7 +171,7 @@ private struct ShareWatermark: View {
     var body: some View {
         Text("Shreddish")
             .font(Theme.display(16, .bold, relativeTo: .headline))
-            .foregroundStyle(Theme.onGreen.opacity(0.8))
+            .foregroundStyle(Theme.onAccent.opacity(0.8))
             .frame(maxWidth: .infinity, alignment: .trailing)
     }
 }

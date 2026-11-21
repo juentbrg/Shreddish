@@ -20,7 +20,7 @@ struct ShreddishApp: App {
         WindowGroup {
             RootView()
                 .environment(model)
-                .tint(Theme.green)
+                .tint(Theme.accent)
                 .font(Theme.text())
                 .foregroundStyle(Theme.ink)
         }

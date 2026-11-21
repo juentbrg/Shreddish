@@ -16,6 +16,20 @@ public enum PlanStore {
         return plans.sorted { $0.startDay < $1.startDay }
     }
 
+    /// Semaines parcourables dans l'ordre : historique terminé avant le premier planning actif (le plus récent
+    /// gagne en cas de chevauchement), puis plannings actifs.
+    public static func browsableWeeks(active: [WeeklyPlan], history: [WeeklyPlan]) -> [WeeklyPlan] {
+        let sortedActive = active.sorted { $0.startDay < $1.startDay }
+        let firstActive = sortedActive.first?.startDay
+        var kept: [WeeklyPlan] = []
+        for plan in history.sorted(by: { $0.createdAt > $1.createdAt }) where !plan.days.isEmpty {
+            if let firstActive, plan.endDay >= firstActive { continue }
+            if kept.contains(where: { $0.startDay <= plan.endDay && plan.startDay <= $0.endDay }) { continue }
+            kept.append(plan)
+        }
+        return kept.sorted { $0.startDay < $1.startDay } + sortedActive
+    }
+
     /// Planning affiché par défaut : celui qui contient `today`, sinon le prochain, sinon le plus récent.
     public static func focusPlan(_ plans: [WeeklyPlan], today: LocalDay) -> WeeklyPlan? {
         let sorted = plans.sorted { $0.startDay < $1.startDay }

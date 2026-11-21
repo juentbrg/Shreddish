@@ -302,7 +302,7 @@ struct TargetGauge: View {
                     .foregroundStyle(Theme.muted)
             }
             ProgressView(value: min(value, target * 1.5), total: max(target, 1))
-                .tint(target > 0 && abs(value - target) / target > Totals.offTargetThreshold && value > target ? Theme.tomato : Theme.green)
+                .tint(target > 0 && abs(value - target) / target > Totals.offTargetThreshold && value > target ? Theme.tomato : Theme.success)
         }
         .accessibilityElement(children: .combine)
     }

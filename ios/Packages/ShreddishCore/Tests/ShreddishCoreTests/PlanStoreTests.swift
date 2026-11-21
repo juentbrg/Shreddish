@@ -94,6 +94,28 @@ struct PlanStoreTests {
         #expect(oats.totalQuantity == 4 * 80)
     }
 
+    /// Sélecteur de semaine : semaines passées puis actives ; un planning remplacé le même jour n'apparaît pas.
+    @Test func browsableWeeksListPastThenActive() throws {
+        let (container, context, targets) = try Self.setup()
+        _ = container
+        let past = try PlanStore.saveWeek(
+            try Fixture.week(), startDay: Self.start, targets: targets, createdAt: .now, today: Self.start, in: context
+        )
+        let nextStart = Self.start.adding(days: 7)
+        let current = try PlanStore.saveWeek(
+            try Fixture.week(), startDay: nextStart, targets: targets, createdAt: .now.addingTimeInterval(60),
+            today: nextStart, in: context
+        )
+        let replaced = try PlanStore.saveWeek(
+            try Fixture.week(), startDay: nextStart, targets: targets, createdAt: .now.addingTimeInterval(120),
+            today: nextStart, in: context
+        )
+        let history = try context.fetch(FetchDescriptor<WeeklyPlan>(predicate: #Predicate { !$0.isCurrent }))
+        let weeks = PlanStore.browsableWeeks(active: PlanStore.activePlans(in: context), history: history)
+        #expect(!current.isCurrent)
+        #expect(weeks.map(\.id) == [past.id, replaced.id])
+    }
+
     @Test func weekStartingSameDayReplacesActivePlan() throws {
         let (container, context, targets) = try Self.setup()
         _ = container

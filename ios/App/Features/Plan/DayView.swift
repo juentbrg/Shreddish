@@ -86,6 +86,7 @@ struct DayHeroCard: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Prévu ce jour")
                         .font(Theme.text(.footnote, .medium))
+                        .foregroundStyle(Theme.muted)
                     Text(Format.kcal(totals.kcal))
                         .font(Theme.display(38, .heavy, relativeTo: .largeTitle))
                         .fixedSize(horizontal: false, vertical: true)
@@ -96,22 +97,31 @@ struct DayHeroCard: View {
                         ? String(localized: "Hors cible \(Format.percent(deviation, signed: true))")
                         : String(localized: "Dans la cible"))
                         .font(Theme.text(.caption, .bold))
-                        .foregroundStyle(Totals.isOffTarget(deviation) ? Theme.tomato : Theme.green)
+                        .foregroundStyle(Totals.isOffTarget(deviation) ? Theme.tomatoInk : Theme.success)
                         .padding(.horizontal, 10)
                         .padding(.vertical, 6)
-                        .background(Theme.paper, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .background(
+                            Totals.isOffTarget(deviation) ? Theme.tomatoSoft : Theme.successSoft,
+                            in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        )
                 }
             }
+            MacroSplitBar(proteinG: totals.proteinG, carbsG: totals.carbsG, fatG: totals.fatG)
             HStack(spacing: 8) {
-                MacroTile(title: "Protéines", value: totals.proteinG, target: targets.map { Double($0.proteinG) })
-                MacroTile(title: "Glucides", value: totals.carbsG, target: targets.map { Double($0.carbsG) })
-                MacroTile(title: "Lipides", value: totals.fatG, target: targets.map { Double($0.fatG) })
+                MacroTile(
+                    title: "Protéines", value: totals.proteinG, target: targets.map { Double($0.proteinG) },
+                    palette: Theme.protein
+                )
+                MacroTile(
+                    title: "Glucides", value: totals.carbsG, target: targets.map { Double($0.carbsG) }, palette: Theme.carbs
+                )
+                MacroTile(title: "Lipides", value: totals.fatG, target: targets.map { Double($0.fatG) }, palette: Theme.fat)
             }
             DayBadges(day: day, targets: targets)
         }
-        .foregroundStyle(Theme.onGreen)
+        .foregroundStyle(Theme.ink)
         .padding(18)
-        .background(Theme.green, in: RoundedRectangle(cornerRadius: 26, style: .continuous))
+        .background(Theme.card, in: RoundedRectangle(cornerRadius: 26, style: .continuous))
         .accessibilityElement(children: .combine)
     }
 }
@@ -120,18 +130,42 @@ struct MacroTile: View {
     let title: String
     let value: Double
     let target: Double?
+    let palette: MacroPalette
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(LocalizedStringKey(title)).font(Theme.text(.caption, .medium))
-            Text(Format.grams(value)).font(Theme.text(.headline, .bold))
+            Text(LocalizedStringKey(title)).font(Theme.text(.caption, .bold)).foregroundStyle(palette.ink)
+            Text(Format.grams(value)).font(Theme.text(.headline, .bold)).foregroundStyle(Theme.ink)
             if let target {
-                Text("cible \(Int(target.rounded()))").font(Theme.text(.caption2, .medium))
+                Text("cible \(Int(target.rounded()))").font(Theme.text(.caption2, .medium)).foregroundStyle(Theme.muted)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(10)
-        .background(Theme.onGreen.opacity(0.14), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .background(palette.soft, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+    }
+}
+
+/// Répartition des calories entre protéines, glucides et lipides (4 / 4 / 9 kcal par gramme).
+struct MacroSplitBar: View {
+    let proteinG: Double
+    let carbsG: Double
+    let fatG: Double
+
+    var body: some View {
+        let parts = [(proteinG * 4, Theme.protein.bar), (carbsG * 4, Theme.carbs.bar), (fatG * 9, Theme.fat.bar)]
+        let total = max(parts.reduce(0) { $0 + $1.0 }, 1)
+        GeometryReader { proxy in
+            HStack(spacing: 3) {
+                ForEach(parts.indices, id: \.self) { index in
+                    Capsule()
+                        .fill(parts[index].1)
+                        .frame(width: max(0, (proxy.size.width - 6) * parts[index].0 / total))
+                }
+            }
+        }
+        .frame(height: 8)
+        .accessibilityHidden(true)
     }
 }
 
@@ -140,13 +174,12 @@ struct MealCard: View {
     let meal: Meal
 
     var body: some View {
-        let isSnack = meal.type == .snack
         HStack(spacing: 12) {
             MealTile(type: meal.type)
             VStack(alignment: .leading, spacing: 2) {
                 Text([meal.time, meal.type.label].compactMap(\.self).joined(separator: " · "))
-                    .font(Theme.text(.caption, isSnack ? .semibold : .regular))
-                    .foregroundStyle(isSnack ? Theme.tomatoInk : Theme.muted)
+                    .font(Theme.text(.caption, .semibold))
+                    .foregroundStyle(meal.type.tileColors.ink)
                 Text(meal.name)
                     .font(Theme.text(.subheadline, .semibold))
                     .foregroundStyle(Theme.ink)
@@ -158,7 +191,7 @@ struct MealCard: View {
             Spacer(minLength: 0)
             if meal.status == .eaten {
                 Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(Theme.green)
+                    .foregroundStyle(Theme.success)
                     .accessibilityLabel("Mangé")
             }
         }

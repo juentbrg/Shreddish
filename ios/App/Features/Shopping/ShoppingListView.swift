@@ -10,6 +10,8 @@ struct ShoppingListView: View {
     @Query var allPreferences: [Preferences]
     @State private var aisleFilter: Aisle?
     @State private var selectedPlanID: UUID?
+    /// Aliment tout juste banni et nombre de repas à venir qui en contiennent.
+    @State private var banned: (food: String, meals: Int)?
     @Environment(AppModel.self) private var model
 
     private var activePlans: [WeeklyPlan] { plans.sorted { $0.startDay < $1.startDay } }
@@ -31,7 +33,29 @@ struct ShoppingListView: View {
                 }
             }
             .navigationTitle("Ma liste")
+            .alert(
+                String(localized: "« \(banned?.food ?? "") » banni"),
+                isPresented: Binding(get: { banned != nil }, set: { if !$0 { banned = nil } })
+            ) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                if let banned, banned.meals > 0 {
+                    Text("""
+                        Plus jamais proposé dans tes plannings. \(banned.meals) repas à venir en contiennent : \
+                        remplace-les avec « Autre idée de repas ».
+                        """)
+                } else {
+                    Text("Plus jamais proposé dans tes plannings.")
+                }
+            }
         }
+    }
+
+    private func ban(_ food: String) {
+        guard let preferences = allPreferences.first else { return }
+        preferences.ban(food)
+        try? context.save()
+        banned = (food, PlanStore.upcomingMeals(containing: food, from: model.clock.today, in: context).count)
     }
 
     private func list(_ plan: WeeklyPlan) -> some View {
@@ -44,9 +68,9 @@ struct ShoppingListView: View {
         return ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 if activePlans.count > 1 {
-                    PlanSwitcher(plans: activePlans, selected: plan, today: model.clock.today) { selectedPlanID = $0 }
+                    WeekNavigator(weeks: activePlans, selected: plan, today: model.clock.today) { selectedPlanID = $0 }
                 }
-                Text("Prix médians en France, paquets entiers")
+                Text("Prix médians en France, paquets entiers. Appui long sur un article pour le bannir.")
                     .font(Theme.text(.subheadline))
                     .foregroundStyle(Theme.muted)
                 VStack(alignment: .leading, spacing: 12) {
@@ -64,10 +88,10 @@ struct ShoppingListView: View {
                     .id(plan.id)
                 AisleFilter(aisles: aisles, selected: $aisleFilter)
                 ForEach(visible, id: \.self) { aisle in
-                    AisleCard(aisle: aisle, items: grouped[aisle] ?? []) { item in
+                    AisleCard(aisle: aisle, items: grouped[aisle] ?? [], toggle: { item in
                         item.isChecked.toggle()
                         try? context.save()
-                    }
+                    }, ban: ban)
                 }
                 if checked > 0 {
                     Button("Tout décocher") {
@@ -121,6 +145,7 @@ private struct AisleCard: View {
     let aisle: Aisle
     let items: [ShoppingItem]
     let toggle: (ShoppingItem) -> Void
+    let ban: (String) -> Void
 
     var body: some View {
         let sorted = items.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
@@ -134,7 +159,7 @@ private struct AisleCard: View {
             }
             .padding(.vertical, 8)
             ForEach(sorted) { item in
-                ShoppingRow(item: item) { toggle(item) }
+                ShoppingRow(item: item, toggle: { toggle(item) }, ban: ban)
                 if item.persistentModelID != sorted.last?.persistentModelID {
                     Divider().overlay(Theme.line)
                 }
@@ -149,13 +174,14 @@ private struct AisleCard: View {
 struct ShoppingRow: View {
     let item: ShoppingItem
     let toggle: () -> Void
+    var ban: ((String) -> Void)?
 
     var body: some View {
         Button(action: toggle) {
             HStack(spacing: 12) {
                 Image(systemName: item.isChecked ? "checkmark.circle.fill" : "circle")
                     .font(.title3)
-                    .foregroundStyle(item.isChecked ? Theme.green : Theme.muted)
+                    .foregroundStyle(item.isChecked ? Theme.success : Theme.muted)
                 let packing = item.packing
                 VStack(alignment: .leading, spacing: 2) {
                     // Ligne 1 : produit et prix ; ligne 2 : paquets et reste, sur toute la largeur.
@@ -191,6 +217,12 @@ struct ShoppingRow: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .contextMenu {
+            if let ban {
+                Button("Ne plus jamais proposer", systemImage: "nosign", role: .destructive) { ban(item.name) }
+            }
+        }
+        .accessibilityAction(named: "Ne plus jamais proposer") { ban?(item.name) }
         .accessibilityAddTraits(item.isChecked ? .isSelected : [])
         .accessibilityIdentifier("shopping-\(item.key)")
     }

@@ -162,6 +162,20 @@ final class OnboardingUITests: XCTestCase {
         XCTAssertTrue(creatineItem.label.contains("5 g par prise, 1 fois par jour"), creatineItem.label)
     }
 
+    /// Semaine en cours affichée, puis la semaine à venir avec la flèche du sélecteur de semaine.
+    func assertCurrentThenUpcomingWeek(_ app: XCUIApplication) {
+        let status = app.staticTexts["weekStatus"]
+        XCTAssertTrue(status.waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["day-0"].waitForExistence(timeout: 10))
+        XCTAssertEqual(status.label, "Semaine en cours")
+        let next = app.buttons["nextWeek"]
+        XCTAssertTrue(next.waitForExistence(timeout: 5) && next.isEnabled)
+        next.tap()
+        XCTAssertTrue(app.staticTexts["Semaine à venir"].waitForExistence(timeout: 3))
+        app.buttons["previousWeek"].tap()
+        XCTAssertTrue(app.staticTexts["Semaine en cours"].waitForExistence(timeout: 3))
+    }
+
     /// Spec 006 : une semaine à venir se planifie sans remplacer celle en cours.
     func testPlanUpcomingWeek() {
         let app = launch()
@@ -176,9 +190,7 @@ final class OnboardingUITests: XCTestCase {
         XCTAssertTrue(tomorrow.waitForExistence(timeout: 3))
         tomorrow.tap()
         app.buttons["startGeneration"].tap()
-        let upcoming = app.buttons.containing(NSPredicate(format: "label BEGINSWITH 'À venir'")).firstMatch
-        XCTAssertTrue(upcoming.waitForExistence(timeout: 10))
-        XCTAssertTrue(app.buttons.containing(NSPredicate(format: "label BEGINSWITH 'En cours'")).firstMatch.exists)
+        assertCurrentThenUpcomingWeek(app)
     }
 
     /// La semaine suivante se planifie depuis le bouton sous le planning, sans toucher à la semaine en cours.
@@ -198,9 +210,7 @@ final class OnboardingUITests: XCTestCase {
         XCTAssertTrue(following.waitForExistence(timeout: 3))
         XCTAssertTrue(following.isSelected)
         app.buttons["startGeneration"].tap()
-        let upcoming = app.buttons.containing(NSPredicate(format: "label BEGINSWITH 'À venir'")).firstMatch
-        XCTAssertTrue(upcoming.waitForExistence(timeout: 10))
-        XCTAssertTrue(app.buttons.containing(NSPredicate(format: "label BEGINSWITH 'En cours'")).firstMatch.exists)
+        assertCurrentThenUpcomingWeek(app)
         XCTAssertFalse(app.buttons["planNextWeek"].exists)
     }
 
@@ -243,7 +253,7 @@ final class OnboardingUITests: XCTestCase {
         for _ in 0..<5 where !(pick.exists && pick.isHittable) { app.swipeUp() }
         XCTAssertTrue(pick.isSelected)
         app.buttons["startGeneration"].tap()
-        XCTAssertTrue(app.buttons.containing(NSPredicate(format: "label BEGINSWITH 'À venir'")).firstMatch.waitForExistence(timeout: 10))
+        assertCurrentThenUpcomingWeek(app)
     }
 
     /// Pesée depuis le profil, courbe et historique un écran plus loin.

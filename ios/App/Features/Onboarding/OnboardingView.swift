@@ -69,7 +69,7 @@ struct DisclaimerView: View {
             VStack(alignment: .leading, spacing: 20) {
                 Image(systemName: "fork.knife.circle.fill")
                     .font(.system(size: 64))
-                    .foregroundStyle(Theme.green)
+                    .foregroundStyle(Theme.accent)
                     .accessibilityHidden(true)
                 Text("Bienvenue sur Shreddish")
                     .font(Theme.display(34, .heavy, relativeTo: .largeTitle))
