@@ -83,3 +83,59 @@ public enum Household {
         }
     }
 }
+
+/// Pesée d'un membre du foyer (spec 017, FR-1704), une par jour et par personne. Met à jour son poids
+/// de profil, donc sa portion. Prêt pour CloudKit.
+@Model
+public final class MemberWeight {
+    public var id = UUID()
+    /// `HouseholdMember.id`.
+    public var memberID = UUID()
+    public var dayKey = 0
+    public var weightKg = 0.0
+    public var recordedAt = Date()
+
+    public init(memberID: UUID, day: LocalDay, weightKg: Double, recordedAt: Date) {
+        self.memberID = memberID
+        dayKey = day.key
+        self.weightKg = weightKg
+        self.recordedAt = recordedAt
+    }
+
+    public var day: LocalDay { LocalDay(key: dayKey) }
+    public var point: WeightPoint { WeightPoint(day: day, weightKg: weightKg) }
+
+    /// Pesées d'un membre, de la plus ancienne à la plus récente.
+    public static func history(of memberID: UUID, in context: ModelContext) -> [MemberWeight] {
+        let descriptor = FetchDescriptor<MemberWeight>(
+            predicate: #Predicate { $0.memberID == memberID }, sortBy: [SortDescriptor(\.dayKey)]
+        )
+        return (try? context.fetch(descriptor)) ?? []
+    }
+
+    /// Pesée du jour (remplace celle du même jour), poids de profil et portion mis à jour.
+    @discardableResult
+    public static func record(
+        _ kg: Double, for member: HouseholdMember, mainKcal: Int, clock: any AppClock, in context: ModelContext
+    ) -> MemberWeight? {
+        guard NutritionCalculator.weightRange.contains(kg) else { return nil }
+        let today = clock.today
+        let entry: MemberWeight
+        if let existing = history(of: member.id, in: context).first(where: { $0.dayKey == today.key }) {
+            existing.weightKg = kg
+            existing.recordedAt = clock.now
+            entry = existing
+        } else {
+            entry = MemberWeight(memberID: member.id, day: today, weightKg: kg, recordedAt: clock.now)
+            context.insert(entry)
+        }
+        member.weightKg = kg
+        member.refreshPortion(mainKcal: mainKcal, clock: clock)
+        return entry
+    }
+
+    /// Supprime les pesées d'un membre retiré du foyer.
+    public static func deleteAll(of memberID: UUID, in context: ModelContext) {
+        history(of: memberID, in: context).forEach(context.delete)
+    }
+}

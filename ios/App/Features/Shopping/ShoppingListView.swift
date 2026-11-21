@@ -60,6 +60,8 @@ struct ShoppingListView: View {
                 }
                 .font(Theme.text(.subheadline))
                 .card()
+                ReceiptSection(plan: plan, budget: allPreferences.first?.weeklyBudget ?? 0)
+                    .id(plan.id)
                 AisleFilter(aisles: aisles, selected: $aisleFilter)
                 ForEach(visible, id: \.self) { aisle in
                     AisleCard(aisle: aisle, items: grouped[aisle] ?? []) { item in

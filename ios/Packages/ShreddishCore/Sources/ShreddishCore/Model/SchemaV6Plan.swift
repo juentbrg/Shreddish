@@ -214,3 +214,10 @@ public enum SchemaV12: VersionedSchema {
 
     public static var models: [any PersistentModel.Type] { SchemaV11.models + [BodyMeasurement.self, ProgressPhoto.self] }
 }
+
+/// Schéma V13 (spec 017) : ticket de courses réel, pesées des membres du foyer.
+public enum SchemaV13: VersionedSchema {
+    public static let versionIdentifier = Schema.Version(13, 0, 0)
+
+    public static var models: [any PersistentModel.Type] { SchemaV12.models + [ShoppingReceipt.self, MemberWeight.self] }
+}

@@ -107,6 +107,66 @@ struct ProgressShareCard: View {
     }
 }
 
+/// Ticket de courses réel contre estimé, coût par repas : l'argument budget d'une sèche (FR-1718).
+struct ReceiptShareCard: View {
+    let comparison: ReceiptComparison
+    /// Repas du planning ; `portions` : personnes du foyer en portions.
+    let meals: Int
+    let portions: Double
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Mes courses de sèche")
+                .font(Theme.display(30, .heavy, relativeTo: .largeTitle))
+                .foregroundStyle(Theme.onGreen)
+            VStack(alignment: .leading, spacing: 12) {
+                row("Estimé par l'app", Format.euros(comparison.estimatedEUR), muted: true)
+                row("Payé en caisse", Format.euros(comparison.paidEUR), muted: false)
+                Divider().overlay(Theme.line)
+                Text(ReceiptSection.verdict(comparison))
+                    .font(Theme.text(.headline, .bold))
+                    .foregroundStyle(comparison.difference <= 0 ? Theme.green : Theme.tomatoInk)
+                if comparison.budgetEUR > 0 {
+                    Text(comparison.withinBudget
+                        ? String(localized: "Dans le budget de \(Format.euros(comparison.budgetEUR)).")
+                        : String(localized: "Budget prévu : \(Format.euros(comparison.budgetEUR))."))
+                        .font(Theme.text(.subheadline))
+                        .foregroundStyle(Theme.muted)
+                }
+            }
+            .padding(16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Theme.card, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+            if meals > 0 {
+                let perMeal = comparison.paidEUR / (Double(meals) * max(portions, 1))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(Format.euros(perMeal))
+                        .font(Theme.display(56, .heavy, relativeTo: .largeTitle))
+                        .foregroundStyle(Theme.onGreen)
+                    Text("par repas, \(meals) repas planifiés")
+                        .font(Theme.text(.subheadline, .semibold))
+                        .foregroundStyle(Theme.onGreen.opacity(0.9))
+                }
+            }
+            Spacer(minLength: 0)
+            ShareWatermark()
+        }
+        .padding(22)
+        .frame(width: ShareCardSize.width, height: ShareCardSize.height, alignment: .topLeading)
+        .background(Theme.green)
+    }
+
+    private func row(_ label: LocalizedStringKey, _ value: String, muted: Bool) -> some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text(label).font(Theme.text(.subheadline)).foregroundStyle(Theme.muted)
+            Spacer()
+            Text(value)
+                .font(Theme.display(muted ? 22 : 28, .heavy, relativeTo: .title))
+                .foregroundStyle(muted ? Theme.muted : Theme.ink)
+        }
+    }
+}
+
 private struct ShareWatermark: View {
     var body: some View {
         Text("Shreddish")

@@ -276,6 +276,29 @@ struct MigrationTests {
         #expect(try context.fetch(FetchDescriptor<ProgressPhoto>()).isEmpty)
     }
 
+    /// Spec 017 : base V12 ouverte en V13, planning et mensurations conservés, tickets et pesées des membres vides.
+    @Test func v12StoreMigratesToV13WithoutDataLoss() throws {
+        let directory = FileManager.default.temporaryDirectory.appending(path: "shreddish-migration-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let url = directory.appending(path: "store.sqlite")
+        do {
+            let schema = Schema(versionedSchema: SchemaV12.self)
+            let container = try ModelContainer(for: schema, configurations: [ModelConfiguration(schema: schema, url: url)])
+            let measurement = BodyMeasurement(day: LocalDay(key: 20_261_120), recordedAt: .now)
+            measurement.waistCm = 84
+            container.mainContext.insert(measurement)
+            container.mainContext.insert(HouseholdMember(name: "Léa", portion: 0.75))
+            try container.mainContext.save()
+        }
+        let container = try ShreddishStore.makeContainer(url: url)
+        let context = container.mainContext
+        #expect(try context.fetch(FetchDescriptor<BodyMeasurement>()).first?.waistCm == 84)
+        #expect(try context.fetch(FetchDescriptor<HouseholdMember>()).first?.portion == 0.75)
+        #expect(try context.fetch(FetchDescriptor<ShoppingReceipt>()).isEmpty)
+        #expect(try context.fetch(FetchDescriptor<MemberWeight>()).isEmpty)
+    }
+
     /// Planning à la forme V7 à V10 (figée) : un jour, un repas, une ligne de courses.
     static func insertV7Plan(mealName: String, pantry: [IngredientDTO], in context: ModelContext) {
         let plan = SchemaV7.WeeklyPlan(startDayKey: 20_261_115, createdAt: .now)

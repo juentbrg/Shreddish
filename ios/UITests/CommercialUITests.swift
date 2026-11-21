@@ -125,6 +125,59 @@ extension OnboardingUITests {
         XCTAssertTrue(app.buttons["shareCard"].waitForExistence(timeout: 5))
     }
 
+    /// Spec 017, FR-1718 : ticket réel saisi dans les courses, comparé à l'estimation, partageable.
+    func testActualReceipt() {
+        let app = launch()
+        onboard(app)
+        app.tabBars.buttons["Semaine"].tap()
+        app.buttons["generateWeek"].tap()
+        app.buttons["startGeneration"].tap()
+        XCTAssertTrue(app.buttons["day-0"].waitForExistence(timeout: 10))
+        app.tabBars.buttons["Courses"].tap()
+        let amount = app.textFields["receiptAmount"]
+        XCTAssertTrue(amount.waitForExistence(timeout: 5))
+        amount.tap()
+        amount.typeText("48,5")
+        app.buttons["saveReceipt"].tap()
+        Self.saveScreenshot(app, name: "receipt-saved")
+        XCTAssertTrue(app.buttons["shareReceipt"].waitForExistence(timeout: 3))
+        XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS 'que prévu' OR label CONTAINS 'estimation'"))
+            .firstMatch.exists)
+        Self.saveScreenshot(app, name: "receipt")
+        app.buttons["shareReceipt"].tap()
+        XCTAssertTrue(app.buttons["shareCard"].waitForExistence(timeout: 5))
+        Self.saveScreenshot(app, name: "receipt-card")
+    }
+
+    /// Spec 017, FR-1704 : poids d'un membre modifié = pesée suivie, portion recalculée.
+    func testMemberWeighIns() {
+        let app = launch()
+        onboard(app)
+        app.buttons["settings"].tap()
+        app.buttons["householdSettings"].tap()
+        app.buttons["addMember"].tap()
+        let name = app.textFields["memberName"]
+        XCTAssertTrue(name.waitForExistence(timeout: 3))
+        name.tap()
+        name.typeText("Léa")
+        app.switches["memberUseProfile"].switches.firstMatch.tap()
+        let height = app.textFields["170"]
+        XCTAssertTrue(height.waitForExistence(timeout: 3))
+        height.tap()
+        height.typeText("165")
+        let weight = app.textFields["65"]
+        weight.tap()
+        weight.typeText("62")
+        app.buttons["saveMember"].tap()
+        XCTAssertTrue(app.buttons["member-Léa"].waitForExistence(timeout: 3))
+        app.buttons["member-Léa"].tap()
+        let edited = app.textFields["65"]
+        XCTAssertTrue(edited.waitForExistence(timeout: 3))
+        reveal(app.staticTexts["Pesées"], in: app)
+        XCTAssertTrue(app.staticTexts["Pesées"].exists)
+        Self.saveScreenshot(app, name: "member-weights")
+    }
+
     /// Spec 017, FR-1713 : audit d'accessibilité des écrans principaux (contrastes, libellés, tailles).
     func testAccessibilityAudit() throws {
         continueAfterFailure = true

@@ -28,7 +28,10 @@ struct HouseholdView: View {
                     .accessibilityIdentifier("member-\(member.name)")
                 }
                 .onDelete { offsets in
-                    for index in offsets { context.delete(members[index]) }
+                    for index in offsets {
+                        MemberWeight.deleteAll(of: members[index].id, in: context)
+                        context.delete(members[index])
+                    }
                     saveAndRebuild()
                 }
                 Button("Ajouter une personne", systemImage: "person.badge.plus") { adding = true }
@@ -72,6 +75,7 @@ struct HouseholdView: View {
 /// Ajout ou modification d'une personne : portion choisie, ou calculée depuis son profil.
 private struct MemberEditView: View {
     @Environment(AppModel.self) private var model
+    @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
     let member: HouseholdMember?
     let mainKcal: Int
@@ -98,6 +102,7 @@ private struct MemberEditView: View {
                 }
                 if useProfile {
                     profileSection
+                    if let member { MemberWeightSection(memberID: member.id) }
                 } else {
                     Section {
                         Stepper(
@@ -196,8 +201,13 @@ private struct MemberEditView: View {
         let target = member ?? HouseholdMember(name: "", createdAt: model.clock.now)
         target.name = name.trimmingCharacters(in: .whitespaces)
         if useProfile {
+            let previous = target.weightKg
             fill(target, heightCm: Format.parse(height), weightKg: Format.parse(weight))
             target.refreshPortion(mainKcal: mainKcal, clock: model.clock)
+            // Nouveau poids : pesée du jour, pour suivre ses progrès (FR-1704).
+            if let kg = target.weightKg, kg != previous || MemberWeight.history(of: target.id, in: context).isEmpty {
+                MemberWeight.record(kg, for: target, mainKcal: mainKcal, clock: model.clock, in: context)
+            }
         } else {
             target.sexRaw = nil
             target.heightCm = nil
@@ -206,5 +216,35 @@ private struct MemberEditView: View {
         }
         onSave(target)
         dismiss()
+    }
+}
+
+/// Pesées d'un membre : les dernières et l'évolution depuis la première.
+private struct MemberWeightSection: View {
+    @Query private var weights: [MemberWeight]
+
+    init(memberID: UUID) {
+        _weights = Query(filter: #Predicate<MemberWeight> { $0.memberID == memberID }, sort: \.dayKey, order: .reverse)
+    }
+
+    var body: some View {
+        if !weights.isEmpty {
+            Section {
+                ForEach(weights.prefix(5)) { entry in
+                    LabeledContent(Format.shortDate(entry.day), value: "\(Format.number(entry.weightKg)) kg")
+                }
+            } header: {
+                ListHeader { Text("Pesées") }
+            } footer: {
+                ListFooter {
+                    if let first = weights.last, let last = weights.first, weights.count > 1 {
+                        let change = last.weightKg - first.weightKg
+                        Text("\(change > 0 ? "+" : "")\(Format.number(change)) kg depuis le \(Format.shortDate(first.day)).")
+                    } else {
+                        Text("Change son poids plus haut pour enregistrer une pesée.")
+                    }
+                }
+            }
+        }
     }
 }

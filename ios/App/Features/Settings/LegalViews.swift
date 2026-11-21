@@ -149,7 +149,17 @@ enum DataExport {
                 ["day": entry.dayKey, "waistCm": entry.waistCm as Any, "hipsCm": entry.hipsCm as Any]
             },
             "recipes": fetch(SavedRecipe.self).map { ["name": $0.name, "steps": $0.steps] },
-            "household": fetch(HouseholdMember.self).map { ["name": $0.name, "portion": $0.portion] },
+            "household": fetch(HouseholdMember.self).map { member in
+                [
+                    "name": member.name, "portion": member.portion,
+                    "weights": fetch(MemberWeight.self).filter { $0.memberID == member.id }
+                        .map { ["day": $0.dayKey, "kg": $0.weightKg] },
+                ] as [String: Any]
+            },
+            "receipts": fetch(ShoppingReceipt.self).map { receipt in
+                ["startDay": plans.first { $0.id == receipt.planID }?.startDayKey as Any, "paidEUR": receipt.amountEUR]
+            },
+            "quickFoods": fetch(QuickFood.self).map { ["name": $0.name, "grams": $0.lastGrams] },
         ]
         let data = try JSONSerialization.data(withJSONObject: export, options: [.prettyPrinted, .sortedKeys])
         let url = FileManager.default.temporaryDirectory.appending(path: "shreddish-export.json")

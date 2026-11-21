@@ -373,6 +373,7 @@ public enum ShreddishMigrationPlan: SchemaMigrationPlan {
         [
             SchemaV1.self, SchemaV2.self, SchemaV3.self, SchemaV4.self, SchemaV5.self, SchemaV6.self, SchemaV7.self,
             SchemaV8.self, SchemaV9.self, SchemaV10.self, SchemaV11.self, SchemaV12.self,
+            SchemaV13.self,
         ]
     }
 
@@ -390,6 +391,7 @@ public enum ShreddishMigrationPlan: SchemaMigrationPlan {
             .lightweight(fromVersion: SchemaV9.self, toVersion: SchemaV10.self),
             .lightweight(fromVersion: SchemaV10.self, toVersion: SchemaV11.self),
             .lightweight(fromVersion: SchemaV11.self, toVersion: SchemaV12.self),
+            .lightweight(fromVersion: SchemaV12.self, toVersion: SchemaV13.self),
         ]
     }
 }
@@ -397,7 +399,7 @@ public enum ShreddishMigrationPlan: SchemaMigrationPlan {
 public enum ShreddishStore {
     /// Container local, sans CloudKit. `inMemory` : previews et tests ; `url` : tests de migration.
     public static func makeContainer(inMemory: Bool = false, url: URL? = nil) throws -> ModelContainer {
-        let schema = Schema(versionedSchema: SchemaV12.self)
+        let schema = Schema(versionedSchema: SchemaV13.self)
         let configuration = if let url {
             ModelConfiguration(schema: schema, url: url, cloudKitDatabase: .none)
         } else {

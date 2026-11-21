@@ -1,4 +1,5 @@
 import ShreddishCore
+import SwiftData
 import SwiftUI
 
 /// Apple Santé en option (spec 017, FR-1709) : désactivé tant que l'utilisateur ne l'active pas.

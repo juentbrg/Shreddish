@@ -146,6 +146,62 @@
         }
       }
     },
+    "%@ de moins que prévu.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ weniger als geplant."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ less than expected."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ menos de lo previsto."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ in meno del previsto."
+          }
+        }
+      }
+    },
+    "%@ de plus que prévu.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ mehr als geplant."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ more than expected."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ más de lo previsto."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ in più del previsto."
+          }
+        }
+      }
+    },
     "%@ kg": {
       "localizations": {
         "de": {
@@ -590,6 +646,40 @@
         }
       }
     },
+    "%@%@ kg depuis le %@.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@%2$@ kg seit %3$@."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@%2$@ kg since %3$@."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@%2$@ kg desde el %3$@."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@%2$@ kg depuis le %3$@."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@%2$@ kg dal %3$@."
+          }
+        }
+      }
+    },
     "%@, protéines %@, glucides %@, lipides %@": {
       "localizations": {
         "de": {
@@ -749,6 +839,7 @@
         }
       }
     },
+    "%lld kcal": {},
     "%lld min avant": {
       "localizations": {
         "de": {
@@ -3020,6 +3111,34 @@
         }
       }
     },
+    "Budget prévu : %@.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geplantes Budget: %@."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Planned budget: %@."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Presupuesto previsto: %@."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Budget previsto: %@."
+          }
+        }
+      }
+    },
     "Bureau, moins de 5 000 pas.": {
       "localizations": {
         "de": {
@@ -3409,6 +3528,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Cosa ti serve"
+          }
+        }
+      }
+    },
+    "Change son poids plus haut pour enregistrer une pesée.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ändere oben das Gewicht, um eine Wiegung zu speichern."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change their weight above to log a weigh-in."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cambia su peso arriba para registrar un pesaje."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cambia il peso qui sopra per registrare una pesata."
           }
         }
       }
@@ -3903,6 +4050,63 @@
         }
       }
     },
+    "Corriger le montant": {
+      "extractionState": "stale",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Betrag korrigieren"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Correct the amount"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Corregir el importe"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Correggi l'importo"
+          }
+        }
+      }
+    },
+    "Corriger le montant (€)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Correct the amount (€)"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Corregir el importe (€)"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Betrag korrigieren (€)"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Correggi l'importo (€)"
+          }
+        }
+      }
+    },
     "Courbe de poids, %lld pesées": {
       "localizations": {
         "de": {
@@ -4179,6 +4383,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nell'obiettivo"
+          }
+        }
+      }
+    },
+    "Dans le budget de %@.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Im Budget von %@."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Within the %@ budget."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dentro del presupuesto de %@."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nel budget di %@."
           }
         }
       }
@@ -5125,6 +5357,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Stime, non un parere medico."
+          }
+        }
+      }
+    },
+    "Estimé par l'app": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Von der App geschätzt"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estimated by the app"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estimado por la app"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stimato dall'app"
           }
         }
       }
@@ -7097,6 +7357,34 @@
         }
       }
     },
+    "Mes courses de sèche": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mein Diät-Einkauf"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "My cutting groceries"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mi compra de definición"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La mia spesa per la definizione"
+          }
+        }
+      }
+    },
     "Mes progrès": {
       "localizations": {
         "de": {
@@ -7459,6 +7747,91 @@
           "stringUnit": {
             "state": "translated",
             "value": "Il mio profilo"
+          }
+        }
+      }
+    },
+    "Mon ticket": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mein Kassenbon"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "My receipt"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mi tique"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il mio scontrino"
+          }
+        }
+      }
+    },
+    "Montant payé": {
+      "extractionState": "stale",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bezahlter Betrag"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Amount paid"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importe pagado"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importo pagato"
+          }
+        }
+      }
+    },
+    "Montant payé (€)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Amount paid (€)"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importe pagado (€)"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bezahlter Betrag (€)"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importo pagato (€)"
           }
         }
       }
@@ -7941,6 +8314,34 @@
         }
       }
     },
+    "Ouvre Shreddish sur ton iPhone pour envoyer ta journée.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öffne Shreddish auf deinem iPhone, um deinen Tag zu senden."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Shreddish on your iPhone to send your day."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abre Shreddish en tu iPhone para enviar tu día."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apri Shreddish sul tuo iPhone per inviare la tua giornata."
+          }
+        }
+      }
+    },
     "Par dose": {
       "localizations": {
         "de": {
@@ -8222,6 +8623,34 @@
         }
       }
     },
+    "Partager mon ticket": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kassenbon teilen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share my receipt"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compartir mi tique"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Condividi lo scontrino"
+          }
+        }
+      }
+    },
     "Pas de connexion : cherche l'aliment dans la table Ciqual.": {
       "localizations": {
         "de": {
@@ -8274,6 +8703,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nessun piano"
+          }
+        }
+      }
+    },
+    "Pas de planning aujourd'hui.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Heute kein Plan."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No plan today."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sin plan hoy."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nessun piano oggi."
           }
         }
       }
@@ -8474,6 +8931,34 @@
         }
       }
     },
+    "Payé en caisse": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "An der Kasse bezahlt"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paid at checkout"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pagado en caja"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pagato alla cassa"
+          }
+        }
+      }
+    },
     "Personnaliser": {
       "localizations": {
         "de": {
@@ -8614,6 +9099,90 @@
         }
       }
     },
+    "Pesée du jour": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Heutiges Wiegen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Today's weigh-in"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pesaje de hoy"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pesata di oggi"
+          }
+        }
+      }
+    },
+    "Pesée faite": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gewogen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weighed in"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pesaje hecho"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pesata fatta"
+          }
+        }
+      }
+    },
+    "Pesées": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wiegungen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weigh-ins"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pesajes"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pesate"
+          }
+        }
+      }
+    },
     "Petit-déjeuner": {
       "localizations": {
         "de": {
@@ -8722,6 +9291,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Foto"
+          }
+        }
+      }
+    },
+    "Pile l'estimation.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Genau wie geschätzt."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Right on the estimate."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Justo lo estimado."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esattamente la stima."
           }
         }
       }
@@ -12894,6 +13491,34 @@
         }
       }
     },
+    "Ticket réel": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Echter Kassenbon"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actual receipt"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tique real"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scontrino reale"
+          }
+        }
+      }
+    },
     "Toi": {
       "localizations": {
         "de": {
@@ -14118,6 +14743,34 @@
         }
       }
     },
+    "par repas, %lld repas planifiés": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "pro Mahlzeit, %lld Mahlzeiten geplant"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "per meal, %lld meals planned"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "por comida, %lld comidas planificadas"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "a pasto, %lld pasti pianificati"
+          }
+        }
+      }
+    },
     "pièce": {
       "localizations": {
         "de": {
@@ -14198,6 +14851,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "previsto %@"
+          }
+        }
+      }
+    },
+    "restantes · %lld g de protéines": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "übrig · %lld g Protein"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "left · %lld g of protein"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "restantes · %lld g de proteína"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "rimanenti · %lld g di proteine"
           }
         }
       }
