@@ -31,7 +31,10 @@ struct RootView: View {
                         Task { await model.health.sync(container: context.container, clock: model.clock) }
                     }
                     // Rappels recalculés à l'ouverture et à la sortie : plannings, coches et pesées à jour.
-                    if phase != .inactive { Task { await model.notifications.reschedule() } }
+                    if phase != .inactive {
+                        Task { await model.notifications.reschedule() }
+                        model.watch.push()
+                    }
                 }
                 .onChange(of: model.network.isOnline) { _, online in
                     guard online else { return }

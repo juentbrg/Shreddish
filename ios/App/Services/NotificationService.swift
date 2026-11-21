@@ -60,6 +60,7 @@ final class NotificationService: NSObject {
 
     /// Remplace tous les rappels en attente par ceux calculés depuis la base.
     func reschedule() async {
+        model?.watch.push()
         guard let center, let container, let model else { return }
         authorization = await center.notificationSettings().authorizationStatus
         center.removeAllPendingNotificationRequests()

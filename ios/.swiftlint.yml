@@ -1,6 +1,8 @@
 # SwiftLint : pré-build de la cible Shreddish (project.yml). Règles reprises de Nowtick.
 included:
   - App
+  - Watch
+  - Shared
   - Packages/ShreddishCore/Sources
   - Packages/ShreddishCore/Tests
   - AppTests

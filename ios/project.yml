@@ -4,6 +4,7 @@ options:
   bundleIdPrefix: app.shreddish
   deploymentTarget:
     iOS: "26.0"
+    watchOS: "26.0"
   developmentLanguage: fr
   createIntermediateGroups: true
   groupSortPosition: top
@@ -31,6 +32,32 @@ packages:
     path: Packages/ShreddishCore
 
 targets:
+  # Apple Watch (spec 017, FR-1711) : app compagnon, données reçues de l'iPhone par WatchConnectivity.
+  ShreddishWatch:
+    type: application
+    platform: watchOS
+    sources:
+      - path: Watch
+      - path: Shared
+      - path: App/Resources/Localizable.xcstrings
+    info:
+      path: Watch/Info.plist
+      properties:
+        CFBundleDisplayName: Shreddish
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        CFBundleDevelopmentRegion: fr
+        CFBundleLocalizations: [fr, en, es, de, it]
+        WKApplication: true
+        WKCompanionAppBundleIdentifier: app.shreddish
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.shreddish.watchkitapp
+        PRODUCT_NAME: ShreddishWatch
+        TARGETED_DEVICE_FAMILY: "4"
+        SKIP_INSTALL: YES
+        ASSETCATALOG_COMPILER_APPICON_NAME: ""
+
   Shreddish:
     type: application
     platform: iOS
@@ -38,8 +65,10 @@ targets:
       - path: App
         excludes:
           - "Info.plist"
+      - path: Shared
     dependencies:
       - package: ShreddishCore
+      - target: ShreddishWatch
     entitlements:
       path: App/Shreddish.entitlements
       properties:

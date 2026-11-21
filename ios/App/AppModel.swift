@@ -63,6 +63,8 @@ final class AppModel {
     var needsPaywall = false
     /// Réseau : bandeau hors ligne, reprise des actions en attente (spec 017).
     let network: NetworkMonitor
+    /// Apple Watch (spec 017).
+    let watch: WatchBridge
     /// Apple Santé, désactivé par défaut (spec 017).
     let health: HealthService
     /// Produits emballés par code-barres (journal rapide, spec 017).
@@ -96,6 +98,7 @@ final class AppModel {
         notifications = NotificationService(enabled: !isUITest)
         health = HealthService(enabled: !isUITest)
         network = NetworkMonitor(enabled: !isUITest)
+        watch = WatchBridge(enabled: !isUITest)
         #if DEBUG
         subscriptions = SubscriptionStore(enforced: false)
         #else
