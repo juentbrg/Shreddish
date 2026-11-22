@@ -17,6 +17,8 @@ struct MealDetailView: View {
     @State private var editing = false
     /// Aliment tout juste banni : propose de remplacer ce repas.
     @State private var banned: String?
+    /// Repas à venir qui contiennent l'aliment tout juste banni (celui-ci compris).
+    @State private var bannedMeals: [Meal] = []
 
     private var owned: [String] { allPreferences.first?.supplementList ?? [] }
 
@@ -116,22 +118,25 @@ struct MealDetailView: View {
             guard let preferences = allPreferences.first else { return }
             preferences.ban(food)
             try? context.save()
+            bannedMeals = PlanStore.upcomingMeals(containing: food, from: model.clock.today, in: context)
             banned = food
         }
         .alert(
             String(localized: "« \(banned ?? "") » banni"),
             isPresented: Binding(get: { banned != nil }, set: { if !$0 { banned = nil } })
         ) {
-            if meal.day?.plan?.isCurrent == true, meal.status == .planned {
-                Button("Remplacer ce repas") {
-                    MealReplacement.run(
-                        meal: meal, profile: profiles.first, preferences: allPreferences.first, model: model, context: context
+            if !bannedMeals.isEmpty {
+                Button(MealReplacement.label(count: bannedMeals.count)) {
+                    MealReplacement.runAll(
+                        meals: bannedMeals, profile: profiles.first, preferences: allPreferences.first, model: model, context: context
                     )
-                    dismiss()
+                    if bannedMeals.contains(where: { $0.persistentModelID == meal.persistentModelID }) { dismiss() }
                 }
                 .disabled(model.isBusy)
+                Button("Plus tard", role: .cancel) {}
+            } else {
+                Button("OK", role: .cancel) {}
             }
-            Button("OK", role: .cancel) {}
         } message: {
             Text("Plus jamais proposé dans tes plannings. Liste dans Réglages → Préférences.")
         }

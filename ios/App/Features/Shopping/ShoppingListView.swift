@@ -11,7 +11,8 @@ struct ShoppingListView: View {
     @State private var aisleFilter: Aisle?
     @State private var selectedPlanID: UUID?
     /// Aliment tout juste banni et nombre de repas à venir qui en contiennent.
-    @State private var banned: (food: String, meals: Int)?
+    @State private var banned: (food: String, meals: [Meal])?
+    @Query var profiles: [Profile]
     @Environment(AppModel.self) private var model
 
     private var activePlans: [WeeklyPlan] { plans.sorted { $0.startDay < $1.startDay } }
@@ -37,13 +38,19 @@ struct ShoppingListView: View {
                 String(localized: "« \(banned?.food ?? "") » banni"),
                 isPresented: Binding(get: { banned != nil }, set: { if !$0 { banned = nil } })
             ) {
-                Button("OK", role: .cancel) {}
+                if let meals = banned?.meals, !meals.isEmpty {
+                    Button(MealReplacement.label(count: meals.count)) {
+                        MealReplacement.runAll(
+                            meals: meals, profile: profiles.first, preferences: allPreferences.first, model: model, context: context
+                        )
+                    }
+                    Button("Plus tard", role: .cancel) {}
+                } else {
+                    Button("OK", role: .cancel) {}
+                }
             } message: {
-                if let banned, banned.meals > 0 {
-                    Text("""
-                        Plus jamais proposé dans tes plannings. \(banned.meals) repas à venir en contiennent : \
-                        remplace-les avec « Autre idée de repas ».
-                        """)
+                if let banned, !banned.meals.isEmpty {
+                    Text("Plus jamais proposé dans tes plannings. \(banned.meals.count) repas à venir en contiennent.")
                 } else {
                     Text("Plus jamais proposé dans tes plannings.")
                 }
@@ -55,7 +62,7 @@ struct ShoppingListView: View {
         guard let preferences = allPreferences.first else { return }
         preferences.ban(food)
         try? context.save()
-        banned = (food, PlanStore.upcomingMeals(containing: food, from: model.clock.today, in: context).count)
+        banned = (food, PlanStore.upcomingMeals(containing: food, from: model.clock.today, in: context))
     }
 
     private func list(_ plan: WeeklyPlan) -> some View {

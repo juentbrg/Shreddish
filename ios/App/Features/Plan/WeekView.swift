@@ -418,6 +418,9 @@ struct WeekPlanList: View {
                 if plan.isCurrent, let warning = model.warningMessage {
                     WarningBadge(text: warning).card()
                 }
+                if plan.isCurrent {
+                    BannedMealsBanner()
+                }
                 DayStrip(days: days, selected: selectedDay?.offset, today: model.clock.today) { selectedOffset = $0 }
                 if let day = selectedDay {
                     DayContent(day: day)

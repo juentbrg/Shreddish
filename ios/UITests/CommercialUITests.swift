@@ -197,7 +197,13 @@ extension OnboardingUITests {
         let alert = app.alerts.firstMatch
         XCTAssertTrue(alert.waitForExistence(timeout: 3))
         XCTAssertTrue(alert.label.contains("banni"))
-        alert.buttons["OK"].tap()
+        // L'article vient du planning : l'alerte propose de remplacer les repas concernés.
+        XCTAssertTrue(alert.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Remplacer'")).firstMatch.exists)
+        alert.buttons["Plus tard"].tap()
+        app.tabBars.buttons["Semaine"].tap()
+        let replace = app.buttons["replaceBannedMeals"]
+        XCTAssertTrue(replace.waitForExistence(timeout: 5))
+        XCTAssertTrue(replace.label.hasPrefix("Remplacer"))
     }
 
     /// Spec 017, FR-1713 : audit d'accessibilité des écrans principaux (contrastes, libellés, tailles).
@@ -223,7 +229,10 @@ extension OnboardingUITests {
                 // la barre), ou contraste « presque » conforme sur les tuiles des cartes vertes.
                 // Élément introuvable (déjà sorti de l'écran) : rien à corriger à cet endroit.
                 guard let frame = issue.element?.frame, frame != .zero else { return true }
-                if frame.maxY > tabBarTop - 4 { return true }
+                // iOS 26 : l'effet de bord de défilement floute le contenu bien au-dessus de la barre flottante.
+                if frame.maxY > tabBarTop - 120 { return true }
+                // Contrôle désactivé (« Enregistrer » sans montant) : hors exigence de contraste (WCAG 1.4.3).
+                if issue.element?.isEnabled == false { return true }
                 // Barre de progression : non interactive, la zone tactile ne s'applique pas.
                 if issue.element?.elementType == .progressIndicator { return true }
                 // Petites légendes (jours, « cible ») : agrandies mais plafonnées par le système. Suivi à part.

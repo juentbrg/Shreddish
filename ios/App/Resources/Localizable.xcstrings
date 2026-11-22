@@ -1093,6 +1093,34 @@
         }
       }
     },
+    "%lld repas à venir contiennent un aliment banni.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld upcoming meals contain a banned food."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld comidas próximas contienen un alimento prohibido."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld anstehende Mahlzeiten enthalten ein ausgeschlossenes Lebensmittel."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld pasti in arrivo contengono un alimento escluso."
+          }
+        }
+      }
+    },
     "%lld session(s) de batch cooking": {
       "localizations": {
         "de": {
@@ -1349,6 +1377,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "1 = stesso piatto tuo, 0,5 = bambino o poco appetito."
+          }
+        }
+      }
+    },
+    "1 repas à venir contient un aliment banni.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 upcoming meal contains a banned food."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 comida próxima contiene un alimento prohibido."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 anstehende Mahlzeit enthält ein ausgeschlossenes Lebensmittel."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 pasto in arrivo contiene un alimento escluso."
           }
         }
       }
@@ -2176,6 +2232,35 @@
         }
       }
     },
+    "Aliments bannis": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gesperrte Lebensmittel"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Banned foods"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alimentos vetados"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alimenti esclusi"
+          }
+        }
+      }
+    },
     "Aliments que tu n'aimes pas": {
       "extractionState": "manual",
       "localizations": {
@@ -2404,6 +2489,12 @@
     },
     "Appui long sur un ingrédient pour ne plus jamais le voir dans tes plannings.": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Halte eine Zutat gedrückt, um sie nie wieder in deinen Plänen zu sehen."
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -2414,12 +2505,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mantén pulsado un ingrediente para no volver a verlo en tus planes."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Halte eine Zutat gedrückt, um sie nie wieder in deinen Plänen zu sehen."
           }
         },
         "it": {
@@ -6428,6 +6513,35 @@
         }
       }
     },
+    "Jamais proposés. Ajoute-en aussi par appui long sur un ingrédient ou un article de courses.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Werden nie vorgeschlagen. Du kannst auch eine Zutat oder einen Einkaufsartikel gedrückt halten."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Never suggested. You can also add some by long-pressing an ingredient or a grocery item."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nunca se proponen. También puedes añadirlos manteniendo pulsado un ingrediente o un artículo de la compra."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mai proposti. Puoi aggiungerne anche tenendo premuto un ingrediente o un articolo della spesa."
+          }
+        }
+      }
+    },
     "Jeûne": {
       "localizations": {
         "de": {
@@ -8035,6 +8149,12 @@
     },
     "Ne plus jamais proposer": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie mehr vorschlagen"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -8045,12 +8165,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "No volver a proponer"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nie mehr vorschlagen"
           }
         },
         "it": {
@@ -9691,6 +9805,12 @@
     },
     "Plus jamais proposé dans tes plannings.": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wird in deinen Plänen nie mehr vorgeschlagen."
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -9703,12 +9823,6 @@
             "value": "No se volverá a proponer en tus planes."
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wird in deinen Plänen nie mehr vorgeschlagen."
-          }
-        },
         "it": {
           "stringUnit": {
             "state": "translated",
@@ -9718,7 +9832,14 @@
       }
     },
     "Plus jamais proposé dans tes plannings. %lld repas à venir en contiennent : remplace-les avec « Autre idée de repas ».": {
+      "extractionState": "stale",
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wird nie mehr vorgeschlagen. %lld kommende Mahlzeiten enthalten es: ersetze sie mit „Andere Mahlzeitidee“."
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -9731,12 +9852,6 @@
             "value": "No se volverá a proponer en tus planes. %lld comidas próximas lo contienen: cámbialas con «Otra idea de comida»."
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wird nie mehr vorgeschlagen. %lld kommende Mahlzeiten enthalten es: ersetze sie mit „Andere Mahlzeitidee“."
-          }
-        },
         "it": {
           "stringUnit": {
             "state": "translated",
@@ -9745,8 +9860,42 @@
         }
       }
     },
+    "Plus jamais proposé dans tes plannings. %lld repas à venir en contiennent.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Never suggested in your plans again. %lld upcoming meals contain it."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nunca más se propondrá en tus planes. %lld comidas próximas lo contienen."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wird nie mehr in deinen Plänen vorgeschlagen. %lld anstehende Mahlzeiten enthalten es."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mai più proposto nei tuoi piani. %lld pasti in arrivo lo contengono."
+          }
+        }
+      }
+    },
     "Plus jamais proposé dans tes plannings. Liste dans Réglages → Préférences.": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wird nie mehr vorgeschlagen. Liste unter Einstellungen → Vorlieben."
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -9757,12 +9906,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "No se volverá a proponer en tus planes. Lista en Ajustes → Preferencias."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wird nie mehr vorgeschlagen. Liste unter Einstellungen → Vorlieben."
           }
         },
         "it": {
@@ -10254,6 +10397,12 @@
     },
     "Prix médians en France, paquets entiers. Appui long sur un article pour le bannir.": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Medianpreise in Frankreich, ganze Packungen. Artikel gedrückt halten, um ihn zu sperren."
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -10264,12 +10413,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Precios medianos en Francia, paquetes enteros. Mantén pulsado un artículo para vetarlo."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Medianpreise in Frankreich, ganze Packungen. Artikel gedrückt halten, um ihn zu sperren."
           }
         },
         "it": {
@@ -11380,6 +11523,68 @@
         }
       }
     },
+    "Remplacement de %lld repas…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Replacing %lld meals…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sustituyendo %lld comidas…"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld Mahlzeiten werden ersetzt…"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sostituzione di %lld pasti…"
+          }
+        }
+      }
+    },
+    "Remplacement du repas %lld sur %lld…": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Remplacement du repas %1$lld sur %2$lld…"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Replacing meal %lld of %lld…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sustituyendo comida %lld de %lld…"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mahlzeit %lld von %lld wird ersetzt…"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sostituzione del pasto %lld di %lld…"
+          }
+        }
+      }
+    },
     "Remplacer ce repas": {
       "localizations": {
         "de": {
@@ -11404,6 +11609,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sostituisci questo pasto"
+          }
+        }
+      }
+    },
+    "Remplacer les %lld repas": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Replace the %lld meals"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sustituir las %lld comidas"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die %lld Mahlzeiten ersetzen"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sostituisci i %lld pasti"
           }
         }
       }
@@ -14826,6 +15059,35 @@
         }
       }
     },
+    "ex. baguette": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "z. B. Baguette"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "e.g. baguette"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "p. ej. baguette"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "es. baguette"
+          }
+        }
+      }
+    },
     "ex. poulet": {
       "extractionState": "manual",
       "localizations": {
@@ -15167,6 +15429,12 @@
     },
     "« %@ » banni": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "„%@“ gesperrt"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -15177,12 +15445,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "«%@» vetado"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "„%@“ gesperrt"
           }
         },
         "it": {
@@ -15622,93 +15884,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "≈ %@ per sessione."
-          }
-        }
-      }
-    },
-    "Aliments bannis": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Banned foods"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Alimentos vetados"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Gesperrte Lebensmittel"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Alimenti esclusi"
-          }
-        }
-      }
-    },
-    "ex. baguette": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "e.g. baguette"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "p. ej. baguette"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "z. B. Baguette"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "es. baguette"
-          }
-        }
-      }
-    },
-    "Jamais proposés. Ajoute-en aussi par appui long sur un ingrédient ou un article de courses.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Never suggested. You can also add some by long-pressing an ingredient or a grocery item."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nunca se proponen. También puedes añadirlos manteniendo pulsado un ingrediente o un artículo de la compra."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Werden nie vorgeschlagen. Du kannst auch eine Zutat oder einen Einkaufsartikel gedrückt halten."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mai proposti. Puoi aggiungerne anche tenendo premuto un ingrediente o un articolo della spesa."
           }
         }
       }

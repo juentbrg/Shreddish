@@ -22,10 +22,16 @@ extension Preferences {
 extension PlanStore {
     /// Repas à venir (aujourd'hui compris) des plannings actifs qui contiennent l'aliment.
     public static func upcomingMeals(containing food: String, from today: LocalDay, in context: ModelContext) -> [Meal] {
-        activePlans(in: context)
+        upcomingMeals(containingAnyOf: [food], from: today, in: context)
+    }
+
+    /// Repas à venir (aujourd'hui compris), encore prévus, qui contiennent au moins un des aliments.
+    public static func upcomingMeals(containingAnyOf foods: [String], from today: LocalDay, in context: ModelContext) -> [Meal] {
+        guard !foods.isEmpty else { return [] }
+        return activePlans(in: context)
             .flatMap(\.sortedDays)
             .filter { $0.day >= today }
             .flatMap(\.sortedMeals)
-            .filter { $0.status == .planned && AIOutputValidator.excludedFood(in: $0.dto, excluded: [food]) != nil }
+            .filter { $0.status == .planned && AIOutputValidator.excludedFood(in: $0.dto, excluded: foods) != nil }
     }
 }

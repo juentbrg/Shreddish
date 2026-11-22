@@ -214,4 +214,26 @@ enum MealReplacement {
             }
         }
     }
+
+    /// « Remplacer ce repas » ou « Remplacer les 3 repas ».
+    static func label(count: Int) -> String {
+        count == 1 ? String(localized: "Remplacer ce repas") : String(localized: "Remplacer les \(count) repas")
+    }
+
+    /// Remplace un à un les repas qui contiennent un aliment banni.
+    static func runAll(meals: [Meal], profile: Profile?, preferences: Preferences?, model: AppModel, context: ModelContext) {
+        guard let profile, let preferences, !meals.isEmpty else { return }
+        let generator = model.generator
+        let total = meals.count
+        Task {
+            await model.run(String(localized: "Remplacement de \(total) repas…")) { () async throws(AIError) -> [ValidationIssue] in
+                var warnings: [ValidationIssue] = []
+                for (index, meal) in meals.enumerated() where !meal.isDeleted && meal.day != nil {
+                    model.busyMessage = String(localized: "Remplacement du repas \(index + 1) sur \(total)…")
+                    warnings += try await generator.replaceMeal(meal, profile: profile, preferences: preferences, in: context)
+                }
+                return warnings
+            }
+        }
+    }
 }
