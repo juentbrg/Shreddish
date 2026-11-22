@@ -49,21 +49,23 @@ struct DayContent: View {
                 .accessibilityIdentifier("regenerateDay")
             }
         }
-        .confirmationDialog("Régénérer cette journée ?", isPresented: $confirmRegenerate, titleVisibility: .visible) {
-            Button("Régénérer la journée") { regenerate() }
-        } message: {
-            Text("Seule cette journée change.")
+        .sheet(isPresented: $confirmRegenerate) {
+            RegenerateDaySheet(day: day, today: model.clock.today) { pantry in
+                confirmRegenerate = false
+                regenerate(pantry: pantry)
+            }
+            .presentationDetents([.medium, .large])
         }
     }
 
-    private func regenerate() {
+    private func regenerate(pantry: [IngredientDTO]) {
         guard let profile = profiles.first, let preferences = allPreferences.first else { return }
         let generator = model.generator
         let context = context
         let day = day
         Task {
             await model.run("Nouvelle journée en préparation…", recipesIn: context) { () async throws(AIError) -> [ValidationIssue] in
-                try await generator.regenerateDay(day, profile: profile, preferences: preferences, in: context)
+                try await generator.regenerateDay(day, profile: profile, preferences: preferences, pantry: pantry, in: context)
             }
         }
     }

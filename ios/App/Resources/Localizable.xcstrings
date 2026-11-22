@@ -754,6 +754,34 @@
         }
       }
     },
+    "%lld articles ajoutés à « Courses Shreddish » dans Rappels.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld Artikel zu „Shreddish Einkauf“ in Erinnerungen hinzugefügt."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld items added to “Shreddish Groceries” in Reminders."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld artículos añadidos a «Compra Shreddish» en Recordatorios."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld articoli aggiunti a «Spesa Shreddish» in Promemoria."
+          }
+        }
+      }
+    },
     "%lld choisie(s)": {
       "localizations": {
         "de": {
@@ -1095,6 +1123,12 @@
     },
     "%lld repas à venir contiennent un aliment banni.": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld anstehende Mahlzeiten enthalten ein ausgeschlossenes Lebensmittel."
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -1105,12 +1139,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld comidas próximas contienen un alimento prohibido."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld anstehende Mahlzeiten enthalten ein ausgeschlossenes Lebensmittel."
           }
         },
         "it": {
@@ -1383,6 +1411,12 @@
     },
     "1 repas à venir contient un aliment banni.": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 anstehende Mahlzeit enthält ein ausgeschlossenes Lebensmittel."
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -1393,12 +1427,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "1 comida próxima contiene un alimento prohibido."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "1 anstehende Mahlzeit enthält ein ausgeschlossenes Lebensmittel."
           }
         },
         "it": {
@@ -1581,6 +1609,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Abbonamento"
+          }
+        }
+      }
+    },
+    "Accès à Rappels refusé. Autorise-le dans Réglages → Shreddish.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zugriff auf Erinnerungen verweigert. Erlaube ihn unter Einstellungen → Shreddish."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reminders access denied. Allow it in Settings → Shreddish."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Acceso a Recordatorios denegado. Permítelo en Ajustes → Shreddish."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accesso a Promemoria negato. Consentilo in Impostazioni → Shreddish."
           }
         }
       }
@@ -4304,6 +4360,34 @@
         }
       }
     },
+    "Courses Shreddish": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shreddish Einkauf"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shreddish Groceries"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compra Shreddish"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spesa Shreddish"
+          }
+        }
+      }
+    },
     "Courses au prix réel, paquets entiers, sans gaspillage": {
       "localizations": {
         "de": {
@@ -4328,6 +4412,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "Spesa a prezzi reali, confezioni intere, senza sprechi"
+          }
+        }
+      }
+    },
+    "Courses du %@ au %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Einkauf vom %@ bis %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Groceries from %@ to %@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compra del %@ al %@"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Courses du %1$@ au %2$@"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spesa dal %@ al %@"
           }
         }
       }
@@ -5303,6 +5421,34 @@
         }
       }
     },
+    "Envoi vers Rappels impossible.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Senden an Erinnerungen fehlgeschlagen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't send to Reminders."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo enviar a Recordatorios."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossibile inviare a Promemoria."
+          }
+        }
+      }
+    },
     "Envoi à OpenAI autorisé": {
       "localizations": {
         "de": {
@@ -5327,6 +5473,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Invio a OpenAI consentito"
+          }
+        }
+      }
+    },
+    "Envoyer vers Rappels": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "An Erinnerungen senden"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send to Reminders"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enviar a Recordatorios"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invia a Promemoria"
           }
         }
       }
@@ -7079,6 +7253,34 @@
         }
       }
     },
+    "Liste déjà à jour dans Rappels.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Liste in Erinnerungen bereits aktuell."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "List already up to date in Reminders."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lista ya actualizada en Recordatorios."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lista già aggiornata in Promemoria."
+          }
+        }
+      }
+    },
     "Liste vide": {
       "localizations": {
         "de": {
@@ -8709,6 +8911,34 @@
         }
       }
     },
+    "Partager en texte": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Als Text teilen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share as text"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compartir como texto"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Condividi come testo"
+          }
+        }
+      }
+    },
     "Partager l'export": {
       "localizations": {
         "de": {
@@ -8733,6 +8963,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Condividi l'esportazione"
+          }
+        }
+      }
+    },
+    "Partager la liste": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Liste teilen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share list"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compartir lista"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Condividi lista"
           }
         }
       }
@@ -9013,6 +9271,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Non ora"
+          }
+        }
+      }
+    },
+    "Pas mangés ces derniers jours": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not eaten in the last few days"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No comido estos últimos días"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In den letzten Tagen nicht gegessen"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Non mangiato negli ultimi giorni"
           }
         }
       }
@@ -9862,6 +10148,12 @@
     },
     "Plus jamais proposé dans tes plannings. %lld repas à venir en contiennent.": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wird nie mehr in deinen Plänen vorgeschlagen. %lld anstehende Mahlzeiten enthalten es."
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -9872,12 +10164,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nunca más se propondrá en tus planes. %lld comidas próximas lo contienen."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wird nie mehr in deinen Plänen vorgeschlagen. %lld anstehende Mahlzeiten enthalten es."
           }
         },
         "it": {
@@ -11525,6 +11811,12 @@
     },
     "Remplacement de %lld repas…": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld Mahlzeiten werden ersetzt…"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -11537,12 +11829,6 @@
             "value": "Sustituyendo %lld comidas…"
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld Mahlzeiten werden ersetzt…"
-          }
-        },
         "it": {
           "stringUnit": {
             "state": "translated",
@@ -11553,10 +11839,10 @@
     },
     "Remplacement du repas %lld sur %lld…": {
       "localizations": {
-        "fr": {
+        "de": {
           "stringUnit": {
-            "state": "new",
-            "value": "Remplacement du repas %1$lld sur %2$lld…"
+            "state": "translated",
+            "value": "Mahlzeit %lld von %lld wird ersetzt…"
           }
         },
         "en": {
@@ -11571,10 +11857,10 @@
             "value": "Sustituyendo comida %lld de %lld…"
           }
         },
-        "de": {
+        "fr": {
           "stringUnit": {
-            "state": "translated",
-            "value": "Mahlzeit %lld von %lld wird ersetzt…"
+            "state": "new",
+            "value": "Remplacement du repas %1$lld sur %2$lld…"
           }
         },
         "it": {
@@ -11615,6 +11901,12 @@
     },
     "Remplacer les %lld repas": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die %lld Mahlzeiten ersetzen"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -11625,12 +11917,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sustituir las %lld comidas"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Die %lld Mahlzeiten ersetzen"
           }
         },
         "it": {
@@ -12040,6 +12326,34 @@
         }
       }
     },
+    "Restes déjà achetés la semaine d'avant déduits : %@.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bereits letzte Woche gekaufte Reste abgezogen: %@."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leftovers already bought last week deducted: %@."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sobras ya compradas la semana anterior descontadas: %@."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Avanzi già comprati la settimana prima detratti: %@."
+          }
+        }
+      }
+    },
     "Restes, conserves, féculents… L'IA s'en sert en priorité et ils sont déduits des courses.": {
       "localizations": {
         "de": {
@@ -12321,6 +12635,34 @@
         }
       }
     },
+    "Régénérer": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Regenerate"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Regenerar"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neu erstellen"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rigenera"
+          }
+        }
+      }
+    },
     "Régénérer cette journée": {
       "localizations": {
         "de": {
@@ -12350,6 +12692,7 @@
       }
     },
     "Régénérer cette journée ?": {
+      "extractionState": "stale",
       "localizations": {
         "de": {
           "stringUnit": {

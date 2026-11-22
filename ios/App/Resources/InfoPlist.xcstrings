@@ -140,6 +140,41 @@
           }
         }
       }
+    },
+    "NSRemindersFullAccessUsageDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deine Einkaufsliste auf Wunsch zu Erinnerungen hinzufügen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add your grocery list to Reminders when you ask."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Añadir tu lista de la compra a Recordatorios cuando lo pidas."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ajouter ta liste de courses dans Rappels, quand tu le demandes."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aggiungere la tua lista della spesa a Promemoria quando lo chiedi."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

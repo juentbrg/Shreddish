@@ -36,6 +36,8 @@
 	<string>Lire ton poids et ta dépense active pour affiner tes cibles, si tu actives Apple Santé.</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>Enregistrer les apports de ton journal dans Apple Santé, si tu l'actives.</string>
+	<key>NSRemindersFullAccessUsageDescription</key>
+	<string>Ajouter ta liste de courses dans Rappels, quand tu le demandes.</string>
 	<key>ShreddishOpenAIKey</key>
 	<string>$(OPENAI_API_KEY)</string>
 	<key>UIAppFonts</key>

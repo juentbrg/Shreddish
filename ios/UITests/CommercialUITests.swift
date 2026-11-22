@@ -206,6 +206,48 @@ extension OnboardingUITests {
         XCTAssertTrue(replace.label.hasPrefix("Remplacer"))
     }
 
+    /// Spec 017, FR-1706 : partage de la liste en texte ou vers Rappels.
+    func testShareShoppingList() {
+        let app = launch()
+        onboard(app)
+        app.tabBars.buttons["Semaine"].tap()
+        app.buttons["generateWeek"].tap()
+        app.buttons["startGeneration"].tap()
+        XCTAssertTrue(app.buttons["day-0"].waitForExistence(timeout: 10))
+        app.tabBars.buttons["Courses"].tap()
+        let share = app.buttons["shareShoppingList"]
+        XCTAssertTrue(share.waitForExistence(timeout: 5))
+        share.tap()
+        XCTAssertTrue(app.buttons["Partager en texte"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Envoyer vers Rappels"].waitForExistence(timeout: 3))
+    }
+
+    /// Régénérer une journée en écoulant des restes (cheat day, repas sautés).
+    func testRegenerateDayWithLeftovers() {
+        let app = launch()
+        onboard(app)
+        app.tabBars.buttons["Semaine"].tap()
+        app.buttons["generateWeek"].tap()
+        app.buttons["startGeneration"].tap()
+        XCTAssertTrue(app.buttons["day-0"].waitForExistence(timeout: 10))
+        let regenerate = app.buttons["regenerateDay"]
+        reveal(regenerate, in: app)
+        regenerate.tap()
+        let yes = app.segmentedControls["hasPantry"].buttons["Oui"]
+        XCTAssertTrue(yes.waitForExistence(timeout: 3))
+        yes.tap()
+        let name = app.textFields["pantryName"].firstMatch
+        XCTAssertTrue(name.waitForExistence(timeout: 3))
+        name.tap()
+        name.typeText("Riz")
+        let quantity = app.textFields["pantryQuantity"].firstMatch
+        quantity.tap()
+        quantity.typeText("200")
+        app.buttons["confirmRegenerateDay"].tap()
+        XCTAssertTrue(app.buttons["regenerateDay"].waitForExistence(timeout: 15))
+        XCTAssertFalse(app.buttons["confirmRegenerateDay"].exists)
+    }
+
     /// Spec 017, FR-1713 : audit d'accessibilité des écrans principaux (contrastes, libellés, tailles).
     func testAccessibilityAudit() throws {
         continueAfterFailure = true

@@ -124,7 +124,8 @@ public enum PlanStore {
         let owned = (try? context.fetch(FetchDescriptor<Preferences>()))?.first?.supplementList ?? []
         let ingredients = plan.days.flatMap { $0.meals.flatMap(\.ingredients) }
         return ShoppingListBuilder.build(
-            from: Household.scaled(ingredients, portions: Household.portions(in: context)), owned: owned, pantry: plan.pantry
+            from: Household.scaled(ingredients, portions: Household.portions(in: context)), owned: owned,
+            pantry: plan.pantry + carriedStock(for: plan, in: context)
         )
     }
 

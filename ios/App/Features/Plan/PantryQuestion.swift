@@ -42,6 +42,7 @@ struct PantryQuestion: View {
     @Binding var hasPantry: Bool
     @Binding var rows: [PantryRow]
     let suggestions: [IngredientDTO]
+    var suggestionsTitle: LocalizedStringKey = "Restes de ta dernière liste"
 
     private var remainingSuggestions: [IngredientDTO] {
         suggestions.filter { suggestion in !rows.contains { $0.name == suggestion.name } }
@@ -61,7 +62,7 @@ struct PantryQuestion: View {
                     .font(Theme.text(.footnote))
                     .foregroundStyle(Theme.muted)
                 if !remainingSuggestions.isEmpty {
-                    Text("Restes de ta dernière liste")
+                    Text(suggestionsTitle)
                         .font(Theme.text(.subheadline, .semibold))
                     suggestionButtons
                 }

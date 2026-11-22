@@ -92,6 +92,7 @@ targets:
         UILaunchScreen: {}
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
         ITSAppUsesNonExemptEncryption: false
+        NSRemindersFullAccessUsageDescription: "Ajouter ta liste de courses dans Rappels, quand tu le demandes."
         NSCameraUsageDescription: "Scanner le code-barres d'un aliment pour l'ajouter au journal."
         NSHealthShareUsageDescription: "Lire ton poids et ta dépense active pour affiner tes cibles, si tu actives Apple Santé."
         NSHealthUpdateUsageDescription: "Enregistrer les apports de ton journal dans Apple Santé, si tu l'actives."

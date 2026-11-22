@@ -13,6 +13,8 @@ struct ShoppingListView: View {
     /// Aliment tout juste banni et nombre de repas à venir qui en contiennent.
     @State private var banned: (food: String, meals: [Meal])?
     @Query var profiles: [Profile]
+    /// Résultat de l'envoi vers Rappels.
+    @State private var remindersMessage: String?
     @Environment(AppModel.self) private var model
 
     private var activePlans: [WeeklyPlan] { plans.sorted { $0.startDay < $1.startDay } }
@@ -34,6 +36,27 @@ struct ShoppingListView: View {
                 }
             }
             .navigationTitle("Ma liste")
+            .toolbar {
+                if let plan = shownPlan, !ShoppingExport.toBuy(plan).isEmpty {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Menu {
+                            ShareLink(item: ShoppingExport.text(plan)) {
+                                Label("Partager en texte", systemImage: "text.bubble")
+                            }
+                            Button("Envoyer vers Rappels", systemImage: "checklist") { sendToReminders(plan) }
+                        } label: {
+                            Label("Partager la liste", systemImage: "square.and.arrow.up")
+                        }
+                        .accessibilityIdentifier("shareShoppingList")
+                    }
+                }
+            }
+            .alert(
+                remindersMessage ?? "",
+                isPresented: Binding(get: { remindersMessage != nil }, set: { if !$0 { remindersMessage = nil } })
+            ) {
+                Button("OK", role: .cancel) {}
+            }
             .alert(
                 String(localized: "« \(banned?.food ?? "") » banni"),
                 isPresented: Binding(get: { banned != nil }, set: { if !$0 { banned = nil } })
@@ -54,6 +77,22 @@ struct ShoppingListView: View {
                 } else {
                     Text("Plus jamais proposé dans tes plannings.")
                 }
+            }
+        }
+    }
+
+    private func sendToReminders(_ plan: WeeklyPlan) {
+        let lines = ShoppingExport.toBuy(plan).flatMap(\.items).map(ShoppingExport.line)
+        Task {
+            do {
+                let added = try await ShoppingExport.sendToReminders(lines)
+                remindersMessage = added == 0
+                    ? String(localized: "Liste déjà à jour dans Rappels.")
+                    : String(localized: "\(added) articles ajoutés à « Courses Shreddish » dans Rappels.")
+            } catch ShoppingExport.RemindersError.denied {
+                remindersMessage = String(localized: "Accès à Rappels refusé. Autorise-le dans Réglages → Shreddish.")
+            } catch {
+                remindersMessage = String(localized: "Envoi vers Rappels impossible.")
             }
         }
     }
@@ -80,6 +119,18 @@ struct ShoppingListView: View {
                 Text("Prix médians en France, paquets entiers. Appui long sur un article pour le bannir.")
                     .font(Theme.text(.subheadline))
                     .foregroundStyle(Theme.muted)
+                let carried = PlanStore.carriedStock(for: plan, in: context)
+                if !carried.isEmpty {
+                    Label(
+                        String(localized: """
+                            Restes déjà achetés la semaine d'avant déduits : \(carried.map(\.name).formatted(.list(type: .and))).
+                            """),
+                        systemImage: "arrow.uturn.down"
+                    )
+                    .font(Theme.text(.footnote))
+                    .foregroundStyle(Theme.success)
+                    .accessibilityIdentifier("carriedStock")
+                }
                 VStack(alignment: .leading, spacing: 12) {
                     if let preferences = allPreferences.first {
                         WeekCostRow(summary: summary, preferences: preferences)
@@ -97,12 +148,14 @@ struct ShoppingListView: View {
                 ForEach(visible, id: \.self) { aisle in
                     AisleCard(aisle: aisle, items: grouped[aisle] ?? [], toggle: { item in
                         item.isChecked.toggle()
+                        PlanStore.rebuildFollowingShoppingList(after: plan, in: context)
                         try? context.save()
                     }, ban: ban)
                 }
                 if checked > 0 {
                     Button("Tout décocher") {
                         for item in items { item.isChecked = false }
+                        PlanStore.rebuildFollowingShoppingList(after: plan, in: context)
                         try? context.save()
                     }
                     .buttonStyle(PillButtonStyle(prominent: false))

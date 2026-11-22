@@ -214,7 +214,7 @@ final class PlanGenerator {
     /// Régénère un jour ; les autres jours restent intacts (US3).
     @discardableResult
     func regenerateDay(
-        _ day: DayPlan, profile: Profile, preferences: Preferences, in store: ModelContext
+        _ day: DayPlan, profile: Profile, preferences: Preferences, pantry: [IngredientDTO] = [], in store: ModelContext
     ) async throws(AIError) -> [ValidationIssue] {
         guard let plan = day.plan else { throw .unexpected("Jour sans planning") }
         let portions = Household.portions(in: store)
@@ -223,7 +223,9 @@ final class PlanGenerator {
             apiKey: ctx.apiKey, targets: plan.targets ?? ctx.targets, goal: ctx.goal, preferences: ctx.preferences,
             constraints: Self.perPortion(preferences.constraints(targets: (plan.targets ?? ctx.targets).macros), portions),
             model: ctx.model,
-            resolver: ctx.resolver, oil: ctx.oil, pantry: plan.pantry
+            resolver: ctx.resolver, oil: ctx.oil,
+            // Ingrédients à écouler choisis pour ce jour, sinon ceux de la semaine.
+            pantry: pantry.isEmpty ? plan.pantry : Self.resolvedPantry(pantry, resolver: ctx.resolver)
         )
         let avoid = plan.days.flatMap(\.meals).map(\.name)
         let otherDaysCost = plan.days.filter { $0.persistentModelID != day.persistentModelID }.reduce(0) { $0 + $1.plannedCostEUR }
