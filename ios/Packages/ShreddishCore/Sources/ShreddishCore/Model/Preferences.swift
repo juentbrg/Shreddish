@@ -208,11 +208,13 @@ public struct SupplementInfo: Codable, Sendable, Equatable {
     public var doseAmount: Double?
     public var doseUnit: SupplementUnit?
     public var dosesPerDay: Int?
+    /// Goût (ex. « chocolat ») ; nil = neutre ou non précisé.
+    public var flavor: String?
 
     public init(
         kind: SupplementKind? = nil, servingG: Double? = nil, kcalPerServing: Double? = nil,
         proteinPerServingG: Double? = nil, carbsPerServingG: Double? = nil, fatPerServingG: Double? = nil,
-        doseAmount: Double? = nil, doseUnit: SupplementUnit? = nil, dosesPerDay: Int? = nil
+        doseAmount: Double? = nil, doseUnit: SupplementUnit? = nil, dosesPerDay: Int? = nil, flavor: String? = nil
     ) {
         self.kind = kind
         self.servingG = servingG
@@ -223,6 +225,7 @@ public struct SupplementInfo: Codable, Sendable, Equatable {
         self.doseAmount = doseAmount
         self.doseUnit = doseUnit
         self.dosesPerDay = dosesPerDay
+        self.flavor = flavor
     }
 
     public var isEmpty: Bool { self == SupplementInfo() }

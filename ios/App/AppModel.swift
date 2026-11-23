@@ -82,6 +82,8 @@ final class AppModel {
     var liveMeals: [String] = []
     var errorMessage: String?
     var warningMessage: String?
+    /// Dernier repas remplacé à la main : on peut le remettre (appui involontaire, objet tombé sur l'écran).
+    var undoableReplacement: ReplacedMeal?
     /// Dernier ajustement de calibration appliqué (spec 002).
     var calibrationMessage: String?
 
@@ -235,4 +237,12 @@ final class AppModel {
         }
         return nil
     }
+}
+
+/// Repas d'avant un remplacement : jour, rang, contenu et statut.
+struct ReplacedMeal {
+    let dayID: PersistentIdentifier
+    let order: Int
+    let previous: MealDTO
+    let status: MealStatus
 }

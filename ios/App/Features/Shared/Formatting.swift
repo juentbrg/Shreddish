@@ -36,6 +36,14 @@ enum Format {
         }
     }
 
+    /// Part d'un fruit ou légume : « ½ pièce », « 1 pièce », « 1 ½ pièce ».
+    static func pieces(_ count: Double) -> String {
+        let whole = Int(count)
+        let half = count - Double(whole) >= 0.5
+        let text = whole == 0 ? "½" : half ? "\(whole) ½" : "\(whole)"
+        return String(localized: "\(text) pièce")
+    }
+
     /// Paquets à acheter : « 2 × 400 g », « 1 × 12 », ou la quantité au détail (spec 013).
     static func packing(_ packing: Packing, quantity: Double, unit: MeasureUnit) -> String {
         guard let size = packing.packSize, packing.packCount > 0 else { return Self.quantity(quantity, unit: unit) }

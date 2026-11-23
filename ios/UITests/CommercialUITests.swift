@@ -362,4 +362,33 @@ extension OnboardingUITests {
         XCTAssertTrue(app.staticTexts["Semaine à venir"].waitForExistence(timeout: 3))
         XCTAssertTrue(app.buttons["day-0"].exists)
     }
+
+    /// « Autre idée de repas » demande confirmation, puis l'ancien repas peut être remis.
+    func testReplaceMealAsksThenUndo() {
+        let app = launch()
+        onboard(app)
+        app.tabBars.buttons["Semaine"].tap()
+        app.buttons["generateWeek"].tap()
+        app.buttons["startGeneration"].tap()
+        XCTAssertTrue(app.buttons["day-0"].waitForExistence(timeout: 10))
+        let original = app.buttons.containing(NSPredicate(format: "label CONTAINS 'J1'")).firstMatch
+        XCTAssertTrue(original.waitForExistence(timeout: 5))
+        let originalLabel = original.label
+        original.tap()
+        let replace = app.buttons["replaceMeal"]
+        XCTAssertTrue(replace.waitForExistence(timeout: 5))
+        reveal(replace, in: app)
+        replace.tap()
+        let confirm = app.buttons["Remplacer"]
+        XCTAssertTrue(confirm.waitForExistence(timeout: 3))
+        Self.saveScreenshot(app, name: "replace-confirm")
+        confirm.tap()
+        let undo = app.buttons["undoReplacement"]
+        XCTAssertTrue(undo.waitForExistence(timeout: 15))
+        XCTAssertTrue(app.buttons.containing(NSPredicate(format: "label CONTAINS 'remplacé'")).firstMatch.exists)
+        Self.saveScreenshot(app, name: "replace-undo")
+        undo.tap()
+        XCTAssertTrue(app.buttons.containing(NSPredicate(format: "label == %@", originalLabel)).firstMatch.waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["undoReplacement"].exists)
+    }
 }

@@ -2,7 +2,7 @@ import Foundation
 
 /// Ajuste les portions d'un jour (ou d'un repas) pour atteindre les cibles, avec les macros Ciqual (spec 010).
 /// Trois leviers : sources de protéines, féculents, matières grasses, chacun multiplié par un facteur borné.
-/// Légumes, pièces et compléments ne bougent pas.
+/// Légumes, pièces, fruits et légumes par moitié (`WholeProduce`) et compléments ne bougent pas.
 public enum PortionAdjuster {
     public static let factorRange = 0.6...1.6
     /// Matières grasses (huile, beurre, oléagineux) : petites quantités, marge plus large.
@@ -93,6 +93,7 @@ public enum PortionAdjuster {
             guard let perGram = resolver.macrosPerGram(of: ingredient), let grams = ingredient.grams else { return nil }
             let macros = perGram * grams
             let adjustable = ingredient.measureUnit != .piece && resolver.supplement(for: ingredient.name) == nil
+                && !WholeProduce.isWhole(ingredient)
             parts.append(Part(macros: macros, lever: adjustable ? lever(perGram) : nil))
         }
         return parts
@@ -144,6 +145,7 @@ public enum PortionAdjuster {
             var ingredient = ingredient
             guard let perGram = resolver.macrosPerGram(of: ingredient) else { return ingredient }
             let adjustable = ingredient.measureUnit != .piece && resolver.supplement(for: ingredient.name) == nil
+                && !WholeProduce.isWhole(ingredient)
             if adjustable, let lever = lever(perGram) {
                 ingredient.quantity = roundedQuantity(ingredient.quantity * factors[lever.rawValue])
                 AIOutputValidator.applyUnitPrice(&ingredient)

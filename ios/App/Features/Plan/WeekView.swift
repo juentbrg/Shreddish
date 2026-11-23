@@ -79,18 +79,6 @@ struct WeekView: View {
                 }
                 .presentationDetents([.medium, .large])
             }
-            .confirmationDialog(
-                "Supprimer ce planning ?", isPresented: $confirmDelete, titleVisibility: .visible
-            ) {
-                Button("Supprimer le planning", role: .destructive) {
-                    if let plan = shownPlan {
-                        selectedPlanID = nil
-                        try? PlanStore.deletePlan(plan, in: context)
-                    }
-                }
-            } message: {
-                Text("Repas, courses et journal de ces jours supprimés. Pesées conservées.")
-            }
         }
     }
 
@@ -142,6 +130,18 @@ struct WeekView: View {
                 }
             } label: {
                 Label("Options", systemImage: "ellipsis.circle")
+            }
+            .confirmationDialog(
+                "Supprimer ce planning ?", isPresented: $confirmDelete, titleVisibility: .visible
+            ) {
+                Button("Supprimer le planning", role: .destructive) {
+                    if let plan = shownPlan {
+                        selectedPlanID = nil
+                        try? PlanStore.deletePlan(plan, in: context)
+                    }
+                }
+            } message: {
+                Text("Repas, courses et journal de ces jours supprimés. Pesées conservées.")
             }
             .accessibilityIdentifier("weekMenu")
         }

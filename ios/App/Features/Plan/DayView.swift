@@ -11,12 +11,21 @@ struct DayContent: View {
     @Query var members: [HouseholdMember]
     let day: DayPlan
     @State private var confirmRegenerate = false
+    /// Repas à remplacer, en attente de confirmation.
+    @State private var mealToReplace: Meal?
 
     private var isEditable: Bool { day.plan?.isCurrent == true }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             DayHeroCard(day: day, targets: day.plan?.targets)
+            if let replaced = model.undoableReplacement, replaced.dayID == day.persistentModelID {
+                UndoReplacementCard(name: replaced.previous.name) {
+                    MealReplacement.undo(model: model, context: context)
+                } dismiss: {
+                    model.undoableReplacement = nil
+                }
+            }
             VStack(alignment: .leading, spacing: 10) {
                 SectionTitle(
                     title: "Au menu",
@@ -33,8 +42,17 @@ struct DayContent: View {
                     .buttonStyle(.plain)
                     .contextMenu {
                         if isEditable {
-                            Button("Remplacer ce repas", systemImage: "arrow.triangle.2.circlepath") { replace(meal) }
+                            Button("Remplacer ce repas", systemImage: "arrow.triangle.2.circlepath") { mealToReplace = meal }
                         }
+                    }
+                    .confirmationDialog(
+                        "Remplacer ce repas ?",
+                        isPresented: Binding(get: { mealToReplace === meal }, set: { if !$0 { mealToReplace = nil } }),
+                        titleVisibility: .visible
+                    ) {
+                        Button("Remplacer", role: .destructive) { replace(meal) }
+                    } message: {
+                        Text("« \(meal.name) » et sa recette seront remplacés par une autre idée.")
                     }
                 }
             }
@@ -208,13 +226,29 @@ struct MealCard: View {
 @MainActor
 enum MealReplacement {
     static func run(meal: Meal, profile: Profile?, preferences: Preferences?, model: AppModel, context: ModelContext) {
-        guard let profile, let preferences else { return }
+        guard let profile, let preferences, let day = meal.day else { return }
         let generator = model.generator
+        let previous = ReplacedMeal(dayID: day.persistentModelID, order: meal.order, previous: meal.dto, status: meal.status)
         Task {
-            await model.run("Recherche d'une alternative…") { () async throws(AIError) -> [ValidationIssue] in
-                try await generator.replaceMeal(meal, profile: profile, preferences: preferences, in: context)
+            var replaced = false
+            await model.run("Recherche d'une alternative…", recipesIn: context) { () async throws(AIError) -> [ValidationIssue] in
+                let warnings = try await generator.replaceMeal(meal, profile: profile, preferences: preferences, in: context)
+                replaced = true
+                return warnings
             }
+            if replaced { model.undoableReplacement = previous }
         }
+    }
+
+    /// Remet le repas d'avant le dernier remplacement, recette et statut compris.
+    static func undo(model: AppModel, context: ModelContext) {
+        guard let replaced = model.undoableReplacement else { return }
+        model.undoableReplacement = nil
+        guard let day = context.model(for: replaced.dayID) as? DayPlan,
+              let current = day.meals.first(where: { $0.order == replaced.order }),
+              let restored = try? PlanStore.replaceMeal(current, with: replaced.previous, in: context) else { return }
+        restored.status = replaced.status
+        try? context.save()
     }
 
     /// « Remplacer ce repas » ou « Remplacer les 3 repas ».

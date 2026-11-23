@@ -60,20 +60,20 @@ struct PlanHistoryView: View {
                 .contextMenu {
                     Button("Supprimer ce planning", systemImage: "trash", role: .destructive) { pendingDeletion = plan }
                 }
+                .confirmationDialog(
+                    String(localized: "Supprimer ce planning ?"),
+                    isPresented: Binding(get: { pendingDeletion === plan }, set: { if !$0 { pendingDeletion = nil } }),
+                    titleVisibility: .visible
+                ) {
+                    Button("Supprimer", role: .destructive) {
+                        context.delete(plan)
+                        try? context.save()
+                        pendingDeletion = nil
+                    }
+                } message: {
+                    Text("Repas, journal et courses supprimés. Irréversible.")
+                }
             }
-        }
-        .confirmationDialog(
-            String(localized: "Supprimer ce planning ?"),
-            isPresented: Binding(get: { pendingDeletion != nil }, set: { if !$0 { pendingDeletion = nil } }),
-            titleVisibility: .visible
-        ) {
-            Button("Supprimer", role: .destructive) {
-                if let plan = pendingDeletion { context.delete(plan) }
-                try? context.save()
-                pendingDeletion = nil
-            }
-        } message: {
-            Text("Repas, journal et courses supprimés. Irréversible.")
         }
         .overlay {
             if plans.isEmpty {

@@ -421,6 +421,34 @@
         }
       }
     },
+    "%@ pièce": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ Stück"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ piece"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ pieza"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ pezzo"
+          }
+        }
+      }
+    },
     "%@ portion": {
       "localizations": {
         "de": {
@@ -879,6 +907,12 @@
     },
     "%lld jours prévus remplacés, les autres restent.": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld geplante Tage ersetzt, die anderen bleiben."
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -891,12 +925,6 @@
             "value": "%lld días previstos sustituidos, los demás se mantienen."
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld geplante Tage ersetzt, die anderen bleiben."
-          }
-        },
         "it": {
           "stringUnit": {
             "state": "translated",
@@ -905,7 +933,6 @@
         }
       }
     },
-    "%lld kcal": {},
     "%lld min avant": {
       "localizations": {
         "de": {
@@ -1448,6 +1475,12 @@
     },
     "1 jour prévu remplacé, les autres restent.": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 geplanter Tag ersetzt, die anderen bleiben."
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -1458,12 +1491,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "1 día previsto sustituido, los demás se mantienen."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "1 geplanter Tag ersetzt, die anderen bleiben."
           }
         },
         "it": {
@@ -1623,6 +1650,12 @@
     },
     "7 jours": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "7 Tage"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -1633,12 +1666,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "7 días"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "7 Tage"
           }
         },
         "it": {
@@ -2807,6 +2834,12 @@
     },
     "Aucun jour prévu remplacé.": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kein geplanter Tag ersetzt."
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -2817,12 +2850,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ningún día previsto sustituido."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kein geplanter Tag ersetzt."
           }
         },
         "it": {
@@ -2948,6 +2975,12 @@
     },
     "Aujourd'hui archivé, journal conservé.": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Heute archiviert, Tagebuch bleibt erhalten."
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -2958,12 +2991,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Hoy archivado, registro conservado."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Heute archiviert, Tagebuch bleibt erhalten."
           }
         },
         "it": {
@@ -3172,6 +3199,12 @@
     },
     "Avant le planning suivant": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vor dem nächsten Plan"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -3182,12 +3215,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Antes del siguiente plan"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vor dem nächsten Plan"
           }
         },
         "it": {
@@ -3817,6 +3844,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Calorie (kcal)"
+          }
+        }
+      }
+    },
+    "Calories et macros comptées. Goût respecté dans les recettes.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calories and macros counted. Flavor respected in recipes."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calorías y macros contabilizadas. Sabor respetado en las recetas."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kalorien und Makros werden gezählt. Geschmack wird in Rezepten berücksichtigt."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calorie e macro conteggiate. Gusto rispettato nelle ricette."
           }
         }
       }
@@ -4994,6 +5049,12 @@
     "Dernier jour": {
       "extractionState": "manual",
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Letzter Tag"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -5004,12 +5065,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Último día"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Letzter Tag"
           }
         },
         "it": {
@@ -5230,10 +5285,10 @@
     },
     "Du %@ au %@, %lld jours.": {
       "localizations": {
-        "fr": {
+        "de": {
           "stringUnit": {
-            "state": "new",
-            "value": "Du %1$@ au %2$@, %3$lld jours."
+            "state": "translated",
+            "value": "Von %@ bis %@, %lld Tage."
           }
         },
         "en": {
@@ -5248,10 +5303,10 @@
             "value": "Del %@ al %@, %lld días."
           }
         },
-        "de": {
+        "fr": {
           "stringUnit": {
-            "state": "translated",
-            "value": "Von %@ bis %@, %lld Tage."
+            "state": "new",
+            "value": "Du %1$@ au %2$@, %3$lld jours."
           }
         },
         "it": {
@@ -6394,6 +6449,34 @@
         }
       }
     },
+    "Goût (ex. chocolat, vanille)": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geschmack (z. B. Schokolade, Vanille)"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Flavor (e.g. chocolate, vanilla)"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sabor (p. ej. chocolate, vainilla)"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gusto (es. cioccolato, vaniglia)"
+          }
+        }
+      }
+    },
     "Grand supermarché": {
       "localizations": {
         "de": {
@@ -7184,6 +7267,12 @@
     },
     "Jusqu'à dimanche": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bis Sonntag"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -7194,12 +7283,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Hasta el domingo"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bis Sonntag"
           }
         },
         "it": {
@@ -7326,6 +7409,12 @@
     },
     "Le %@, 1 jour.": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Am %@, 1 Tag."
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -7336,12 +7425,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "El %@, 1 día."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Am %@, 1 Tag."
           }
         },
         "it": {
@@ -12135,6 +12218,34 @@
         }
       }
     },
+    "Remettre l'ancien repas": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vorherige Mahlzeit wiederherstellen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bring back the previous meal"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recuperar la comida anterior"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ripristina il pasto precedente"
+          }
+        }
+      }
+    },
     "Remplacement de %lld repas…": {
       "localizations": {
         "de": {
@@ -12197,6 +12308,34 @@
         }
       }
     },
+    "Remplacer": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ersetzen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Replace"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sustituir"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sostituisci"
+          }
+        }
+      }
+    },
     "Remplacer ce repas": {
       "localizations": {
         "de": {
@@ -12221,6 +12360,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sostituisci questo pasto"
+          }
+        }
+      }
+    },
+    "Remplacer ce repas ?": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diese Mahlzeit ersetzen?"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Replace this meal?"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Sustituir esta comida?"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sostituire questo pasto?"
           }
         }
       }
@@ -16096,6 +16263,34 @@
         }
       }
     },
+    "« %@ » a été remplacé.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "„%@“ wurde ersetzt."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“%@” was replaced."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "«%@» se ha sustituido."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "«%@» è stato sostituito."
+          }
+        }
+      }
+    },
     "« %@ » banni": {
       "localizations": {
         "de": {
@@ -16120,6 +16315,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "«%@» escluso"
+          }
+        }
+      }
+    },
+    "« %@ » et sa recette seront remplacés par une autre idée.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "„%@“ und das Rezept werden durch eine andere Idee ersetzt."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“%@” and its recipe will be replaced with another idea."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "«%@» y su receta se sustituirán por otra idea."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "«%@» e la sua ricetta saranno sostituiti da un'altra idea."
           }
         }
       }

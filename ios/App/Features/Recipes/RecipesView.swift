@@ -132,6 +132,13 @@ struct SavedRecipeView: View {
                 RecipeSteps(steps: recipe.steps)
                 Button("Retirer des recettes", systemImage: "trash", role: .destructive) { confirmDelete = true }
                     .buttonStyle(PillButtonStyle(prominent: false))
+                    .confirmationDialog("Retirer cette recette ?", isPresented: $confirmDelete, titleVisibility: .visible) {
+                        Button("Retirer", role: .destructive) {
+                            context.delete(recipe)
+                            try? context.save()
+                            dismiss()
+                        }
+                    }
                     .padding(.horizontal, 20)
             }
             .padding(.bottom, 28)
@@ -149,13 +156,6 @@ struct SavedRecipeView: View {
             MealEditView(meal: recipe.dto, title: "Modifier la recette") { meal in
                 recipe.apply(meal)
                 try? context.save()
-            }
-        }
-        .confirmationDialog("Retirer cette recette ?", isPresented: $confirmDelete, titleVisibility: .visible) {
-            Button("Retirer", role: .destructive) {
-                context.delete(recipe)
-                try? context.save()
-                dismiss()
             }
         }
     }

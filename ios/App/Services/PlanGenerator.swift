@@ -294,9 +294,11 @@ final class PlanGenerator {
         guard let draft = result.sanitized else { throw .invalidOutput("Repas invalide") }
         // Spec 010 : macros Ciqual, portions ajustées aux macros restantes du jour.
         await answerFoodQuestions(for: [draft], ctx: base)
-        let (resolved, verified) = base.resolver.resolve(draft)
+        let (resolved, verified) = resolvedWithParts(draft, resolver: base.resolver)
         let remaining = targets.macros - Totals.planned(others)
-        let replacement = PortionAdjuster.adjust([resolved], to: remaining, resolver: base.resolver, oil: base.oil)[0]
+        var replacement = PortionAdjuster.adjust([resolved], to: remaining, resolver: base.resolver, oil: base.oil)[0]
+        // Étapes écrites pour les quantités d'avant ajustement : réécrites par le rédacteur de recettes.
+        if !RecipeConsistency.stepsMatch(replacement) { replacement.steps = [] }
         do { try PlanStore.replaceMeal(meal, with: replacement, in: store) } catch { throw .unexpected("Enregistrement impossible") }
         return result.warnings.filter { !$0.isRecomputed } + (verified ? [] : [.unverifiedMeals(count: 1)])
     }

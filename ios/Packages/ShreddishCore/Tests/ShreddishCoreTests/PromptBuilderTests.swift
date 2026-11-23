@@ -68,7 +68,7 @@ struct PromptBuilderTests {
             "training_sessions_per_week", "previous_attempt_feedback", "reference_prices_eur_per_kg", "pack_sizes",
             "ingredients_to_use", "quantity", "unit", "recipes_to_include", "ingredients",
             "protein_g_per_serving", "serving_g", "kind", "kcal_per_serving", "carbs_g_per_serving",
-            "fat_g_per_serving", "dose", "doses_per_day", "eating_window", "diets", "language",
+            "fat_g_per_serving", "dose", "doses_per_day", "eating_window", "diets", "language", "flavor",
         ]
         for text in texts {
             let keys = Self.allKeys(try JSONSerialization.jsonObject(with: Data(text.utf8)))
@@ -150,6 +150,24 @@ struct PromptBuilderTests {
         preferences.setSupplementInfo(SupplementInfo(), for: "Whey")
         preferences.setSupplementInfo(SupplementInfo(), for: "Créatine")
         #expect(preferences.supplementInfoData == nil)
+    }
+
+    @Test func supplementFlavorReachesWeekAndRecipe() {
+        let preferences = Preferences()
+        preferences.supplementList = ["Whey", "Créatine"]
+        preferences.setSupplementInfo(SupplementInfo(servingG: 30, flavor: "chocolat "), for: "Whey")
+        let prompt = preferences.promptPreferences
+        #expect(PromptBuilder.weekInput(targets: referenceTargets, goal: .cut, preferences: prompt)
+            .contains("\"flavor\":\"chocolat\""))
+        let meal = MealDTO(
+            type: .snack, name: "Shake", ingredients: [
+                IngredientDTO(name: "Whey protéine", quantity: 30, unit: "g", aisle: .autre, costEur: 0, unitPriceEur: 0),
+                IngredientDTO(name: "Lait", quantity: 250, unit: "ml", aisle: .cremerie, costEur: 0.3, unitPriceEur: 1),
+            ], steps: [], prepMinutes: 2, costEur: 0.3, kcal: 230, proteinG: 30, carbsG: 14, fatG: 4, prepSessionRef: nil
+        )
+        let recipe = PromptBuilder.recipeInput(meal: meal, supplementDoses: [], preferences: prompt)
+        #expect(recipe.contains("\"flavor\":\"chocolat\""))
+        #expect(recipe.components(separatedBy: "flavor").count == 2)
     }
 
     @Test(arguments: [

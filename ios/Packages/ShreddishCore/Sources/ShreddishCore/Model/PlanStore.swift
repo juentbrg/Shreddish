@@ -200,6 +200,21 @@ public enum PlanStore {
             .map(\.element)
     }
 
+    /// Recettes des repas prévus à partir de `today` dont les étapes ne citent pas les quantités du repas :
+    /// effacées pour être réécrites. Renvoie le nombre de recettes effacées.
+    @discardableResult
+    public static func clearStaleRecipes(from today: LocalDay, in context: ModelContext) -> Int {
+        var cleared = 0
+        for day in activePlans(in: context).flatMap(\.days) where day.day >= today {
+            for meal in day.meals where meal.status == .planned && !RecipeConsistency.stepsMatch(meal.dto) {
+                meal.steps = []
+                cleared += 1
+            }
+        }
+        if cleared > 0 { try? context.save() }
+        return cleared
+    }
+
     /// Nettoyage au lancement : tirets cadratins des textes déjà générés, ancien modèle IA par défaut.
     public static func cleanUpStoredData(in context: ModelContext) {
         let clean = TextNormalizer.withoutDashes

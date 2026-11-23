@@ -62,9 +62,13 @@ public struct OwnedSupplement: Codable, Sendable, Equatable {
     /// « 5 g », « 1 gelule ».
     public var dose: String?
     public var dosesPerDay: Int?
+    /// Goût du produit (ex. « chocolat »).
+    public var flavor: String?
 
     public init(name: String, info: SupplementInfo = SupplementInfo()) {
         self.name = name
+        let flavor = info.flavor?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        self.flavor = flavor.isEmpty ? nil : flavor
         kind = info.resolvedKind(for: name)
         switch kind {
         case .macro:
@@ -354,7 +358,7 @@ public enum PromptBuilder {
         macros du complément = quantité ÷ serving_g × kcal_per_serving, protein_g_per_serving, \
         carbs_g_per_serving, fat_g_per_serving ; indique la dose en scoops (ex. « 1 scoop de 30 g »). \
         kind "dose" (créatine, vitamines, oméga-3…) : ni macro ni ingrédient, la prise est ajoutée par \
-        l'application.
+        l'application. flavor : goût du produit, à n'utiliser que là où il va (ex. chocolat : sucré, jamais salé).
         - training_time et training_sessions_per_week : place la collation ou le repas protéiné autour de \
         l'entraînement ; sans heure connue, suppose une séance en fin de journée.
         - time : heure conseillée « HH:mm » de chaque repas, cohérente sur la journée (petit-déjeuner 7:00-9:00, \
@@ -367,7 +371,7 @@ public enum PromptBuilder {
         - Variété : un même plat principal au plus 2 fois par semaine, sauf préparation batch cooking. Change \
         vraiment de plat, pas seulement de nom : la même association protéine principale + féculent (ex. \
         poulet + riz, thon + pâtes) au plus 2 fois par semaine sur les déjeuners et dîners.
-        - Privilégie liked_foods.
+        - Privilégie liked_foods. Avocat, banane, pomme, citron, poivron, oignon et autre fruit ou légume entamé : ½ pièce minimum.
         - task "week" : toujours day_count jours, day_offset 0 à day_count - 1 (0 = jour de génération), \
         weekly_budget_eur couvre ces jours. La période est fixe : jamais un motif d'infeasible.
         - batch_cooking vrai : 1 ou 2 prep_sessions (index 0, 1), et les repas issus d'une session ont \
@@ -398,7 +402,8 @@ public enum PromptBuilder {
         Tu rédiges la recette d'un repas déjà composé. Tu reçois un JSON de contexte et tu réponds uniquement \
         avec le JSON demandé par le schéma, en français sauf si language est indiqué : étapes dans cette langue.
         - Utilise exactement les ingrédients et quantités de meal.ingredients, sans en ajouter d'autres que \
-        sel, poivre, épices, herbes et eau.
+        sel, poivre, épices, herbes et eau. Chaque quantité citée dans les étapes est celle de meal.ingredients, \
+        jamais arrondie ni modifiée. pieces renseigné : écris la part, jamais les grammes (ex. « ½ avocat »).
         - Respecte meal.prep_minutes.
         - \(recipeRules)
         - supplement_doses : ajoute une étape pour chaque prise, avec la dose exacte et le moment \
@@ -412,6 +417,10 @@ public enum PromptBuilder {
             var name: String
             var quantity: Double
             var unit: String
+            /// Fruit ou légume par moitié : nombre de pièces (0,5 = ½).
+            var pieces: Double?
+            /// Complément possédé : son goût.
+            var flavor: String?
         }
 
         struct MealPayload: Encodable {
@@ -430,10 +439,21 @@ public enum PromptBuilder {
         var language: String?
     }
 
+    /// Goût du complément possédé cité par cet ingrédient (« Whey » → « chocolat »).
+    static func flavor(of ingredient: String, in supplements: [OwnedSupplement]) -> String? {
+        let name = TextNormalizer.singular(ingredient)
+        return supplements.first { name.contains(TextNormalizer.singular($0.name)) }?.flavor
+    }
+
     public static func recipeInput(meal: MealDTO, supplementDoses: [String], preferences: PromptPreferences) -> String {
         let payload = RecipeInput.MealPayload(
             type: meal.type, name: meal.name, time: meal.time, prepMinutes: meal.prepMinutes,
-            ingredients: meal.ingredients.map { .init(name: $0.name, quantity: $0.quantity, unit: $0.unit) }
+            ingredients: meal.ingredients.map {
+                .init(
+                    name: $0.name, quantity: $0.quantity, unit: $0.unit, pieces: WholeProduce.pieces(of: $0),
+                    flavor: flavor(of: $0.name, in: preferences.ownedSupplements)
+                )
+            }
         )
         return encodeAny(RecipeInput(
             meal: payload, supplementDoses: supplementDoses, equipment: preferences.equipment,

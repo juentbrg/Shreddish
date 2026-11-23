@@ -6,6 +6,7 @@ public enum SupplementPlacement {
     public static func doses(_ supplements: [OwnedSupplement]) -> [String] {
         supplements.filter { $0.kind == .dose }.map { supplement in
             var text = supplement.name
+            if let flavor = supplement.flavor { text += " goût \(flavor)" }
             if let dose = supplement.dose { text += " : \(dose)" }
             if let times = supplement.dosesPerDay, times > 1 { text += ", \(times) fois par jour" }
             return text

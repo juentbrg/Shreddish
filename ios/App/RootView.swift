@@ -19,6 +19,11 @@ struct RootView: View {
             tabs
                 .task {
                     PlanStore.cleanUpStoredData(in: context)
+                    // Une fois : recettes écrites avant l'ajustement des portions, réécrites aux bonnes quantités.
+                    if !UserDefaults.standard.bool(forKey: "staleRecipesCleared") {
+                        PlanStore.clearStaleRecipes(from: model.clock.today, in: context)
+                        UserDefaults.standard.set(true, forKey: "staleRecipesCleared")
+                    }
                     model.recipes.fillMissing(in: context)
                     model.calibrateIfDue(context: context)
                     await model.notifications.requestAuthorizationIfNeeded()

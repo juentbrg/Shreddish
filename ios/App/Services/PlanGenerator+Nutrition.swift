@@ -9,16 +9,27 @@ extension PlanGenerator {
         var unverified = 0
         let finished = days.map { day in
             let meals = day.meals.map { meal in
-                let (resolved, verified) = ctx.resolver.resolve(meal)
+                let (resolved, verified) = resolvedWithParts(meal, resolver: ctx.resolver)
                 if !verified { unverified += 1 }
                 return resolved
             }
-            return DayPlanDTO(
-                dayOffset: day.dayOffset,
-                meals: PortionAdjuster.adjust(meals, to: ctx.targets.macros, resolver: ctx.resolver, oil: ctx.oil)
-            )
+            // Étapes éventuelles de l'IA écrites pour d'autres quantités : la recette est rédigée ensuite.
+            let adjusted = PortionAdjuster.adjust(meals, to: ctx.targets.macros, resolver: ctx.resolver, oil: ctx.oil)
+            return DayPlanDTO(dayOffset: day.dayOffset, meals: adjusted.map { meal in
+                var meal = meal
+                meal.steps = []
+                return meal
+            })
         }
         return (finished, unverified)
+    }
+
+    /// Macros Ciqual, avocat, banane… ramenés à la demi-pièce (macros recalculées).
+    func resolvedWithParts(_ meal: MealDTO, resolver: NutritionResolver) -> (meal: MealDTO, verified: Bool) {
+        let first = resolver.resolve(meal)
+        let snapped = WholeProduce.snap(first.meal)
+        guard snapped.ingredients != first.meal.ingredients else { return first }
+        return resolver.resolve(snapped, keepCodes: true)
     }
 
     /// Un seul appel groupé pour les ingrédients ambigus ; en cas d'échec, macros de l'IA conservées.

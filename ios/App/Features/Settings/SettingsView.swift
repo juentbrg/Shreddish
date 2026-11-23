@@ -32,6 +32,11 @@ struct SettingsView: View {
             Section {
                 Button("Supprimer toutes mes données", role: .destructive) { confirmErase = true }
                     .accessibilityIdentifier("eraseAll")
+                    .confirmationDialog("Supprimer toutes tes données ?", isPresented: $confirmErase, titleVisibility: .visible) {
+                        Button("Tout supprimer", role: .destructive, action: eraseAll)
+                    } message: {
+                        Text("Irréversible.")
+                    }
             }
             ThemedSection("À propos") {
                 Text("Pas un avis médical. Données sur cet iPhone ; seules cibles et préférences vont à OpenAI. "
@@ -42,11 +47,6 @@ struct SettingsView: View {
         }
         .themedList()
         .navigationTitle("Réglages")
-        .confirmationDialog("Supprimer toutes tes données ?", isPresented: $confirmErase, titleVisibility: .visible) {
-            Button("Tout supprimer", role: .destructive, action: eraseAll)
-        } message: {
-            Text("Irréversible.")
-        }
     }
 }
 

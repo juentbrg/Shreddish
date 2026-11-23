@@ -250,7 +250,14 @@ private struct FoodsSections: View {
 
 extension SupplementsSection {
     /// Résumé sous le nom du complément.
+    /// « Chocolat · Dose de 30 g · … ».
     static func summary(_ info: SupplementInfo, name: String) -> String {
+        let values = values(info, name: name)
+        guard let flavor = info.flavor, !flavor.isEmpty else { return values }
+        return flavor.capitalizedFirst + " · " + values
+    }
+
+    private static func values(_ info: SupplementInfo, name: String) -> String {
         switch info.resolvedKind(for: name) {
         case .macro:
             guard let serving = info.servingG else {
@@ -300,10 +307,15 @@ private struct SupplementInfoView: View {
                     Text("Dose simple").tag(SupplementKind.dose)
                 }
                 .accessibilityIdentifier("supplementKind")
+                TextField("Goût (ex. chocolat, vanille)", text: Binding(
+                    get: { info.flavor ?? "" },
+                    set: { info.flavor = $0.isEmpty ? nil : $0 }
+                ))
+                .accessibilityIdentifier("supplementFlavor")
             } footer: {
                 ListFooter {
                     Text(kind == .macro
-                        ? "Calories et macros comptées."
+                        ? String(localized: "Calories et macros comptées. Goût respecté dans les recettes.")
                         : String(localized: "Aucune calorie, prise placée dans un repas."))
                 }
             }

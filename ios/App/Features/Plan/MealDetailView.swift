@@ -15,6 +15,8 @@ struct MealDetailView: View {
     /// Quantités pour tout le foyer plutôt que pour ta portion (spec 017).
     @State private var forHousehold = false
     @State private var editing = false
+    /// « Autre idée de repas » : confirmé avant de remplacer (repas déjà cuisiné, appui involontaire).
+    @State private var confirmReplace = false
     /// Aliment tout juste banni : propose de remplacer ce repas.
     @State private var banned: String?
     /// Repas à venir qui contiennent l'aliment tout juste banni (celui-ci compris).
@@ -30,15 +32,23 @@ struct MealDetailView: View {
                 steps
                 if meal.day?.plan?.isCurrent == true {
                     Button {
-                        MealReplacement.run(
-                            meal: meal, profile: profiles.first, preferences: allPreferences.first, model: model, context: context
-                        )
-                        dismiss()
+                        confirmReplace = true
                     } label: {
                         Label("Autre idée de repas", systemImage: "arrow.triangle.2.circlepath")
                     }
+                    .accessibilityIdentifier("replaceMeal")
                     .buttonStyle(PillButtonStyle(prominent: false))
                     .disabled(model.isBusy)
+                    .confirmationDialog("Remplacer ce repas ?", isPresented: $confirmReplace, titleVisibility: .visible) {
+                        Button("Remplacer", role: .destructive) {
+                            MealReplacement.run(
+                                meal: meal, profile: profiles.first, preferences: allPreferences.first, model: model, context: context
+                            )
+                            dismiss()
+                        }
+                    } message: {
+                        Text("« \(meal.name) » et sa recette seront remplacés par une autre idée.")
+                    }
                     .padding(.horizontal, 20)
                 }
             }
@@ -193,7 +203,8 @@ struct IngredientGrid: View {
                             .font(Theme.text(.subheadline, .semibold))
                             .foregroundStyle(Theme.ink)
                         Text(
-                            Format.quantity(ingredient.quantity, unit: ingredient.measureUnit ?? .g)
+                            (WholeProduce.pieces(of: ingredient).map(Format.pieces)
+                                ?? Format.quantity(ingredient.quantity, unit: ingredient.measureUnit ?? .g))
                                 + " · " + (isOwned ? String(localized: "possédé") : Format.euros(ingredient.costEur))
                         )
                         .font(Theme.text(.caption))
