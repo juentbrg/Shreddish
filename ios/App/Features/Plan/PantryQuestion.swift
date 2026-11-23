@@ -11,6 +11,9 @@ struct PantryRow: Identifiable, Equatable {
     /// Code Ciqual d'un reste proposé par l'application.
     var foodCode: Int?
     var pieceG: Double?
+    /// Proposé par l'application (reste, repas non mangé) : coché ou décoché, jamais supprimé.
+    var isSuggested = false
+    var isSelected = true
 
     init(name: String = "", quantity: String = "", unit: MeasureUnit = .g, foodCode: Int? = nil, pieceG: Double? = nil) {
         self.name = name
@@ -25,28 +28,25 @@ struct PantryRow: Identifiable, Equatable {
             name: ingredient.name, quantity: Format.number(ingredient.quantity, digits: 0),
             unit: ingredient.measureUnit ?? .g, foodCode: ingredient.foodCode, pieceG: ingredient.pieceG
         )
+        isSuggested = true
     }
 
     var ingredient: IngredientDTO? {
         let name = name.trimmingCharacters(in: .whitespaces)
         let value = Double(quantity.replacingOccurrences(of: ",", with: ".").trimmingCharacters(in: .whitespaces))
-        guard !name.isEmpty, let value, value > 0 else { return nil }
+        guard isSelected, !name.isEmpty, let value, value > 0 else { return nil }
         return IngredientDTO(
             name: name, quantity: value, unit: unit.rawValue, aisle: .autre, costEur: 0, pieceG: pieceG, foodCode: foodCode
         )
     }
 }
 
-/// « As-tu des ingrédients à écouler ? » : facultatif ; oui, liste éditable avec les restes de la semaine passée.
+/// « As-tu des ingrédients à écouler ? » : facultatif ; oui, restes proposés à cocher puis saisies libres.
 struct PantryQuestion: View {
     @Binding var hasPantry: Bool
     @Binding var rows: [PantryRow]
     let suggestions: [IngredientDTO]
     var suggestionsTitle: LocalizedStringKey = "Restes de ta dernière liste"
-
-    private var remainingSuggestions: [IngredientDTO] {
-        suggestions.filter { suggestion in !rows.contains { $0.name == suggestion.name } }
-    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -61,34 +61,25 @@ struct PantryQuestion: View {
                 Text("Restes, conserves, féculents… L'IA s'en sert en priorité et ils sont déduits des courses.")
                     .font(Theme.text(.footnote))
                     .foregroundStyle(Theme.muted)
-                if !remainingSuggestions.isEmpty {
+                if rows.contains(where: \.isSuggested) {
                     Text(suggestionsTitle)
                         .font(Theme.text(.subheadline, .semibold))
-                    suggestionButtons
+                    VStack(spacing: 0) {
+                        ForEach($rows) { $row in
+                            if row.isSuggested {
+                                SuggestedPantryRow(row: $row)
+                                if row.id != rows.last(where: \.isSuggested)?.id { Divider().overlay(Theme.line) }
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 14)
+                    .background(Theme.card, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+                    Text("Autres ingrédients")
+                        .font(Theme.text(.subheadline, .semibold))
+                        .padding(.top, 4)
                 }
                 ForEach($rows) { $row in
-                    HStack(spacing: 8) {
-                        TextField("Ingrédient", text: $row.name)
-                            .textInputAutocapitalization(.sentences)
-                            .accessibilityIdentifier("pantryName")
-                        TextField("Qté", text: $row.quantity)
-                            .keyboardType(.decimalPad)
-                            .multilineTextAlignment(.trailing)
-                            .frame(width: 64)
-                            .accessibilityIdentifier("pantryQuantity")
-                        Picker("Unité", selection: $row.unit) {
-                            Text("g").tag(MeasureUnit.g)
-                            Text("ml").tag(MeasureUnit.ml)
-                            Text("pièce").tag(MeasureUnit.piece)
-                        }
-                        .labelsHidden()
-                        .fixedSize()
-                        Button("Retirer", systemImage: "xmark.circle.fill") { rows.removeAll { $0.id == row.id } }
-                            .labelStyle(.iconOnly)
-                            .foregroundStyle(Theme.muted)
-                    }
-                    .font(Theme.text(.body))
-                    .card()
+                    if !row.isSuggested { customRow($row) }
                 }
                 Button("Ajouter un ingrédient", systemImage: "plus") { rows.append(PantryRow()) }
                     .font(Theme.text(.subheadline, .semibold))
@@ -100,18 +91,68 @@ struct PantryQuestion: View {
         }
     }
 
-    private var suggestionButtons: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                ForEach(remainingSuggestions, id: \.name) { suggestion in
-                    Button("+ \(suggestion.name)") { rows.append(PantryRow(suggestion)) }
-                        .font(Theme.text(.subheadline))
-                        .padding(.horizontal, 12)
-                        .frame(minHeight: 36)
-                        .background(Theme.card, in: Capsule())
-                        .buttonStyle(.plain)
-                }
+    private func customRow(_ row: Binding<PantryRow>) -> some View {
+        HStack(spacing: 8) {
+            TextField("Ingrédient", text: row.name)
+                .textInputAutocapitalization(.sentences)
+                .accessibilityIdentifier("pantryName")
+            TextField("Qté", text: row.quantity)
+                .keyboardType(.decimalPad)
+                .multilineTextAlignment(.trailing)
+                .frame(width: 64)
+                .accessibilityIdentifier("pantryQuantity")
+            Picker("Unité", selection: row.unit) {
+                Text("g").tag(MeasureUnit.g)
+                Text("ml").tag(MeasureUnit.ml)
+                Text("pièce").tag(MeasureUnit.piece)
             }
+            .labelsHidden()
+            .fixedSize()
+            Button("Retirer", systemImage: "xmark.circle.fill") { rows.removeAll { $0.id == row.wrappedValue.id } }
+                .labelStyle(.iconOnly)
+                .foregroundStyle(Theme.muted)
         }
+        .font(Theme.text(.body))
+        .card()
+    }
+}
+
+/// Reste proposé : case à cocher, nom et quantité modifiable. Décoché, il reste en place, grisé.
+private struct SuggestedPantryRow: View {
+    @Binding var row: PantryRow
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Button {
+                row.isSelected.toggle()
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: row.isSelected ? "checkmark.circle.fill" : "circle")
+                        .font(.title3)
+                        .foregroundStyle(row.isSelected ? Theme.success : Theme.muted)
+                    Text(row.name)
+                        .font(Theme.text(.subheadline, .semibold))
+                        .foregroundStyle(row.isSelected ? Theme.ink : Theme.muted)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .frame(minHeight: 48)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityAddTraits(row.isSelected ? .isSelected : [])
+            .accessibilityHint("Coché : utilisé en priorité.")
+            .accessibilityIdentifier("pantrySuggestion")
+            TextField("Qté", text: $row.quantity)
+                .keyboardType(.decimalPad)
+                .multilineTextAlignment(.trailing)
+                .frame(width: 56)
+                .font(Theme.text(.subheadline))
+                .disabled(!row.isSelected)
+                .accessibilityLabel("Quantité de \(row.name)")
+            Text(row.unit == .piece ? String(localized: "pièce") : row.unit.rawValue)
+                .font(Theme.text(.subheadline))
+                .foregroundStyle(Theme.muted)
+        }
+        .opacity(row.isSelected ? 1 : 0.6)
     }
 }

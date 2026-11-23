@@ -248,6 +248,31 @@ extension OnboardingUITests {
         XCTAssertFalse(app.buttons["confirmRegenerateDay"].exists)
     }
 
+    /// Restes proposés : cochés par défaut, décochés sur place sans changer d'ordre.
+    func testPantrySuggestionsToggleInPlace() {
+        let app = launch()
+        onboard(app)
+        app.tabBars.buttons["Semaine"].tap()
+        app.buttons["generateWeek"].tap()
+        app.buttons["startGeneration"].tap()
+        XCTAssertTrue(app.buttons["day-0"].waitForExistence(timeout: 10))
+        app.buttons["navPlanNext"].tap()
+        let yes = app.segmentedControls["hasPantry"].buttons["Oui"]
+        XCTAssertTrue(yes.waitForExistence(timeout: 3))
+        yes.tap()
+        let suggestions = app.buttons.matching(identifier: "pantrySuggestion")
+        XCTAssertTrue(suggestions.firstMatch.waitForExistence(timeout: 3))
+        let count = suggestions.count
+        let first = suggestions.element(boundBy: 0)
+        let label = first.label
+        XCTAssertTrue(first.isSelected)
+        first.tap()
+        XCTAssertEqual(suggestions.count, count)
+        XCTAssertEqual(suggestions.element(boundBy: 0).label, label)
+        XCTAssertFalse(suggestions.element(boundBy: 0).isSelected)
+        Self.saveScreenshot(app, name: "pantry-checklist")
+    }
+
     /// Spec 017, FR-1713 : audit d'accessibilité des écrans principaux (contrastes, libellés, tailles).
     func testAccessibilityAudit() throws {
         continueAfterFailure = true

@@ -1323,7 +1323,6 @@
         }
       }
     },
-    "+ %@": {},
     ", aujourd'hui": {
       "localizations": {
         "de": {
@@ -2993,6 +2992,34 @@
         }
       }
     },
+    "Autres ingrédients": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Other ingredients"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otros ingredientes"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weitere Zutaten"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Altri ingredienti"
+          }
+        }
+      }
+    },
     "Basiques, dispo même en hard discount.": {
       "localizations": {
         "de": {
@@ -4018,6 +4045,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Spunta tutti i pasti e pesati 2 volte a settimana."
+          }
+        }
+      }
+    },
+    "Coché : utilisé en priorité.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checked: used first."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Marcado: se usa primero."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Angehakt: wird zuerst verwendet."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selezionato: usato per primo."
           }
         }
       }
@@ -9277,6 +9332,12 @@
     },
     "Pas mangés ces derniers jours": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In den letzten Tagen nicht gegessen"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -9287,12 +9348,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "No comido estos últimos días"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "In den letzten Tagen nicht gegessen"
           }
         },
         "it": {
@@ -11387,6 +11442,34 @@
         }
       }
     },
+    "Quantité de %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quantity of %@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cantidad de %@"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Menge von %@"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quantità di %@"
+          }
+        }
+      }
+    },
     "Quantités": {
       "localizations": {
         "de": {
@@ -12637,6 +12720,12 @@
     },
     "Régénérer": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neu erstellen"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -12647,12 +12736,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Regenerar"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Neu erstellen"
           }
         },
         "it": {
