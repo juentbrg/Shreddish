@@ -22,6 +22,8 @@ public struct GenerationConstraints: Sendable, Equatable {
     public var eatingWindow: EatingWindow?
     /// Régimes (spec 017) : ingrédient interdit fatal, comme une allergie.
     public var diets: [Diet] = []
+    /// Jours demandés à une génération de période : 7 par défaut, moins pour finir avant une date choisie.
+    public var dayCount = 7
 
     public init(
         targets: MacroTotals, mealsPerDay: Int, maxPrepMinutes: Int, weeklyBudgetEur: Double, budgetTolerance: Double,
@@ -157,7 +159,7 @@ public enum AIOutputValidator {
     public static func validate(week: WeekPlanDTO, constraints: GenerationConstraints) -> ValidationResult<WeekPlanDTO> {
         var result = ValidationResult<WeekPlanDTO>()
         let offsets = week.days.map(\.dayOffset).sorted()
-        if offsets != Array(0...6) {
+        if offsets != Array(0..<max(constraints.dayCount, 1)) {
             result.fatal.append(.wrongDays)
         }
 

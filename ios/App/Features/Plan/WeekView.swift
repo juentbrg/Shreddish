@@ -73,9 +73,9 @@ struct WeekView: View {
             .onAppear(perform: openDeepLink)
             .onChange(of: model.deepLink) { openDeepLink() }
             .sheet(isPresented: $showNewWeek) {
-                NewWeekSheet(today: model.clock.today, activePlans: activePlans) { start, pantry, recipes in
+                NewWeekSheet(today: model.clock.today, activePlans: activePlans) { start, dayCount, pantry, recipes in
                     showNewWeek = false
-                    generate(from: start, pantry: pantry, recipes: recipes)
+                    generate(from: start, dayCount: dayCount, pantry: pantry, recipes: recipes)
                 }
                 .presentationDetents([.medium, .large])
             }
@@ -185,7 +185,7 @@ struct WeekView: View {
         model.hasAPIKey && !model.isBusy && plan.id == activePlans.last?.id && plan.endDay >= model.clock.today
     }
 
-    private func generate(from start: LocalDay, pantry: [IngredientDTO], recipes: [SavedRecipe]) {
+    private func generate(from start: LocalDay, dayCount: Int, pantry: [IngredientDTO], recipes: [SavedRecipe]) {
         guard let profile = profiles.first, let preferences = allPreferences.first else { return }
         let generator = model.generator
         let context = context
@@ -194,7 +194,7 @@ struct WeekView: View {
         Task {
             await model.run("Préparation de ta semaine…", recipesIn: context) { () async throws(AIError) -> [ValidationIssue] in
                 let warnings = try await generator.generateWeek(
-                    profile: profile, preferences: preferences, startDay: start, pantry: pantry,
+                    profile: profile, preferences: preferences, startDay: start, dayCount: dayCount, pantry: pantry,
                     recipes: recipes.map(\.dto), in: context, onText: live
                 )
                 // Recettes replacées : plus en attente.
@@ -270,129 +270,6 @@ struct WeekNavigator: View {
         .disabled(!enabled)
         .accessibilityLabel(label)
         .accessibilityIdentifier(id)
-    }
-}
-
-/// Choix du premier jour de la semaine à planifier : aujourd'hui ou jusqu'à 13 jours plus tard (spec 006).
-struct NewWeekSheet: View {
-    let today: LocalDay
-    let activePlans: [WeeklyPlan]
-    let start: (LocalDay, [IngredientDTO], [SavedRecipe]) -> Void
-    @Query(sort: \SavedRecipe.savedAt, order: .reverse) var savedRecipes: [SavedRecipe]
-    @State private var startDay: LocalDay?
-    /// Recettes sauvegardées à replacer (spec 014) ; par défaut celles mises en attente.
-    @State private var pickedRecipes: Set<UUID>?
-    /// Questionnaire facultatif : ingrédients à écouler (spec 013).
-    @State private var hasPantry = false
-    @State private var pantry: [PantryRow] = []
-
-    private var chosen: LocalDay { startDay ?? defaultStart }
-
-    /// Lendemain du dernier planning en cours, pour ne pas archiver la semaine en cours par erreur.
-    private var followingDay: LocalDay? {
-        guard let next = activePlans.map(\.endDay).max()?.adding(days: 1), next > today,
-              next <= today.adding(days: 13) else { return nil }
-        return next
-    }
-
-    private var defaultStart: LocalDay { followingDay ?? today }
-
-    /// Le choix touche un planning en cours (archivé ou jours remplacés).
-    private var replacesActivePlan: Bool {
-        if chosen <= today { return !activePlans.isEmpty }
-        return activePlans.contains { $0.contains(chosen) || $0.startDay > chosen }
-    }
-
-    /// Paquets entamés du dernier planning.
-    private var suggestions: [IngredientDTO] {
-        activePlans.max { $0.startDay < $1.startDay }?.leftovers ?? []
-    }
-
-    /// Raccourcis : suite du planning en cours, aujourd'hui, demain, prochain lundi, prochain dimanche.
-    private var shortcuts: [(String, LocalDay)] {
-        var items: [(String, LocalDay)] = followingDay.map { [("Suite du planning", $0)] } ?? []
-        let others = [
-            ("Aujourd'hui", today), ("Demain", today.adding(days: 1)),
-            ("Lundi prochain", Format.next(weekday: 2, after: today)),
-            ("Dimanche prochain", Format.next(weekday: 1, after: today)),
-        ]
-        for (label, day) in others where !items.contains(where: { $0.1 == day }) { items.append((label, day)) }
-        return items.sorted { $0.1 < $1.1 }
-    }
-
-    private var effect: String {
-        if chosen <= today {
-            return String(localized: "Planning actuel archivé, journal conservé.")
-        }
-        let overlapped = activePlans.filter { $0.contains(chosen) || $0.startDay > chosen }
-        guard !overlapped.isEmpty else { return String(localized: "Planning en cours inchangé.") }
-        return String(localized: "Jours prévus à partir de cette date remplacés.")
-    }
-
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
-                    SectionTitle(title: "Premier jour")
-                    LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)], spacing: 8) {
-                        ForEach(shortcuts, id: \.1) { label, day in
-                            let isSelected = day == chosen
-                            Button {
-                                startDay = day
-                            } label: {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(label).font(Theme.text(.subheadline, .semibold))
-                                    Text(Format.weekdayLong(day)).font(Theme.text(.caption))
-                                }
-                                .foregroundStyle(isSelected ? Theme.onAccent : Theme.ink)
-                                .frame(maxWidth: .infinity, minHeight: 56, alignment: .leading)
-                                .padding(.horizontal, 12)
-                                .background(
-                                    isSelected ? Theme.accent : Theme.card,
-                                    in: RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                )
-                            }
-                            .buttonStyle(.plain)
-                            .accessibilityAddTraits(isSelected ? .isSelected : [])
-                        }
-                    }
-                    DatePicker(
-                        String(localized: "Autre date"),
-                        selection: Binding(
-                            get: { chosen.startDate(calendar: .current) },
-                            set: { startDay = LocalDay(date: $0, calendar: .current) }
-                        ),
-                        in: today.startDate(calendar: .current)...today.adding(days: 13).startDate(calendar: .current),
-                        displayedComponents: .date
-                    )
-                    .font(Theme.text(.body))
-                    .card()
-                    Text("Du \(Format.weekdayLong(chosen)) au \(Format.weekdayLong(chosen.adding(days: 6))). \(effect)")
-                        .font(Theme.text(.footnote, replacesActivePlan ? .semibold : .regular))
-                        .foregroundStyle(replacesActivePlan ? Theme.tomato : Theme.muted)
-                    PantryQuestion(hasPantry: $hasPantry, rows: $pantry, suggestions: suggestions)
-                    if !savedRecipes.isEmpty {
-                        RecipePicker(recipes: savedRecipes, picked: Binding(
-                            get: { pickedRecipes ?? Set(savedRecipes.filter(\.isQueued).map(\.id)) },
-                            set: { pickedRecipes = $0 }
-                        ))
-                    }
-                }
-                .padding(20)
-            }
-            .paperBackground()
-            .navigationTitle("Planifier")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Générer") {
-                        let picked = pickedRecipes ?? Set(savedRecipes.filter(\.isQueued).map(\.id))
-                        start(chosen, hasPantry ? pantry.compactMap(\.ingredient) : [], savedRecipes.filter { picked.contains($0.id) })
-                    }
-                        .accessibilityIdentifier("startGeneration")
-                }
-            }
-        }
     }
 }
 

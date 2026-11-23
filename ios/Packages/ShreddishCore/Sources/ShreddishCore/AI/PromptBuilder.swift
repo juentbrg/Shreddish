@@ -114,6 +114,8 @@ public enum PromptBuilder {
         var goal: Goal
         var preferences: PromptPreferences
         var dayOffset: Int?
+        /// Nombre de jours d'une période (task "week").
+        var dayCount: Int?
         var existingDayMeals: [MealSummary]?
         var mealTypeToReplace: MealType?
         var remainingTargets: TargetsPayload?
@@ -197,10 +199,10 @@ public enum PromptBuilder {
 
     public static func weekInput(
         targets: MacroTotals, goal: Goal, preferences: PromptPreferences, feedback: String? = nil,
-        pantry: [IngredientDTO] = [], recipes: [MealDTO] = []
+        pantry: [IngredientDTO] = [], recipes: [MealDTO] = [], dayCount: Int = 7
     ) -> String {
         encode(Input(
-            task: "week", targets: TargetsPayload(targets), goal: goal, preferences: preferences,
+            task: "week", targets: TargetsPayload(targets), goal: goal, preferences: preferences, dayCount: dayCount,
             previousAttemptFeedback: feedback, ingredientsToUse: pantryPayload(pantry), recipesToInclude: recipesPayload(recipes)
         ))
     }
@@ -366,8 +368,8 @@ public enum PromptBuilder {
         vraiment de plat, pas seulement de nom : la même association protéine principale + féculent (ex. \
         poulet + riz, thon + pâtes) au plus 2 fois par semaine sur les déjeuners et dîners.
         - Privilégie liked_foods.
-        - task "week" : toujours les 7 jours, day_offset 0 à 6 (0 = jour de génération). La période est fixe : \
-        jamais un motif d'infeasible.
+        - task "week" : toujours day_count jours, day_offset 0 à day_count - 1 (0 = jour de génération), \
+        weekly_budget_eur couvre ces jours. La période est fixe : jamais un motif d'infeasible.
         - batch_cooking vrai : 1 ou 2 prep_sessions (index 0, 1), et les repas issus d'une session ont \
         prep_session_ref = index de la session. batch_cooking faux : prep_sessions vide, prep_session_ref null.
         - task "day" : régénère uniquement le jour day_offset, différent de avoid_meal_names.

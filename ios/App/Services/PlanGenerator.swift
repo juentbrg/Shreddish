@@ -26,8 +26,8 @@ final class PlanGenerator {
         let apiKey: String
         let targets: NutritionTargets
         let goal: Goal
-        let preferences: PromptPreferences
-        let constraints: GenerationConstraints
+        var preferences: PromptPreferences
+        var constraints: GenerationConstraints
         let model: String
         let resolver: NutritionResolver
         /// Huile ajoutée si les lipides manquent ; `nil` si exclue (allergie ou aliment non aimé).
@@ -75,11 +75,11 @@ final class PlanGenerator {
 
     // MARK: Semaine
 
-    /// Génère et enregistre 7 jours à partir de `startDay` (aujourd'hui par défaut, ou plus tard : spec 006). Renvoie les avertissements (jours hors cible,
-    /// semaine au-dessus du budget dans la tolérance).
+    /// Génère et enregistre `dayCount` jours (1 à 7) à partir de `startDay` (aujourd'hui par défaut, ou plus tard : spec 006).
+    /// Budget hebdo ramené à la période. Renvoie les avertissements (jours hors cible, période au-dessus du budget).
     @discardableResult
     func generateWeek(
-        profile: Profile, preferences: Preferences, startDay: LocalDay? = nil, pantry: [IngredientDTO] = [],
+        profile: Profile, preferences: Preferences, startDay: LocalDay? = nil, dayCount: Int = 7, pantry: [IngredientDTO] = [],
         recipes: [MealDTO] = [], in store: ModelContext, onText: (@Sendable (String) -> Void)? = nil
     ) async throws(AIError) -> [ValidationIssue] {
         let startDay = max(startDay ?? clock.today, clock.today)
@@ -88,6 +88,10 @@ final class PlanGenerator {
         }
         let portions = Household.portions(in: store)
         var ctx = try context(profile: profile, preferences: preferences, portions: portions)
+        let dayCount = min(max(dayCount, 1), 7)
+        ctx.preferences.weeklyBudgetEur *= Double(dayCount) / 7
+        ctx.constraints.weeklyBudgetEur *= Double(dayCount) / 7
+        ctx.constraints.dayCount = dayCount
         ctx.pantry = Self.resolvedPantry(pantry, resolver: ctx.resolver)
         ctx.recipes = recipes
         ctx.onText = onText
@@ -95,7 +99,7 @@ final class PlanGenerator {
         do {
             week = try await requestWeek(ctx)
         } catch where error.isRetryable || error.isInfeasible {
-            // Repli : 7 requêtes d'un jour en parallèle (research R5). Aussi quand l'IA refuse la semaine
+            // Repli : une requête par jour en parallèle (research R5). Aussi quand l'IA refuse la semaine
             // entière (réponse jugée trop longue, spec 008) : un jour à la fois, un vrai refus se répète.
             week = try await requestWeekByDays(ctx)
         }
@@ -121,7 +125,7 @@ final class PlanGenerator {
             preferences.weeklyBudgetEur *= budgetScale
             let input = PromptBuilder.weekInput(
                 targets: ctx.targets.macros, goal: ctx.goal, preferences: preferences, feedback: feedback,
-                pantry: ctx.pantry, recipes: ctx.recipes
+                pantry: ctx.pantry, recipes: ctx.recipes, dayCount: ctx.constraints.dayCount
             )
             let data = try await client.generate(
                 kind: .week, instructions: PromptBuilder.systemInstructions(), input: input,
@@ -136,11 +140,12 @@ final class PlanGenerator {
     private func requestWeekByDays(_ ctx: Context) async throws(AIError) -> ValidationResult<WeekPlanDTO> {
         var days: [DayPlanDTO] = []
         var warnings: [ValidationIssue] = []
-        // Chaque jour reçoit un septième du plafond de la semaine (spec 003, FR-203).
-        let dayLimit = ctx.constraints.budgetCeilingEur / 7
+        // Chaque jour reçoit sa part du plafond de la période (spec 003, FR-203).
+        let dayCount = ctx.constraints.dayCount
+        let dayLimit = ctx.constraints.budgetCeilingEur / Double(dayCount)
         do {
             try await withThrowingTaskGroup(of: ValidationResult<DayPlanDTO>.self) { group in
-                for offset in 0...6 {
+                for offset in 0..<dayCount {
                     group.addTask {
                         try await self.requestDay(
                             ctx, offset: offset, avoid: [], costLimit: dayLimit,
@@ -156,7 +161,7 @@ final class PlanGenerator {
         } catch {
             throw error as? AIError ?? .unexpected(error.localizedDescription)
         }
-        // Semaine reconstituée : contrôle global (7 jours, budget) sans batch cooking.
+        // Semaine reconstituée : contrôle global (jours, budget) sans batch cooking.
         var constraints = ctx.constraints
         constraints.batchCooking = false
         constraints.enforceVariety = false

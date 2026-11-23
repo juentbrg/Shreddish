@@ -38,29 +38,20 @@ public enum PlanStore {
             ?? sorted.last
     }
 
-    /// Enregistre une semaine validée à partir de `startDay` (aujourd'hui ou plus tard, spec 006).
-    /// Semaine qui démarre aujourd'hui : les plannings actifs passent en historique, intacts (journal conservé).
-    /// Semaine à venir : plannings commençant le même jour ou après → historique ; chevauchants → jours futurs
-    /// à partir de `startDay` remplacés ; terminés avant `today` → historique.
-    /// Une seule sauvegarde à la fin : aucun état partiel si l'app est fermée avant (edge case spec).
+    /// Enregistre une période validée de `startDay` (aujourd'hui ou plus tard, spec 006) à son dernier jour généré.
+    /// Seuls les jours des plannings actifs compris dans la période sont remplacés ; ceux d'avant et d'après restent.
+    /// Planning entièrement couvert → historique, intact. Jour remplacé déjà commencé (aujourd'hui) → historique,
+    /// journal conservé ; jours futurs remplacés → supprimés. Une seule sauvegarde à la fin : aucun état partiel.
     @discardableResult
     public static func saveWeek(
         _ week: WeekPlanDTO, startDay: LocalDay, targets: NutritionTargets, createdAt: Date, today: LocalDay? = nil,
         pantry: [IngredientDTO] = [], in context: ModelContext
     ) throws -> WeeklyPlan {
         let today = today ?? startDay
+        let endDay = startDay.adding(days: max(week.days.map(\.dayOffset).max() ?? 6, 0))
         for plan in activePlans(in: context) {
-            if plan.startDay >= startDay || startDay <= today {
-                plan.isCurrent = false
-                continue
-            }
-            let replaced = plan.days.filter { $0.day >= startDay }
-            if !replaced.isEmpty {
-                plan.days = plan.days.filter { $0.day < startDay }
-                for day in replaced { context.delete(day) }
-                rebuildShoppingList(for: plan, in: context)
-            }
-            if plan.endDay < today { plan.isCurrent = false }
+            carve(plan, from: startDay, to: endDay, today: today, in: context)
+            if plan.isCurrent, plan.endDay < today { plan.isCurrent = false }
         }
 
         let plan = WeeklyPlan(startDay: startDay, createdAt: createdAt, targets: targets, prepSessions: week.prepSessions)
@@ -76,6 +67,62 @@ public enum PlanStore {
         rebuildShoppingList(for: plan, in: context)
         try context.save()
         return plan
+    }
+
+    /// Retire d'un planning actif les jours de `start...end`. Jours d'après la période séparés dans leur propre
+    /// planning si des jours la précèdent, sinon le planning repart de son premier jour restant.
+    private static func carve(_ plan: WeeklyPlan, from start: LocalDay, to end: LocalDay, today: LocalDay, in context: ModelContext) {
+        let covered = plan.days.filter { start <= $0.day && $0.day <= end }
+        guard !covered.isEmpty else { return }
+        guard covered.count < plan.days.count else {
+            plan.isCurrent = false
+            return
+        }
+        let coveredIDs = Set(covered.map(\.persistentModelID))
+        plan.days.removeAll { coveredIDs.contains($0.persistentModelID) }
+        let started = covered.filter { $0.day <= today }
+        if !started.isEmpty {
+            let archive = sibling(of: plan, in: context)
+            archive.isCurrent = false
+            for day in started { archive.days.append(day) }
+            rebase(archive)
+            rebuildShoppingList(for: archive, in: context)
+        }
+        for day in covered where day.day > today { context.delete(day) }
+
+        let tail = plan.days.filter { $0.day > end }
+        if !tail.isEmpty, plan.days.contains(where: { $0.day < start }) {
+            let next = sibling(of: plan, in: context)
+            next.pantry = plan.pantry
+            let tailIDs = Set(tail.map(\.persistentModelID))
+            plan.days.removeAll { tailIDs.contains($0.persistentModelID) }
+            for day in tail { next.days.append(day) }
+            rebase(next)
+            rebuildShoppingList(for: next, in: context)
+        } else {
+            rebase(plan)
+        }
+        rebuildShoppingList(for: plan, in: context)
+    }
+
+    /// Planning vide aux mêmes cibles, même date de création et mêmes rangs de jours que `plan`.
+    private static func sibling(of plan: WeeklyPlan, in context: ModelContext) -> WeeklyPlan {
+        let sibling = WeeklyPlan(startDay: plan.startDay, createdAt: plan.createdAt, targetsData: plan.targetsData)
+        context.insert(sibling)
+        return sibling
+    }
+
+    /// Premier jour du planning recalé sur son premier jour restant ; rangs et sessions de batch cooking décalés.
+    private static func rebase(_ plan: WeeklyPlan) {
+        guard let first = plan.days.map(\.day).min(), first > plan.startDay else { return }
+        let shift = first.days(since: plan.startDay)
+        plan.startDayKey = first.key
+        for day in plan.days { day.offset -= shift }
+        plan.prepSessions = plan.prepSessions.compactMap { session in
+            var session = session
+            session.dayOffset -= shift
+            return session.dayOffset >= 0 ? session : nil
+        }
     }
 
     /// Remplace les repas d'un jour (régénération) ; extras conservés.

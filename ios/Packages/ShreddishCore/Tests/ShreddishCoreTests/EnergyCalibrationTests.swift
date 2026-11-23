@@ -98,16 +98,15 @@ struct EnergyCalibrationTests {
         let targets = try NutritionCalculator.targets(for: NutritionCalculatorTests.man)
         let start = LocalDay(year: 2026, month: 11, day: 11)
         let old = try PlanStore.saveWeek(try Fixture.week(), startDay: start, targets: targets, createdAt: .now, in: context)
-        let new = try PlanStore.saveWeek(
+        // Ancien planning, jour 3 : tout journalisé. Jour 0 : partiel.
+        for meal in old.sortedDays[3].meals { meal.setStatus(.eaten, at: .now) }
+        old.sortedDays[0].sortedMeals[0].setStatus(.eaten, at: .now)
+        // Nouveau planning dès le jour 3 : jour 3 journalisé archivé, nouveau jour 3 sans rien.
+        try PlanStore.saveWeek(
             try Fixture.week(), startDay: start.adding(days: 3), targets: targets, createdAt: .now.addingTimeInterval(1), in: context
         )
-        // Ancien planning, jour 3 : tout journalisé. Nouveau planning, même jour : rien.
-        for meal in old.sortedDays[3].meals { meal.setStatus(.eaten, at: .now) }
-        // Jour 0 de l'ancien planning : partiel.
-        old.sortedDays[0].sortedMeals[0].setStatus(.eaten, at: .now)
-        _ = new
 
-        let intakes = EnergyCalibration.intakes(from: old.days + new.days)
+        let intakes = EnergyCalibration.intakes(from: try context.fetch(FetchDescriptor<DayPlan>()))
         let day3 = try #require(intakes.first { $0.day == start.adding(days: 3) })
         #expect(day3.isComplete)
         #expect(day3.kcal == 2208)

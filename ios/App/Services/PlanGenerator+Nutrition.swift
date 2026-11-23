@@ -45,7 +45,7 @@ extension PlanGenerator {
             repeated[$0.dayOffset] != nil || Totals.needsRegeneration(Totals.planned($0.meals), targets: targets)
         }
         guard !toRetry.isEmpty else { return days }
-        let dayLimit = ctx.constraints.budgetCeilingEur / 7
+        let dayLimit = ctx.constraints.budgetCeilingEur / Double(ctx.constraints.dayCount)
         var replacements: [Int: DayPlanDTO] = [:]
         await withTaskGroup(of: DayPlanDTO?.self) { group in
             for day in toRetry {

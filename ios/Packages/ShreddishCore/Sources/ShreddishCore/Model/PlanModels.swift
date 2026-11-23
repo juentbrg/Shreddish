@@ -29,6 +29,16 @@ public final class WeeklyPlan {
         isCurrent = true
     }
 
+    /// Planning issu d'un autre (jours séparés) : mêmes cibles, sans batch cooking.
+    init(startDay: LocalDay, createdAt: Date, targetsData: Data) {
+        id = UUID()
+        startDayKey = startDay.key
+        self.createdAt = createdAt
+        self.targetsData = targetsData
+        prepSessionsData = (try? JSONEncoder().encode([PrepSessionDTO]())) ?? Data()
+        isCurrent = true
+    }
+
     public var startDay: LocalDay { LocalDay(key: startDayKey) }
     /// Dernier jour : J+6, ou plus tôt si une semaine suivante a repris les derniers jours (spec 006).
     public var endDay: LocalDay { days.map(\.day).max() ?? startDay.adding(days: 6) }

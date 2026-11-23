@@ -1,6 +1,16 @@
 {
   "sourceLanguage": "fr",
   "strings": {
+    "%@ %@": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@ %2$@"
+          }
+        }
+      }
+    },
     "%@ %@ par prise, %lld fois par jour": {
       "localizations": {
         "de": {
@@ -867,6 +877,34 @@
         }
       }
     },
+    "%lld jours prévus remplacés, les autres restent.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld planned days replaced, the others stay."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld días previstos sustituidos, los demás se mantienen."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld geplante Tage ersetzt, die anderen bleiben."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld giorni previsti sostituiti, gli altri restano."
+          }
+        }
+      }
+    },
     "%lld kcal": {},
     "%lld min avant": {
       "localizations": {
@@ -1408,6 +1446,34 @@
         }
       }
     },
+    "1 jour prévu remplacé, les autres restent.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 planned day replaced, the others stay."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 día previsto sustituido, los demás se mantienen."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 geplanter Tag ersetzt, die anderen bleiben."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 giorno previsto sostituito, gli altri restano."
+          }
+        }
+      }
+    },
     "1 repas à venir contient un aliment banni.": {
       "localizations": {
         "de": {
@@ -1551,6 +1617,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Da 7.500 a 10.000 passi, o spesso in piedi."
+          }
+        }
+      }
+    },
+    "7 jours": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "7 days"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "7 días"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "7 Tage"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "7 giorni"
           }
         }
       }
@@ -2711,6 +2805,34 @@
         }
       }
     },
+    "Aucun jour prévu remplacé.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No planned day replaced."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ningún día previsto sustituido."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kein geplanter Tag ersetzt."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nessun giorno previsto sostituito."
+          }
+        }
+      }
+    },
     "Aucun jour terminé. Le jour compte à partir de 21 h.": {
       "localizations": {
         "de": {
@@ -2820,6 +2942,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nessuna ricetta salvata"
+          }
+        }
+      }
+    },
+    "Aujourd'hui archivé, journal conservé.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Today archived, log kept."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hoy archivado, registro conservado."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Heute archiviert, Tagebuch bleibt erhalten."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oggi archiviato, diario conservato."
           }
         }
       }
@@ -2994,6 +3144,12 @@
     },
     "Autres ingrédients": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weitere Zutaten"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -3006,16 +3162,38 @@
             "value": "Otros ingredientes"
           }
         },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Altri ingredienti"
+          }
+        }
+      }
+    },
+    "Avant le planning suivant": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Before the next plan"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Antes del siguiente plan"
+          }
+        },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Weitere Zutaten"
+            "value": "Vor dem nächsten Plan"
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Altri ingredienti"
+            "value": "Prima del piano successivo"
           }
         }
       }
@@ -4051,6 +4229,12 @@
     },
     "Coché : utilisé en priorité.": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Angehakt: wird zuerst verwendet."
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -4061,12 +4245,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Marcado: se usa primero."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Angehakt: wird zuerst verwendet."
           }
         },
         "it": {
@@ -4813,6 +4991,35 @@
         }
       }
     },
+    "Dernier jour": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last day"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Último día"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Letzter Tag"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ultimo giorno"
+          }
+        }
+      }
+    },
     "Dernier repas": {
       "localizations": {
         "de": {
@@ -5021,7 +5228,42 @@
         }
       }
     },
+    "Du %@ au %@, %lld jours.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Du %1$@ au %2$@, %3$lld jours."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "From %@ to %@, %lld days."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Del %@ al %@, %lld días."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Von %@ bis %@, %lld Tage."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dal %@ al %@, %lld giorni."
+          }
+        }
+      }
+    },
     "Du %@ au %@. %@": {
+      "extractionState": "stale",
       "localizations": {
         "de": {
           "stringUnit": {
@@ -6940,30 +7182,30 @@
         }
       }
     },
-    "Jours prévus à partir de cette date remplacés.": {
+    "Jusqu'à dimanche": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Geplante Tage ab diesem Datum werden ersetzt."
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Planned days from this date are replaced."
+            "value": "Until Sunday"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Se reemplazan los días previstos a partir de esta fecha."
+            "value": "Hasta el domingo"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bis Sonntag"
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "I giorni previsti da questa data vengono sostituiti."
+            "value": "Fino a domenica"
           }
         }
       }
@@ -7078,6 +7320,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Il giorno prima dell'ultimo giorno pianificato."
+          }
+        }
+      }
+    },
+    "Le %@, 1 jour.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On %@, 1 day."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El %@, 1 día."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Am %@, 1 Tag."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il %@, 1 giorno."
           }
         }
       }
@@ -10031,35 +10301,8 @@
         }
       }
     },
-    "Planning actuel archivé, journal conservé.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Aktueller Plan archiviert, Tagebuch bleibt erhalten."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Current plan archived, log kept."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Plan actual archivado, diario conservado."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Piano attuale archiviato, diario conservato."
-          }
-        }
-      }
-    },
     "Planning en cours inchangé.": {
+      "extractionState": "stale",
       "localizations": {
         "de": {
           "stringUnit": {
@@ -11444,6 +11687,12 @@
     },
     "Quantité de %@": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Menge von %@"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -11454,12 +11703,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Cantidad de %@"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Menge von %@"
           }
         },
         "it": {

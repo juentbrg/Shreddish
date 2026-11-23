@@ -330,4 +330,36 @@ extension OnboardingUITests {
         guard let folder = ProcessInfo.processInfo.environment["SHOTS_DIR"] else { return }
         try? app.screenshot().pngRepresentation.write(to: URL(fileURLWithPath: "\(folder)/\(name).png"))
     }
+
+    /// Période choisie : dès demain jusqu'au dernier jour choisi ; aujourd'hui reste dans le planning en cours.
+    func testPlanCustomRangeKeepsToday() {
+        let app = launch()
+        onboard(app)
+        app.tabBars.buttons["Semaine"].tap()
+        app.buttons["generateWeek"].tap()
+        app.buttons["startGeneration"].tap()
+        XCTAssertTrue(app.buttons["day-0"].waitForExistence(timeout: 10))
+        app.buttons["weekMenu"].tap()
+        app.buttons["newWeek"].tap()
+        let tomorrow = app.buttons.containing(NSPredicate(format: "label BEGINSWITH 'Demain'")).firstMatch
+        XCTAssertTrue(tomorrow.waitForExistence(timeout: 3))
+        tomorrow.tap()
+        let end = app.buttons.matching(identifier: "endDay").firstMatch
+        XCTAssertTrue(end.waitForExistence(timeout: 3))
+        end.tap()
+        XCTAssertTrue(end.isSelected)
+        let summary = app.staticTexts["periodSummary"]
+        XCTAssertTrue(summary.label.contains("prévus remplacés, les autres restent"), summary.label)
+        Self.saveScreenshot(app, name: "plan-range")
+        app.buttons["startGeneration"].tap()
+        let status = app.staticTexts["weekStatus"]
+        XCTAssertTrue(status.waitForExistence(timeout: 10))
+        XCTAssertEqual(status.label, "Semaine en cours")
+        // Planning en cours réduit à aujourd'hui.
+        XCTAssertTrue(app.buttons["day-0"].waitForExistence(timeout: 10))
+        XCTAssertFalse(app.buttons["day-1"].exists)
+        app.buttons["nextWeek"].tap()
+        XCTAssertTrue(app.staticTexts["Semaine à venir"].waitForExistence(timeout: 3))
+        XCTAssertTrue(app.buttons["day-0"].exists)
+    }
 }

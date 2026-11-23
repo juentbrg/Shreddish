@@ -62,7 +62,8 @@ struct UITestAITransport: AITransport {
             let type = MealType(rawValue: input["meal_type_to_replace"] as? String ?? "lunch") ?? .lunch
             object = MealEnvelope(meal: meal(type: type, share: 1 / Double(types.count), target: target, variant: "remplacé"))
         default:
-            object = WeekEnvelope(days: (0..<7).map { day($0, variant: "J\($0 + 1)") })
+            let count = input["day_count"] as? Int ?? 7
+            object = WeekEnvelope(days: (0..<count).map { day($0, variant: "J\($0 + 1)") })
         }
         return String(bytes: try encoder.encode(object), encoding: .utf8) ?? "{}"
     }

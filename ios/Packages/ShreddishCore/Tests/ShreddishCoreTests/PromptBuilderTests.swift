@@ -60,7 +60,7 @@ struct PromptBuilderTests {
             ),
         ]
         let allowed: Set<String> = [
-            "task", "targets", "kcal", "protein_g", "carbs_g", "fat_g", "goal", "preferences",
+            "task", "day_count", "targets", "kcal", "protein_g", "carbs_g", "fat_g", "goal", "preferences",
             "meals_per_day", "max_prep_minutes", "weekly_budget_eur", "budget_tolerance", "allergies",
             "disliked_foods", "ingredient_availability", "cost_limit_eur", "liked_foods",
             "equipment", "batch_cooking", "day_offset", "existing_day_meals", "meal_type_to_replace",
