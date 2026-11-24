@@ -19,9 +19,18 @@ public enum WholeProduce {
         "concombre": Rule(wholeG: 300, step: 0.5),
     ]
 
+    /// Formes transformées vendues autrement qu'à la pièce (oignon séché, zeste, jus) : quantité libre.
+    static let processed = ["seche", "deshydrate", "zeste", "vinaigre", "jus", "confit", "sirop", "poudre", "chips", "frit",
+                            "puree", "compote", "surgele", "congele", "conserve", "appertise"]
+
+    static func isProcessed(_ ingredient: IngredientDTO) -> Bool {
+        let names = [ingredient.name] + [ingredient.foodCode.flatMap { FoodCatalog.shared.food(code: $0)?.name }].compactMap(\.self)
+        return names.contains { name in processed.contains { TextNormalizer.containsWords(name, $0) } }
+    }
+
     /// g mangeables d'une pièce et plus petite part, pour un ingrédient concerné.
     static func portion(for ingredient: IngredientDTO, catalog: PriceCatalog = .shared) -> (edibleG: Double, step: Double)? {
-        guard let link = catalog.purchase(for: ingredient), let rule = rules[link.product.id],
+        guard !isProcessed(ingredient), let link = catalog.purchase(for: ingredient), let rule = rules[link.product.id],
               let whole = rule.wholeG ?? link.product.pieceG, whole > 0 else { return nil }
         // Sans code Ciqual : part mangeable de l'aliment tel qu'acheté (peau, noyau).
         let yield = ingredient.foodCode == nil

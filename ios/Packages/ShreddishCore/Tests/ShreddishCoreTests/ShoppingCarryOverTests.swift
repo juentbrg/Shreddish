@@ -29,6 +29,22 @@ struct ShoppingCarryOverTests {
         #expect(after.allSatisfy { key, quantity in quantity <= (before[key] ?? .infinity) })
     }
 
+    /// Spec 018 : article coché (déjà chez soi ou dans le panier) retiré du reste à acheter.
+    @Test func checkedItemsLeaveTheRemainingCost() throws {
+        let (container, context, targets) = try PlanStoreTests.setup()
+        _ = container
+        let plan = try PlanStore.saveWeek(
+            try Fixture.week(), startDay: PlanStoreTests.start, targets: targets, createdAt: .now, in: context
+        )
+        let total = plan.remainingShoppingEur
+        #expect(abs(total - plan.shoppingSummary.checkoutEur) < 0.01)
+        let item = try #require(plan.shoppingItems.max { $0.costEUR < $1.costEUR })
+        item.isChecked = true
+        #expect(abs(plan.remainingShoppingEur - (total - item.costEUR)) < 0.01)
+        for item in plan.shoppingItems { item.isChecked = true }
+        #expect(plan.remainingShoppingEur == 0)
+    }
+
     @Test func perishableLeftoversAreNotCarried() throws {
         let (container, context, targets) = try PlanStoreTests.setup()
         _ = container

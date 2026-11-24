@@ -65,7 +65,7 @@ struct ShoppingListBuilderTests {
         #expect(lines.count == 1)
         #expect(lines.first?.totalQuantity == 30)
         #expect(lines.first?.unit == .ml)
-        #expect(lines.first?.costEur == 2.12) // bouteille de 1 L
+        #expect(lines.first?.costEur == 1.53) // bouteille de 75 cl à 2,04 €/L
     }
 
     @Test func eggsAreOneLineInPieces() {
@@ -84,7 +84,7 @@ struct ShoppingListBuilderTests {
         #expect(lines.first?.unit == .piece)
         #expect(lines.first?.totalQuantity == 11)
         #expect(lines.first?.aisle == .epicerie)
-        #expect(lines.first?.costEur == 3.56) // boîte de 12 à 0,297 € l'œuf
+        #expect(lines.first?.costEur == 6.18) // boîte de 12 à 0,515 € l'œuf
     }
 
     @Test func fruitsInGramsAreCountedInPieces() {
@@ -140,13 +140,13 @@ struct ShoppingListBuilderTests {
         let line = try? #require(lines.first)
         #expect(line?.totalQuantity == 250) // 150 g égouttés ÷ 0,6
         let packing = ShoppingListBuilder.packing(key: line?.key ?? "", quantity: 250, unit: .g)
-        #expect(packing.packSize == 400)
+        #expect(packing.packSize == 265)
         #expect(packing.packCount == 1)
-        #expect(packing.leftover == 150)
+        #expect(packing.leftover == 15)
         #expect(packing.perishable)
-        #expect(line?.costEur == 1.78) // 400 g à 4,45 €/kg
+        #expect(line?.costEur == 1.28) // 265 g à 4,84 €/kg
         let summary = ShoppingListBuilder.summary(lines)
-        #expect(abs(summary.wastedEur - 0.6675) < 0.001)
+        #expect(abs(summary.wastedEur - 0.0726) < 0.001)
         #expect(summary.keptEur == 0)
     }
 
@@ -154,9 +154,9 @@ struct ShoppingListBuilderTests {
         var rice = ingredient("Riz basmati cru", 560, aisle: .epicerie)
         rice.foodCode = 9100
         let summary = ShoppingListBuilder.summary(ShoppingListBuilder.build(from: [rice]))
-        #expect(summary.checkoutEur == 5.38) // paquet de 1 kg
-        #expect(abs(summary.keptEur - 0.44 * 5.38) < 0.001)
-        #expect(abs(summary.weekCostEur - 0.56 * 5.38) < 0.01)
+        #expect(summary.checkoutEur == 5.32) // paquet de 1 kg
+        #expect(abs(summary.keptEur - 0.44 * 5.32) < 0.001)
+        #expect(abs(summary.weekCostEur - 0.56 * 5.32) < 0.01)
     }
 
     @Test func frozenVegetablesComeInBags() {

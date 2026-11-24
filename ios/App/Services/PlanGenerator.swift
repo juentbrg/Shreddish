@@ -105,7 +105,8 @@ final class PlanGenerator {
         }
         guard let sanitized = week.sanitized else { throw .invalidOutput("Semaine invalide") }
         let finished = await finish(sanitized.days, ctx: ctx)
-        let days = SavedRecipeMatcher.restoreSteps(await retryOffTargetDays(finished.days, ctx: ctx), recipes: ctx.recipes)
+        let onTarget = await retryOffTargetDays(finished.days, ctx: ctx)
+        let days = SavedRecipeMatcher.restoreSteps(await retryOverBudgetDays(onTarget, ctx: ctx), recipes: ctx.recipes)
         let plan = WeekPlanDTO(prepSessions: sanitized.prepSessions, days: days)
         do {
             try PlanStore.saveWeek(
@@ -235,14 +236,20 @@ final class PlanGenerator {
         let avoid = plan.days.flatMap(\.meals).map(\.name)
         let otherDaysCost = plan.days.filter { $0.persistentModelID != day.persistentModelID }.reduce(0) { $0 + $1.plannedCostEUR }
         let limit = BudgetMath.dayLimit(
-            weeklyBudget: preferences.weeklyBudget / portions, tolerance: preferences.tolerance, otherDaysCost: otherDaysCost
+            weeklyBudget: Self.periodBudget(preferences, plan: plan) / portions, tolerance: preferences.tolerance,
+            otherDaysCost: otherDaysCost
         )
         let result = try await requestDay(
             ctx, offset: day.offset, avoid: avoid, prepSessions: Set(plan.prepSessions.map(\.index)), costLimit: limit
         )
         guard let sanitized = result.sanitized else { throw .invalidOutput("Jour invalide") }
         let finished = await finish([sanitized], ctx: ctx)
-        guard let newDay = finished.days.first else { throw .invalidOutput("Jour invalide") }
+        guard var newDay = finished.days.first else { throw .invalidOutput("Jour invalide") }
+        // Spec 018 : coût calculé au-dessus de la part du budget restante, un essai moins cher.
+        if Self.cost(of: [newDay]) > limit + 0.01,
+           let cheaper = await cheaperDay(than: newDay, limit: limit, avoid: avoid, ctx: ctx) {
+            newDay = cheaper
+        }
         do { try PlanStore.replaceDay(day, with: newDay, in: store) } catch { throw .unexpected("Enregistrement impossible") }
         return Self.finalWarnings(
             result.warnings, days: [newDay], constraints: ctx.constraints, unverified: finished.unverified, includeBudget: false
@@ -261,7 +268,8 @@ final class PlanGenerator {
         let others = day.sortedMeals.filter { $0.persistentModelID != meal.persistentModelID }.map(\.dto)
         let otherDaysCost = plan.days.filter { $0.persistentModelID != day.persistentModelID }.reduce(0) { $0 + $1.plannedCostEUR }
         let dayLimit = BudgetMath.dayLimit(
-            weeklyBudget: preferences.weeklyBudget / portions, tolerance: preferences.tolerance, otherDaysCost: otherDaysCost
+            weeklyBudget: Self.periodBudget(preferences, plan: plan) / portions, tolerance: preferences.tolerance,
+            otherDaysCost: otherDaysCost
         )
         let mealLimit = BudgetMath.mealLimit(dayLimit: dayLimit, otherMealsCost: others.reduce(0) { $0 + $1.costEur })
         let avoid = plan.days.flatMap(\.meals).map(\.name)
@@ -300,7 +308,15 @@ final class PlanGenerator {
         // Étapes écrites pour les quantités d'avant ajustement : réécrites par le rédacteur de recettes.
         if !RecipeConsistency.stepsMatch(replacement) { replacement.steps = [] }
         do { try PlanStore.replaceMeal(meal, with: replacement, in: store) } catch { throw .unexpected("Enregistrement impossible") }
-        return result.warnings.filter { !$0.isRecomputed } + (verified ? [] : [.unverifiedMeals(count: 1)])
+        // Spec 018 : coût calculé par l'application, signalé au-dessus de la part du budget restante.
+        let overLimit: [ValidationIssue] = replacement.costEur > mealLimit + 0.01
+            ? [.overCostLimit(costEur: BudgetMath.cents(replacement.costEur), limitEur: BudgetMath.cents(mealLimit))] : []
+        return result.warnings.filter { !$0.isRecomputed && !$0.isBudget } + overLimit + (verified ? [] : [.unverifiedMeals(count: 1)])
+    }
+
+    /// Budget hebdo ramené aux jours du planning (planning de 3 jours : 3/7 du budget).
+    static func periodBudget(_ preferences: Preferences, plan: WeeklyPlan) -> Double {
+        preferences.weeklyBudget * Double(min(max(plan.days.count, 1), 7)) / 7
     }
 
     // MARK: Retry
@@ -326,21 +342,12 @@ final class PlanGenerator {
         return try await withBudgetRetry { try await operation(2, $0 ?? refusal) }
     }
 
-    /// Budget souple (spec 004, FR-304) : au-dessus du plafond, un nouvel essai avec le coût obtenu ;
-    /// la proposition la moins chère est gardée, avec son avertissement.
+    /// Coût vérifié après le calcul des prix par l'application (spec 018) : ici, un essai et un nouvel essai
+    /// si l'erreur s'y prête.
     private func withBudgetRetry<T: Sendable>(
         _ operation: @escaping @Sendable (String?) async throws -> ValidationResult<T>
     ) async throws(AIError) -> ValidationResult<T> {
-        let first = try await withRetry { try await operation(nil) }
-        guard let over = first.overCeiling else { return first }
-        let feedback = PromptBuilder.overBudgetFeedback(costEur: over.costEur, ceilingEur: over.limitEur)
-        let second: ValidationResult<T>
-        do {
-            second = try await withRetry { try await operation(feedback) }
-        } catch {
-            return first
-        }
-        return (second.overCeiling?.costEur ?? 0) <= over.costEur ? second : first
+        try await withRetry { try await operation(nil) }
     }
 
     /// Un essai + un nouvel essai si l'erreur s'y prête (research R6).

@@ -51,7 +51,7 @@ SwiftLint tourne en pré-build (`ios/.swiftlint.yml`).
 ## Macros et prix embarqués
 
 - Macros : table Ciqual 2025 (ANSES, Licence Ouverte), `python3 tools/ciqual/build_catalog.py`.
-- Prix : relevés Open Prices (Open Food Facts, ODbL), prix France au quartile bas, sans magasin
+- Prix : relevés Open Prices (Open Food Facts, ODbL), prix France au 3e quartile (moyen-haut), formats les plus relevés, sans magasin
   (spec 011). Export : `prices.parquet` du dépôt Hugging Face `openfoodfacts/open-prices`.
 
 ```bash

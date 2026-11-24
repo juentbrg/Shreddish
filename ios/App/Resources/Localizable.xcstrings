@@ -792,6 +792,40 @@
         }
       }
     },
+    "%lld / %lld articles cochés": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld / %lld Artikel abgehakt"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld / %lld items checked"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld / %lld artículos marcados"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$lld / %2$lld articles cochés"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld / %lld articoli spuntati"
+          }
+        }
+      }
+    },
     "%lld articles ajoutés à « Courses Shreddish » dans Rappels.": {
       "localizations": {
         "de": {
@@ -1158,6 +1192,34 @@
         }
       }
     },
+    "%lld repas déjà mangés ou sautés retirés de la liste.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld meals already eaten or skipped removed from the list."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld comidas ya comidas u omitidas quitadas de la lista."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld bereits gegessene oder ausgelassene Mahlzeiten von der Liste entfernt."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld pasti già mangiati o saltati tolti dalla lista."
+          }
+        }
+      }
+    },
     "%lld repas par jour": {
       "localizations": {
         "de": {
@@ -1497,6 +1559,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "1 giorno previsto sostituito, gli altri restano."
+          }
+        }
+      }
+    },
+    "1 repas déjà mangé ou sauté retiré de la liste.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 meal already eaten or skipped removed from the list."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 comida ya comida u omitida quitada de la lista."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 bereits gegessene oder ausgelassene Mahlzeit von der Liste entfernt."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 pasto già mangiato o saltato tolto dalla lista."
           }
         }
       }
@@ -2973,30 +3063,30 @@
         }
       }
     },
-    "Aujourd'hui archivé, journal conservé.": {
+    "Aujourd'hui": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Heute archiviert, Tagebuch bleibt erhalten."
+            "value": "Heute"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Today archived, log kept."
+            "value": "Today"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Hoy archivado, registro conservado."
+            "value": "Hoy"
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Oggi archiviato, diario conservato."
+            "value": "Oggi"
           }
         }
       }
@@ -3850,6 +3940,12 @@
     },
     "Calories et macros comptées. Goût respecté dans les recettes.": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kalorien und Makros werden gezählt. Geschmack wird in Rezepten berücksichtigt."
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -3860,12 +3956,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Calorías y macros contabilizadas. Sabor respetado en las recetas."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kalorien und Makros werden gezählt. Geschmack wird in Rezepten berücksichtigt."
           }
         },
         "it": {
@@ -4738,6 +4828,34 @@
         }
       }
     },
+    "Courses validées le %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shopping done on %@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compra validada el %@"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Einkauf erledigt am %@"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spesa convalidata il %@"
+          }
+        }
+      }
+    },
     "Coût": {
       "localizations": {
         "de": {
@@ -4934,34 +5052,6 @@
         }
       }
     },
-    "Dans le panier": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Im Wagen"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "In the cart"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "En el carrito"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nel carrello"
-          }
-        }
-      }
-    },
     "Date": {
       "localizations": {
         "de": {
@@ -5014,6 +5104,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Data di nascita"
+          }
+        }
+      }
+    },
+    "Demain": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Morgen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tomorrow"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mañana"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Domani"
           }
         }
       }
@@ -5161,6 +5279,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ingredienti da consumare?"
+          }
+        }
+      }
+    },
+    "Dimanche prochain": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nächster Sonntag"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next Sunday"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El próximo domingo"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Domenica prossima"
           }
         }
       }
@@ -6417,6 +6563,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Carboidrati"
+          }
+        }
+      }
+    },
+    "Glucides %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kohlenhydrate %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Carbs %@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Carbohidratos %@"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Carboidrati %@"
           }
         }
       }
@@ -7717,6 +7891,34 @@
         }
       }
     },
+    "Lundi prochain": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nächster Montag"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next Monday"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El próximo lunes"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lunedì prossimo"
+          }
+        }
+      }
+    },
     "Légère": {
       "localizations": {
         "de": {
@@ -8921,6 +9123,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Notifiche negate per Shreddish: nessun promemoria verrà mostrato."
+          }
+        }
+      }
+    },
+    "Nouvelle journée en préparation…": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neuer Tag wird vorbereitet…"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preparing a new day…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preparando un nuevo día…"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preparazione di una nuova giornata…"
           }
         }
       }
@@ -11033,6 +11263,34 @@
         }
       }
     },
+    "Prix moyens en France, paquets entiers. Coche ce que tu as déjà. Appui long sur un article pour le bannir.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Durchschnittspreise in Frankreich, ganze Packungen. Hake ab, was du schon hast. Lange auf einen Artikel drücken, um ihn auszuschließen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Average prices in France, whole packs. Check what you already have. Long-press an item to ban it."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Precios medios en Francia, paquetes enteros. Marca lo que ya tienes. Mantén pulsado un artículo para vetarlo."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prezzi medi in Francia, confezioni intere. Spunta ciò che hai già. Tieni premuto un articolo per escluderlo."
+          }
+        }
+      }
+    },
     "Prix médians en France, paquets entiers": {
       "extractionState": "stale",
       "localizations": {
@@ -11058,34 +11316,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Prezzi mediani in Francia, confezioni intere"
-          }
-        }
-      }
-    },
-    "Prix médians en France, paquets entiers. Appui long sur un article pour le bannir.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Medianpreise in Frankreich, ganze Packungen. Artikel gedrückt halten, um ihn zu sperren."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Median prices in France, whole packs. Long-press an item to ban it."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Precios medianos en Francia, paquetes enteros. Mantén pulsado un artículo para vetarlo."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Prezzi mediani in Francia, confezioni intere. Tieni premuto un articolo per escluderlo."
           }
         }
       }
@@ -11568,6 +11798,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Preparazione"
+          }
+        }
+      }
+    },
+    "Préparation de ta semaine…": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deine Woche wird vorbereitet…"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preparing your week…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preparando tu semana…"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preparazione della tua settimana…"
           }
         }
       }
@@ -12162,6 +12420,34 @@
         }
       }
     },
+    "Recherche d'une alternative…": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Suche nach einer Alternative…"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Looking for an alternative…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buscando una alternativa…"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ricerca di un'alternativa…"
+          }
+        }
+      }
+    },
     "Recherche du produit…": {
       "localizations": {
         "de": {
@@ -12505,6 +12791,34 @@
         }
       }
     },
+    "Repas déjà cochés aujourd'hui gardés.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Heute bereits abgehakte Mahlzeiten bleiben erhalten."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Meals already checked today are kept."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se conservan las comidas ya marcadas hoy."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I pasti già spuntati oggi vengono mantenuti."
+          }
+        }
+      }
+    },
     "Repas entre %@ et %@, %@ de jeûne. S'applique aux prochains plannings.": {
       "localizations": {
         "de": {
@@ -12791,6 +13105,34 @@
         }
       }
     },
+    "Reste à acheter": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Noch zu kaufen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Left to buy"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Por comprar"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Da comprare"
+          }
+        }
+      }
+    },
     "Restes de ta dernière liste": {
       "localizations": {
         "de": {
@@ -12955,6 +13297,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Rimuovi dalle ricette"
+          }
+        }
+      }
+    },
+    "Rouvrir": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reopen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reabrir"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wieder öffnen"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Riapri"
           }
         }
       }
@@ -15208,6 +15578,34 @@
         }
       }
     },
+    "Tout est coché": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Everything is checked"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Todo marcado"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alles abgehakt"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tutto spuntato"
+          }
+        }
+      }
+    },
     "Tout le foyer avec un seul abonnement": {
       "localizations": {
         "de": {
@@ -15569,6 +15967,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Valori nutrizionali mancanti per questo prodotto. Inseriscilo a mano."
+          }
+        }
+      }
+    },
+    "Valider les courses": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Confirm shopping"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Validar la compra"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Einkauf bestätigen"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Convalida la spesa"
           }
         }
       }

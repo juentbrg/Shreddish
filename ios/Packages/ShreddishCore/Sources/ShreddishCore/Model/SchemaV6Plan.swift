@@ -221,3 +221,10 @@ public enum SchemaV13: VersionedSchema {
 
     public static var models: [any PersistentModel.Type] { SchemaV12.models + [ShoppingReceipt.self, MemberWeight.self] }
 }
+
+/// Schéma V14 (spec 019) : courses validées, liste figée.
+public enum SchemaV14: VersionedSchema {
+    public static let versionIdentifier = Schema.Version(14, 0, 0)
+
+    public static var models: [any PersistentModel.Type] { SchemaV13.models + [ShoppingValidation.self] }
+}

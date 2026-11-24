@@ -38,11 +38,12 @@ struct PlanRangeTests {
         #expect(following.isCurrent)
         #expect(following.startDay == Self.sunday.adding(days: 8))
         #expect(following.sortedDays.map(\.offset) == Array(0...5))
-        // Aujourd'hui, déjà journalisé : archivé, journal conservé.
+        // Aujourd'hui, déjà journalisé : ancien jour archivé, repas coché repris dans le nouveau planning.
         let archived = try context.fetch(FetchDescriptor<WeeklyPlan>()).filter { !$0.isCurrent && $0.id != current.id }
         #expect(archived.count == 1)
         #expect(archived.first?.sortedDays.map(\.day) == [monday])
-        #expect(archived.first?.sortedDays.first?.meals.contains { $0.status == .eaten } == true)
+        #expect(archived.first?.sortedDays.first?.meals.contains { $0.status == .eaten } == false)
+        #expect(plan.day(monday)?.meals.contains { $0.status == .eaten } == true)
         #expect(PlanStore.activePlans(in: context).map(\.id) == [plan.id, following.id])
     }
 

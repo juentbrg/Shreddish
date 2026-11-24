@@ -127,10 +127,6 @@ public enum PromptBuilder {
         var costLimitEur: Double?
         /// Retour sur l'essai précédent (coût trop élevé), spec 004.
         var previousAttemptFeedback: String?
-        /// Prix de référence en France (spec 011), pour estimer le budget comme l'application.
-        var referencePricesEurPerKg: String? = PromptBuilder.referencePrices
-        /// Formats vendus des produits qui se perdent une fois ouverts (spec 013).
-        var packSizes: String? = PromptBuilder.packSizes
         /// Ingrédients déjà chez l'utilisateur, à écouler en priorité (spec 013).
         var ingredientsToUse: [PantryItem]?
         /// Recettes sauvegardées à replacer (spec 014).
@@ -165,42 +161,6 @@ public enum PromptBuilder {
         pantry.isEmpty ? nil : pantry.map(PantryItem.init)
     }
 
-    /// Produits frais et conserves vendus en paquets : « Pois chiches en conserve 400 g / 800 g ; … ».
-    static let packSizes: String? = {
-        let products = PriceCatalog.shared.allProducts.filter { $0.perishable && !$0.packs.isEmpty }
-            .sorted { $0.label.localizedStandardCompare($1.label) == .orderedAscending }
-        func size(_ value: Double, _ unit: MeasureUnit) -> String {
-            switch unit {
-            case .piece: "\(Int(value))"
-            case .g: value >= 1000 ? "\(String(format: "%g", value / 1000)) kg" : "\(Int(value)) g"
-            case .ml: value >= 1000 ? "\(String(format: "%g", value / 1000)) L" : "\(Int(value)) ml"
-            }
-        }
-        let items = products.map { product in
-            "\(product.label) " + product.packs.map { size($0, product.unit) }.joined(separator: " / ")
-        }
-        return items.isEmpty ? nil : items.joined(separator: " ; ")
-    }()
-
-    /// Aliments de base et leur prix au kg mangé (table de prix), envoyés avec les tâches de planification.
-    static let referenceFoods: [(label: String, code: Int)] = [
-        ("poulet filet", 36017), ("poulet cuisse", 36002), ("bœuf haché 5 %", 6250), ("porc filet", 28204),
-        ("thon au naturel égoutté", 26039), ("œuf", 22000), ("fromage blanc 0 %", 19644), ("lait demi-écrémé", 19041),
-        ("emmental", 12115), ("riz", 9100), ("pâtes", 9810), ("semoule", 9610), ("flocons d'avoine", 32140),
-        ("lentilles", 20585), ("pois chiches égouttés", 20532), ("pomme de terre", 4008), ("haricots verts", 20061),
-        ("banane", 13005), ("pomme", 13039), ("avocat", 13004), ("huile de colza", 17130), ("huile d'olive", 17270),
-        ("amandes", 15000), ("graines de chia", 15047), ("beurre de cacahuète", 15202), ("pain complet", 7110),
-        ("tofu", 20904),
-    ]
-
-    static let referencePrices: String? = {
-        let catalog = PriceCatalog.shared
-        let items = referenceFoods.compactMap { item in
-            catalog.price(code: item.code).map { "\(item.label) \(String(format: "%.1f", $0.eurPerEdibleKg))" }
-        }
-        return items.isEmpty ? nil : items.joined(separator: " ; ")
-    }()
-
     public static func weekInput(
         targets: MacroTotals, goal: Goal, preferences: PromptPreferences, feedback: String? = nil,
         pantry: [IngredientDTO] = [], recipes: [MealDTO] = [], dayCount: Int = 7
@@ -222,11 +182,13 @@ public enum PromptBuilder {
         ))
     }
 
-    /// Message envoyé au nouvel essai quand le coût dépasse le plafond.
-    public static func overBudgetFeedback(costEur: Double, ceilingEur: Double) -> String {
-        "Proposition précédente : \(BudgetMath.cents(costEur)) € pour un plafond de \(BudgetMath.cents(ceilingEur)) €. "
-            + "Remplace les produits chers (marque distributeur, yaourt nature 0 % ou fromage blanc au lieu du skyr, "
-            + "œufs, légumineuses, poulet entier ou cuisses, légumes surgelés), macros identiques."
+    /// Message envoyé au nouvel essai quand le coût calculé par l'application dépasse le plafond (spec 018).
+    public static func overBudgetFeedback(costEur: Double, ceilingEur: Double, expensive: [IngredientDTO] = []) -> String {
+        let items = expensive.map { "\($0.name) \(String(format: "%.2f", $0.costEur)) €" }.joined(separator: ", ")
+        return "Proposition précédente : \(BudgetMath.cents(costEur)) € au prix moyen en supermarché, pour un plafond de "
+            + "\(BudgetMath.cents(ceilingEur)) €." + (items.isEmpty ? "" : " Les plus chers : \(items).")
+            + " Remplace les produits chers (yaourt nature 0 % ou fromage blanc au lieu du skyr, œufs, légumineuses, "
+            + "poulet entier ou cuisses, légumes surgelés), macros identiques."
     }
 
     /// Retour pour un jour hors cible après ajustement des portions (spec 010), valeurs Ciqual.
@@ -323,22 +285,14 @@ public enum PromptBuilder {
         macros depuis la table Ciqual et ajuste les portions : nomme chaque ingrédient précisément, tel \
         qu'acheté (ex. « Riz basmati cru », « Lentilles vertes sèches », « Thon au naturel en boîte \
         égoutté », « Fromage blanc 0 % »).
-        - Budget : objectif, jamais bloquant. Coût total de la semaine ≤ weekly_budget_eur ; dépassement au plus de budget_tolerance \
-        (0,1 = 10 %), à éviter. task "day" ou "replace_meal" : coût total ≤ cost_limit_eur. Budget serré : \
-        choisis les produits les moins chers par gramme de protéine (œufs, yaourt nature 0 %, fromage blanc 0 %, \
-        lentilles, pois chiches, thon en boîte, poulet entier ou cuisses, porc, légumes surgelés, riz, pâtes, \
-        flocons d'avoine) plutôt que les produits premium (skyr, saumon, avocat, fruits secs, portions individuelles). \
-        Ne remplis jamais infeasible pour le budget ou le prix : propose le planning le moins cher possible, \
-        l'application recalcule le coût et prévient si besoin.
+        - Budget : weekly_budget_eur (task "week") ou cost_limit_eur (task "day", "replace_meal"), au prix moyen \
+        en supermarché en France ; l'application calcule le coût. Budget serré : produits les moins chers par \
+        gramme de protéine (œufs, yaourt nature 0 %, fromage blanc 0 %, lentilles, pois chiches, thon en boîte, \
+        poulet entier ou cuisses, porc, légumes surgelés, riz, pâtes, flocons d'avoine) plutôt que premium (skyr, \
+        saumon, avocat, fruits secs, portions individuelles). Jamais un motif d'infeasible.
         - previous_attempt_feedback : si présent, corrige ce qui y est signalé.
-        - Prix : prix moyens en supermarché en France, marque distributeur. reference_prices_eur_per_kg donne \
-        le prix au kg mangé des aliments courants : base-toi dessus pour le budget. Pour chaque ingrédient, \
-        unit_price_eur en € par kg (unit "g"), par litre (unit "ml") ou par pièce (unit "piece"). \
-        cost_eur = quantity × unit_price_eur (÷ 1000 pour g et ml). L'application recalcule les prix.
-        - pack_sizes : formats vendus des produits frais et conserves, qui se gardent 3 jours une fois \
-        ouverts (poids acheté ; conserve de légumineuses ≈ 60 % égoutté). Utilise chaque paquet entier : \
-        répartis-le sur des repas proches (même plat en 2 fois, ou 2 recettes en 3 jours) plutôt que d'en \
-        laisser (ex. boîte de 400 g de pois chiches = 240 g égouttés sur 2 repas).
+        - Produits frais et conserves entamés (viande, crème, conserve, brique) : finis le paquet sur des repas \
+        proches plutôt que d'en laisser (ex. boîte de 400 g de pois chiches = 240 g égouttés sur 2 repas).
         - ingredients_to_use : ingrédients déjà chez l'utilisateur (quantités disponibles au plus), à utiliser \
         en priorité cette semaine, les plus périssables dans les premiers jours. L'application les déduit des \
         courses.
@@ -354,7 +308,7 @@ public enum PromptBuilder {
         (riz au moins 2 fois par semaine sauf si exclu).
         - owned_supplements : compléments déjà possédés, coût 0. kind "macro" (whey, gainer…) : utilise-le pour \
         atteindre les protéines quand c'est pertinent (collation, après l'entraînement), comme ingrédient en g, \
-        unit_price_eur = 0, cost_eur = 0, aisle "autre". Si serving_g et les valeurs par dose sont présents, \
+        aisle "autre". Si serving_g et les valeurs par dose sont présents, \
         macros du complément = quantité ÷ serving_g × kcal_per_serving, protein_g_per_serving, \
         carbs_g_per_serving, fat_g_per_serving ; indique la dose en scoops (ex. « 1 scoop de 30 g »). \
         kind "dose" (créatine, vitamines, oméga-3…) : ni macro ni ingrédient, la prise est ajoutée par \
@@ -365,8 +319,7 @@ public enum PromptBuilder {
         déjeuner 12:00-13:30, dîner 19:00-21:00, collation selon l'entraînement).
         \(fastingRules)
         - Quantités en g, ml ou piece, pesées crues / non cuites. unit "piece" seulement pour ce qui se compte \
-        (œufs, fruits, tortillas), avec piece_g = poids d'une pièce en g ; sinon piece_g = null. cost_eur = \
-        coût de la quantité utilisée, recalculé par l'application depuis unit_price_eur.
+        (œufs, fruits, tortillas), avec piece_g = poids d'une pièce en g ; sinon piece_g = null.
         - Semaine et jour : pas d'étapes, les recettes sont rédigées ensuite.
         - Variété : un même plat principal au plus 2 fois par semaine, sauf préparation batch cooking. Change \
         vraiment de plat, pas seulement de nom : la même association protéine principale + féculent (ex. \
@@ -382,7 +335,7 @@ public enum PromptBuilder {
         - Si allergies, exclusions et temps sont impossibles à respecter ensemble : remplis infeasible avec la \
         raison en une phrase, sans jamais ignorer une contrainte ; sinon infeasible = null. Jamais pour le \
         budget, le prix, la longueur ou le format de la réponse : produis tous les jours demandés.
-        - Noms de plats, étapes et textes en français.
+        - Noms de plats, étapes et textes en français, sauf language indiqué.
         """
     }
 

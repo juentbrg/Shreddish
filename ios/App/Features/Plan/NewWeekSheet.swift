@@ -51,11 +51,11 @@ struct NewWeekSheet: View {
 
     /// Raccourcis : suite du planning en cours, aujourd'hui, demain, prochain lundi, prochain dimanche.
     private var shortcuts: [(String, LocalDay)] {
-        var items: [(String, LocalDay)] = followingDay.map { [("Suite du planning", $0)] } ?? []
+        var items: [(String, LocalDay)] = followingDay.map { [(String(localized: "Suite du planning"), $0)] } ?? []
         let others = [
-            ("Aujourd'hui", today), ("Demain", today.adding(days: 1)),
-            ("Lundi prochain", Format.next(weekday: 2, after: today)),
-            ("Dimanche prochain", Format.next(weekday: 1, after: today)),
+            (String(localized: "Aujourd'hui"), today), (String(localized: "Demain"), today.adding(days: 1)),
+            (String(localized: "Lundi prochain"), Format.next(weekday: 2, after: today)),
+            (String(localized: "Dimanche prochain"), Format.next(weekday: 1, after: today)),
         ]
         for (label, day) in others where !items.contains(where: { $0.1 == day }) { items.append((label, day)) }
         return items.sorted { $0.1 < $1.1 }
@@ -81,7 +81,7 @@ struct NewWeekSheet: View {
         var text = replaced.count == 1
             ? String(localized: "1 jour prévu remplacé, les autres restent.")
             : String(localized: "\(replaced.count) jours prévus remplacés, les autres restent.")
-        if replaced.contains(today) { text += " " + String(localized: "Aujourd'hui archivé, journal conservé.") }
+        if replaced.contains(today) { text += " " + String(localized: "Repas déjà cochés aujourd'hui gardés.") }
         return text
     }
 
@@ -161,7 +161,7 @@ struct NewWeekSheet: View {
     private func dayGrid(
         _ items: [(String, LocalDay)], selected: LocalDay, id: String, select: @escaping (LocalDay) -> Void
     ) -> some View {
-        LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)], spacing: 8) {
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 8)], spacing: 8) {
             ForEach(items, id: \.1) { label, day in
                 let isSelected = day == selected
                 Button {

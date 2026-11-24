@@ -64,6 +64,11 @@ public final class WeeklyPlan {
         ShoppingListBuilder.summary(shoppingItems.map(\.line))
     }
 
+    /// Reste à acheter : prix des articles pas encore cochés (déjà chez soi ou dans le panier), spec 018.
+    public var remainingShoppingEur: Double {
+        BudgetMath.cents(shoppingItems.filter { !$0.isChecked }.reduce(0) { $0 + $1.costEUR })
+    }
+
     /// Paquets entamés de la liste, à proposer comme ingrédients à écouler (spec 013).
     public var leftovers: [IngredientDTO] {
         ShoppingListBuilder.leftovers(shoppingItems.map(\.line))

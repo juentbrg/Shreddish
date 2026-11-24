@@ -9,8 +9,9 @@ public struct IngredientDTO: Codable, Sendable, Equatable {
     /// Brute telle que reçue ; `g`, `ml` ou `piece` après validation (research R11).
     public var unit: String
     public var aisle: Aisle
+    /// Coût calculé par l'application (spec 018) ; l'IA n'envoie plus de prix.
     public var costEur: Double
-    /// Prix au kg (g), au litre (ml) ou à la pièce estimé pour l'enseigne et le secteur (spec 005).
+    /// Prix au kg (g), au litre (ml) ou à la pièce de la table de prix (spec 018).
     public var unitPriceEur: Double?
     /// Poids d'une pièce en g, fourni par l'IA pour l'unité `piece` (spec 010).
     public var pieceG: Double?
@@ -29,6 +30,25 @@ public struct IngredientDTO: Codable, Sendable, Equatable {
         self.unitPriceEur = unitPriceEur
         self.pieceG = pieceG
         self.foodCode = foodCode
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case name, quantity, unit, aisle, costEur, unitPriceEur, pieceG, foodCode
+    }
+
+    /// Prix absents des réponses de l'IA (spec 018) : coût 0 jusqu'au calcul par l'application.
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.init(
+            name: try container.decode(String.self, forKey: .name),
+            quantity: try container.decode(Double.self, forKey: .quantity),
+            unit: try container.decode(String.self, forKey: .unit),
+            aisle: try container.decode(Aisle.self, forKey: .aisle),
+            costEur: try container.decodeIfPresent(Double.self, forKey: .costEur) ?? 0,
+            unitPriceEur: try container.decodeIfPresent(Double.self, forKey: .unitPriceEur),
+            pieceG: try container.decodeIfPresent(Double.self, forKey: .pieceG),
+            foodCode: try container.decodeIfPresent(Int.self, forKey: .foodCode)
+        )
     }
 
     public var measureUnit: MeasureUnit? { MeasureUnit(rawValue: unit) }
@@ -105,7 +125,7 @@ extension MealDTO {
             ingredients: try container.decode([IngredientDTO].self, forKey: .ingredients),
             steps: try container.decodeIfPresent([String].self, forKey: .steps) ?? [],
             prepMinutes: try container.decode(Int.self, forKey: .prepMinutes),
-            costEur: try container.decode(Double.self, forKey: .costEur),
+            costEur: try container.decodeIfPresent(Double.self, forKey: .costEur) ?? 0,
             kcal: try container.decode(Double.self, forKey: .kcal),
             proteinG: try container.decode(Double.self, forKey: .proteinG),
             carbsG: try container.decode(Double.self, forKey: .carbsG),

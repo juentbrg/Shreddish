@@ -106,7 +106,8 @@ public enum ShoppingListBuilder {
             let product = link.product
             let unitKey = product.unit == .ml ? MeasureUnit.g : product.unit
             // Version surgelée d'un produit frais (« haricots verts surgelés ») : ligne à part, au rayon surgelés.
-            if product.aisle != .surgeles, AisleClassifier.inferred(ingredient.name) == .surgeles {
+            // Produit à la pièce (banane) : acheté frais, jamais en sachet surgelé.
+            if product.aisle != .surgeles, product.unit != .piece, AisleClassifier.inferred(ingredient.name) == .surgeles {
                 return ShoppingLine(
                     key: "\(product.id)\(frozenSuffix)|\(unitKey.rawValue)", name: displayName(ingredient.name),
                     totalQuantity: quantity, unit: product.unit, aisle: .surgeles, costEur: ingredient.costEur
@@ -158,11 +159,26 @@ public enum ShoppingListBuilder {
         return unit == .piece ? max(1, (quantity - 0.15).rounded(.up)) : quantity.rounded()
     }
 
-    /// Produit d'une ligne d'après sa clé (surgelé compris).
+    /// Produit d'une ligne d'après sa clé, dans la même unité d'achat (« oignon|piece » sans code n'est pas le
+    /// produit « oignon » vendu au poids). Version surgelée : prix du frais plafonné à celui des légumes surgelés.
     static func product(forKey key: String, prices: PriceCatalog) -> PurchaseProduct? {
-        let id = String(key.split(separator: "|").first ?? "")
-        return prices.product(id: id.hasSuffix(frozenSuffix) ? String(id.dropLast(frozenSuffix.count)) : id)
+        let parts = key.split(separator: "|").map(String.init)
+        guard let id = parts.first else { return nil }
+        let frozen = id.hasSuffix(frozenSuffix)
+        guard let product = prices.product(id: frozen ? String(id.dropLast(frozenSuffix.count)) : id) else { return nil }
+        let unitKey = product.unit == .ml ? MeasureUnit.g : product.unit
+        guard parts.count < 2 || parts[1] == unitKey.rawValue else { return nil }
+        guard frozen, let fresh = product.price, let bag = prices.product(id: frozenVegetablesId)?.price, bag < fresh else {
+            return product
+        }
+        return PurchaseProduct(
+            id: product.id, label: product.label, unit: product.unit, pieceG: product.pieceG, aisle: .surgeles,
+            price: bag, packs: product.packs, perishable: product.perishable
+        )
     }
+
+    /// Légumes surgelés en sachet (prix au kg des versions surgelées).
+    private static let frozenVegetablesId = "legumes surgeles"
 
     /// Paquets à acheter pour une ligne : la combinaison d'un seul format qui laisse le moins de reste, puis le
     /// moins de paquets ; au détail sans format connu.
@@ -171,7 +187,7 @@ public enum ShoppingListBuilder {
     ) -> Packing {
         let product = product(forKey: key, prices: prices)
         let frozen = key.split(separator: "|").first?.hasSuffix(frozenSuffix) ?? false
-        let sizes = frozen && product?.aisle != .surgeles ? frozenPacks : product?.packs ?? []
+        let sizes = frozen ? frozenPacks : product?.packs ?? []
         let perishable = !frozen && product?.perishable == true
         guard quantity > 0, !sizes.isEmpty else {
             return Packing(packSize: nil, packCount: 0, bought: quantity, leftover: 0, perishable: perishable, leftoverValue: 0)

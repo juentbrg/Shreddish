@@ -4,30 +4,28 @@
     "ingredient": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["name", "quantity", "unit", "aisle", "unit_price_eur", "cost_eur"],
+      "required": ["name", "quantity", "unit", "piece_g", "aisle"],
       "properties": {
         "name": { "type": "string" },
         "quantity": { "type": "number" },
-        "unit_price_eur": { "type": "number" },
         "unit": { "type": "string", "enum": ["g", "ml", "piece"] },
+        "piece_g": { "type": ["number", "null"] },
         "aisle": {
           "type": "string",
           "enum": ["fruits_legumes", "viande_poisson", "cremerie", "epicerie", "surgeles", "boulangerie", "autre"]
-        },
-        "cost_eur": { "type": "number" }
+        }
       }
     },
     "meal": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["type", "name", "ingredients", "steps", "prep_minutes", "cost_eur", "kcal", "protein_g", "carbs_g", "fat_g", "prep_session_ref", "time"],
+      "required": ["type", "name", "ingredients", "steps", "prep_minutes", "kcal", "protein_g", "carbs_g", "fat_g", "prep_session_ref", "time"],
       "properties": {
         "type": { "type": "string", "enum": ["breakfast", "lunch", "dinner", "snack"] },
         "name": { "type": "string" },
         "ingredients": { "type": "array", "items": { "$ref": "#/$defs/ingredient" } },
         "steps": { "type": "array", "items": { "type": "string" } },
         "prep_minutes": { "type": "integer" },
-        "cost_eur": { "type": "number" },
         "kcal": { "type": "number" },
         "protein_g": { "type": "number" },
         "carbs_g": { "type": "number" },

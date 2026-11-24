@@ -32,7 +32,7 @@ schéma strict ; tirets et rayons sont corrigés par l'application.
 
 - Repas par jour exact, macros à ±5 % (kcal) et ±10 % (glucides, lipides), protéines ≥ cible.
 - Allergies, `disliked_foods`, `max_prep_minutes` stricts.
-- Budget = objectif ; prix unitaires réalistes selon `store` et `location`.
+- Budget = objectif ; prix et coûts calculés par l'application (spec 018), jamais envoyés par l'IA.
 - Compléments possédés à coût 0, selon `kind` (macro ou dose).
 - `infeasible` seulement pour allergies, exclusions ou temps incompatibles, jamais pour le budget ni la longueur.
 

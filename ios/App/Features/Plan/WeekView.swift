@@ -40,6 +40,7 @@ struct WeekView: View {
                         ) { id in
                             withAnimation(.snappy) { selectedPlanID = id }
                         }
+                        .frame(maxWidth: Theme.readableWidth)
                         .padding(.horizontal, 20)
                         .padding(.bottom, 8)
                         WeekPlanList(plan: plan, planNext: canPlanAfter(plan) ? { showNewWeek = true } : nil)
@@ -138,6 +139,8 @@ struct WeekView: View {
                     if let plan = shownPlan {
                         selectedPlanID = nil
                         try? PlanStore.deletePlan(plan, in: context)
+                        model.undoableReplacement = nil
+                        Task { await model.notifications.reschedule() }
                     }
                 }
             } message: {
@@ -192,7 +195,8 @@ struct WeekView: View {
         let live = model.liveMealsHandler
         selectedPlanID = nil
         Task {
-            await model.run("Préparation de ta semaine…", recipesIn: context) { () async throws(AIError) -> [ValidationIssue] in
+            let message = String(localized: "Préparation de ta semaine…")
+            await model.run(message, recipesIn: context) { () async throws(AIError) -> [ValidationIssue] in
                 let warnings = try await generator.generateWeek(
                     profile: profile, preferences: preferences, startDay: start, dayCount: dayCount, pantry: pantry,
                     recipes: recipes.map(\.dto), in: context, onText: live
@@ -395,11 +399,13 @@ struct DayBadges: View {
         let carbsTarget = targets?.macros.carbsG ?? 0
         let carbsDeviation = carbsTarget > 0 ? totals.carbsG / carbsTarget - 1 : 0
         if Totals.isOffTarget(deviation) {
-            WarningBadge(text: "Hors cible \(Format.percent(deviation, signed: true))")
+            WarningBadge(text: String(localized: "Hors cible \(Format.percent(deviation, signed: true))"))
         }
         // Spec 004 : glucides nettement au-dessus de la cible.
         if carbsDeviation > 0.15 {
-            WarningBadge(text: "Glucides \(Format.percent(carbsDeviation, signed: true))", systemImage: "leaf.fill")
+            WarningBadge(
+                text: String(localized: "Glucides \(Format.percent(carbsDeviation, signed: true))"), systemImage: "leaf.fill"
+            )
         }
     }
 }

@@ -19,7 +19,8 @@ struct DayContent: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             DayHeroCard(day: day, targets: day.plan?.targets)
-            if let replaced = model.undoableReplacement, replaced.dayID == day.persistentModelID {
+            if let replaced = model.undoableReplacement, replaced.dayID == day.persistentModelID,
+               day.meals.contains(where: { $0.persistentModelID == replaced.replacementID }) {
                 UndoReplacementCard(name: replaced.previous.name) {
                     MealReplacement.undo(model: model, context: context)
                 } dismiss: {
@@ -82,7 +83,8 @@ struct DayContent: View {
         let context = context
         let day = day
         Task {
-            await model.run("Nouvelle journée en préparation…", recipesIn: context) { () async throws(AIError) -> [ValidationIssue] in
+            let message = String(localized: "Nouvelle journée en préparation…")
+            await model.run(message, recipesIn: context) { () async throws(AIError) -> [ValidationIssue] in
                 try await generator.regenerateDay(day, profile: profile, preferences: preferences, pantry: pantry, in: context)
             }
         }
@@ -228,15 +230,23 @@ enum MealReplacement {
     static func run(meal: Meal, profile: Profile?, preferences: Preferences?, model: AppModel, context: ModelContext) {
         guard let profile, let preferences, let day = meal.day else { return }
         let generator = model.generator
-        let previous = ReplacedMeal(dayID: day.persistentModelID, order: meal.order, previous: meal.dto, status: meal.status)
+        let order = meal.order
+        var previous = ReplacedMeal(
+            dayID: day.persistentModelID, previous: meal.dto, status: meal.status, eatenFraction: meal.eatenFraction,
+            statusChangedAt: meal.statusChangedAt
+        )
         Task {
             var replaced = false
-            await model.run("Recherche d'une alternative…", recipesIn: context) { () async throws(AIError) -> [ValidationIssue] in
+            let message = String(localized: "Recherche d'une alternative…")
+            await model.run(message, recipesIn: context) { () async throws(AIError) -> [ValidationIssue] in
                 let warnings = try await generator.replaceMeal(meal, profile: profile, preferences: preferences, in: context)
                 replaced = true
                 return warnings
             }
-            if replaced { model.undoableReplacement = previous }
+            guard replaced else { return }
+            // Nouveau repas au même rang, juste après le remplacement.
+            previous.replacementID = day.meals.first { $0.order == order }?.persistentModelID
+            model.undoableReplacement = previous
         }
     }
 
@@ -245,9 +255,11 @@ enum MealReplacement {
         guard let replaced = model.undoableReplacement else { return }
         model.undoableReplacement = nil
         guard let day = context.model(for: replaced.dayID) as? DayPlan,
-              let current = day.meals.first(where: { $0.order == replaced.order }),
+              let current = day.meals.first(where: { $0.persistentModelID == replaced.replacementID }),
               let restored = try? PlanStore.replaceMeal(current, with: replaced.previous, in: context) else { return }
         restored.status = replaced.status
+        restored.eatenFraction = replaced.eatenFraction
+        restored.statusChangedAt = replaced.statusChangedAt
         try? context.save()
     }
 

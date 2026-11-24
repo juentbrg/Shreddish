@@ -240,9 +240,13 @@ final class AppModel {
 }
 
 /// Repas d'avant un remplacement : jour, rang, contenu et statut.
+/// Repas remplacé, pour « Remettre l'ancien repas » : nouveau repas visé par son identifiant, jamais par son rang
+/// (un jour régénéré entre-temps ne doit pas être écrasé).
 struct ReplacedMeal {
     let dayID: PersistentIdentifier
-    let order: Int
+    var replacementID: PersistentIdentifier?
     let previous: MealDTO
     let status: MealStatus
+    let eatenFraction: Double?
+    let statusChangedAt: Date?
 }

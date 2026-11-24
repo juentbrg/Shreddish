@@ -41,6 +41,10 @@ struct MealEditTests {
         #expect(stored.name == "Poulet patate douce")
         #expect(stored.status == .eaten)
         #expect(stored.time == "12:30")
+        // Spec 019 : repas mangé hors de la liste ; repassé à prévu, ses ingrédients y reviennent.
+        #expect(!plan.shoppingItems.map(\.name).contains { $0.localizedCaseInsensitiveContains("patate") })
+        stored.setStatus(.planned, at: .now)
+        PlanStore.rebuildStaleShoppingList(for: plan, in: context)
         #expect(plan.shoppingItems.map(\.name).contains { $0.localizedCaseInsensitiveContains("patate") })
     }
 }

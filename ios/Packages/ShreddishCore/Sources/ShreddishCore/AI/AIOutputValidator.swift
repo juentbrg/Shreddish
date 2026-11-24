@@ -438,10 +438,10 @@ public enum AIOutputValidator {
         // Libellé du produit acheté en plus du nom Ciqual : un article banni depuis la liste de courses
         // (« Steak haché 5 % ») retrouve l'ingrédient « Boeuf, steak haché 5% MG cru ».
         let labels = meal.ingredients.compactMap { PriceCatalog.shared.purchase(for: $0)?.product.label }
-        let haystacks = ([meal.name] + meal.ingredients.map(\.name) + labels).map(TextNormalizer.singular)
+        // Mots entiers : « lait » n'exclut pas la laitue, « ail » pas la volaille.
+        let haystacks = [meal.name] + meal.ingredients.map(\.name) + labels
         return excluded.first { food in
-            let needle = TextNormalizer.singular(food)
-            return !needle.isEmpty && haystacks.contains { $0.contains(needle) }
+            haystacks.contains { TextNormalizer.containsWords($0, food) }
         }
     }
 

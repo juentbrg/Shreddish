@@ -25,7 +25,8 @@ struct PantryRow: Identifiable, Equatable {
 
     init(_ ingredient: IngredientDTO) {
         self.init(
-            name: ingredient.name, quantity: Format.number(ingredient.quantity, digits: 0),
+            // Sans séparateur de milliers : « 1000 » se relit, « 1 000 » ou « 1,000 » non.
+            name: ingredient.name, quantity: String(Int(ingredient.quantity.rounded())),
             unit: ingredient.measureUnit ?? .g, foodCode: ingredient.foodCode, pieceG: ingredient.pieceG
         )
         isSuggested = true
@@ -33,7 +34,8 @@ struct PantryRow: Identifiable, Equatable {
 
     var ingredient: IngredientDTO? {
         let name = name.trimmingCharacters(in: .whitespaces)
-        let value = Double(quantity.replacingOccurrences(of: ",", with: ".").trimmingCharacters(in: .whitespaces))
+        let digits = quantity.filter { !$0.isWhitespace && $0 != "\u{202F}" && $0 != "\u{00A0}" }
+        let value = Double(digits.replacingOccurrences(of: ",", with: "."))
         guard isSelected, !name.isEmpty, let value, value > 0 else { return nil }
         return IngredientDTO(
             name: name, quantity: value, unit: unit.rawValue, aisle: .autre, costEur: 0, pieceG: pieceG, foodCode: foodCode

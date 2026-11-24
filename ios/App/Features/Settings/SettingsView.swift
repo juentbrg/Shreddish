@@ -73,6 +73,9 @@ extension SettingsView {
         try? context.save()
         model.calibrationMessage = nil
         model.warningMessage = nil
+        model.undoableReplacement = nil
         model.selectedTab = .week
+        // Rappels des repas supprimés retirés.
+        Task { await model.notifications.reschedule() }
     }
 }

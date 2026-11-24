@@ -8,7 +8,8 @@ struct ShoppingListView: View {
     @Query(filter: #Predicate<WeeklyPlan> { $0.isCurrent }, sort: \WeeklyPlan.createdAt, order: .reverse)
     var plans: [WeeklyPlan]
     @Query var allPreferences: [Preferences]
-    @State private var aisleFilter: Aisle?
+    /// Courses validées (spec 019) : observées pour rafraîchir l'écran à la validation.
+    @Query var validations: [ShoppingValidation]
     @State private var selectedPlanID: UUID?
     /// Aliment tout juste banni et nombre de repas à venir qui en contiennent.
     @State private var banned: (food: String, meals: [Meal])?
@@ -108,51 +109,39 @@ struct ShoppingListView: View {
         let items = plan.shoppingItems
         let grouped = Dictionary(grouping: items, by: \.aisle)
         let aisles = grouped.keys.sorted { $0.sortIndex < $1.sortIndex }
-        let visible = aisleFilter.map { [$0] } ?? aisles
         let checked = items.filter(\.isChecked).count
-        let summary = plan.shoppingSummary
+        // Coût de la semaine face au budget : tous les repas, mangés compris (spec 019).
+        let summary = PlanStore.fullShoppingSummary(for: plan, in: context)
+        let validation = validations.first { $0.planID == plan.id }
+        let logged = plan.days.flatMap(\.meals).filter { $0.status != .planned }.count
         return ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 if activePlans.count > 1 {
                     WeekNavigator(weeks: activePlans, selected: plan, today: model.clock.today) { selectedPlanID = $0 }
                 }
-                Text("Prix médians en France, paquets entiers. Appui long sur un article pour le bannir.")
+                Text("Prix moyens en France, paquets entiers. Coche ce que tu as déjà. Appui long sur un article pour le bannir.")
                     .font(Theme.text(.subheadline))
                     .foregroundStyle(Theme.muted)
-                let carried = PlanStore.carriedStock(for: plan, in: context)
-                if !carried.isEmpty {
-                    Label(
-                        String(localized: """
-                            Restes déjà achetés la semaine d'avant déduits : \(carried.map(\.name).formatted(.list(type: .and))).
-                            """),
-                        systemImage: "arrow.uturn.down"
-                    )
-                    .font(Theme.text(.footnote))
-                    .foregroundStyle(Theme.success)
-                    .accessibilityIdentifier("carriedStock")
-                }
+                ShoppingStatus(plan: plan, validation: validation, logged: logged)
                 VStack(alignment: .leading, spacing: 12) {
                     if let preferences = allPreferences.first {
                         WeekCostRow(summary: summary, preferences: preferences)
                     } else {
                         LabeledContent("Ticket estimé", value: Format.euros(summary.checkoutEur))
                     }
-                    Divider().overlay(Theme.line)
-                    LabeledContent("Dans le panier", value: "\(checked) / \(items.count)")
                 }
                 .font(Theme.text(.subheadline))
                 .card()
                 ReceiptSection(plan: plan, budget: allPreferences.first?.weeklyBudget ?? 0)
                     .id(plan.id)
-                AisleFilter(aisles: aisles, selected: $aisleFilter)
-                ForEach(visible, id: \.self) { aisle in
+                ForEach(aisles, id: \.self) { aisle in
                     AisleCard(aisle: aisle, items: grouped[aisle] ?? [], toggle: { item in
                         item.isChecked.toggle()
                         PlanStore.rebuildFollowingShoppingList(after: plan, in: context)
                         try? context.save()
                     }, ban: ban)
                 }
-                if checked > 0 {
+                if checked > 0, validation == nil {
                     Button("Tout décocher") {
                         for item in items { item.isChecked = false }
                         PlanStore.rebuildFollowingShoppingList(after: plan, in: context)
@@ -164,39 +153,112 @@ struct ShoppingListView: View {
             .padding(.horizontal, 20)
             .padding(.bottom, 24)
         }
+        // Reste à acheter toujours visible pendant qu'on coche (spec 018) ; tout coché : validation (spec 019).
+        .safeAreaInset(edge: .bottom) {
+            if validation == nil {
+                RemainingBar(
+                    remaining: plan.remainingShoppingEur, checked: checked, total: items.count,
+                    validate: checked == items.count ? { ShoppingValidation.validate(plan, at: model.clock.now, in: context) } : nil
+                )
+            }
+        }
+        // Repas cochés ou décochés ailleurs (journal, montre) : liste recalculée à l'affichage (spec 019).
+        .task(id: "\(plan.id)-\(logged)") {
+            PlanStore.rebuildStaleShoppingList(for: plan, in: context)
+            try? context.save()
+        }
         .paperBackground()
     }
 }
 
-/// Filtre par rayon.
-private struct AisleFilter: View {
-    let aisles: [Aisle]
-    @Binding var selected: Aisle?
+/// Courses validées (rouvrables), repas déjà mangés retirés, restes de la semaine d'avant déduits.
+private struct ShoppingStatus: View {
+    let plan: WeeklyPlan
+    let validation: ShoppingValidation?
+    let logged: Int
+    @Environment(\.modelContext) private var context
+    @Environment(AppModel.self) private var model
 
     var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                chip(String(localized: "Tout"), isSelected: selected == nil, color: Theme.card) { selected = nil }
-                ForEach(aisles, id: \.self) { aisle in
-                    chip(aisle.label, isSelected: selected == aisle, color: aisle.dotColor.opacity(0.22)) { selected = aisle }
-                }
+        if let validation {
+            let day = Format.weekdayLong(LocalDay(date: validation.validatedAt, calendar: model.clock.calendar))
+            HStack {
+                Label(
+                    String(localized: "Courses validées le \(day)"),
+                    systemImage: "checkmark.seal.fill"
+                )
+                .font(Theme.text(.subheadline, .semibold))
+                .foregroundStyle(Theme.success)
+                Spacer()
+                Button("Rouvrir") { ShoppingValidation.reopen(plan, in: context) }
+                    .buttonStyle(CompactButtonStyle(prominent: false))
+                    .accessibilityIdentifier("reopenShopping")
+            }
+        } else if logged > 0 {
+            Label(
+                logged == 1
+                    ? String(localized: "1 repas déjà mangé ou sauté retiré de la liste.")
+                    : String(localized: "\(logged) repas déjà mangés ou sautés retirés de la liste."),
+                systemImage: "fork.knife"
+            )
+            .font(Theme.text(.footnote))
+            .foregroundStyle(Theme.muted)
+            .accessibilityIdentifier("loggedMealsRemoved")
+        }
+        let carried = PlanStore.carriedStock(for: plan, in: context)
+        if !carried.isEmpty {
+            Label(
+                String(localized: """
+                    Restes déjà achetés la semaine d'avant déduits : \(carried.map(\.name).formatted(.list(type: .and))).
+                    """),
+                systemImage: "arrow.uturn.down"
+            )
+            .font(Theme.text(.footnote))
+            .foregroundStyle(Theme.success)
+            .accessibilityIdentifier("carriedStock")
+        }
+    }
+}
+
+/// Barre du bas : prix des articles pas encore cochés, mis à jour à chaque coche.
+private struct RemainingBar: View {
+    let remaining: Double
+    let checked: Int
+    let total: Int
+    /// Tout est coché : valider les courses (liste figée ensuite).
+    var validate: (() -> Void)?
+
+    var body: some View {
+        HStack(alignment: .center) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(validate == nil ? "Reste à acheter" : "Tout est coché").font(Theme.text(.subheadline, .semibold))
+                Text("\(checked) / \(total) articles cochés")
+                    .font(Theme.text(.caption))
+                    .foregroundStyle(Theme.muted)
+            }
+            Spacer()
+            if let validate {
+                Button("Valider les courses", systemImage: "checkmark", action: validate)
+                    .buttonStyle(CompactButtonStyle())
+                    .accessibilityIdentifier("validateShopping")
+            } else {
+                Text(Format.euros(remaining))
+                    .font(Theme.text(.title3, .bold))
+                    .monospacedDigit()
+                    .contentTransition(.numericText())
+                    .animation(.snappy, value: remaining)
             }
         }
-        .scrollClipDisabled()
-    }
-
-    private func chip(_ title: String, isSelected: Bool, color: Color, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Text(title)
-                .font(Theme.text(.subheadline, isSelected ? .semibold : .regular))
-                .foregroundStyle(isSelected ? Theme.paper : Theme.ink)
-                .padding(.horizontal, 14)
-                .frame(minHeight: 44)
-                .background(isSelected ? Theme.ink : color, in: Capsule())
-                .contentShape(Capsule())
-        }
-        .buttonStyle(.plain)
-        .accessibilityAddTraits(isSelected ? .isSelected : [])
+        .foregroundStyle(Theme.ink)
+        .padding(.horizontal, 18)
+        .padding(.vertical, 12)
+        .background(Theme.card, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .shadow(color: .black.opacity(0.08), radius: 12, y: 4)
+        .frame(maxWidth: Theme.readableWidth)
+        .padding(.horizontal, 20)
+        .padding(.bottom, 8)
+        .accessibilityElement(children: validate == nil ? .combine : .contain)
+        .accessibilityIdentifier("remainingCost")
     }
 }
 

@@ -195,7 +195,7 @@ struct IngredientGrid: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             SectionTitle(title: "Ce qu'il te faut")
-            LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)], spacing: 8) {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 8)], spacing: 8) {
                 ForEach(Array(ingredients.enumerated()), id: \.offset) { _, ingredient in
                     let isOwned = AIOutputValidator.isOwnedSupplement(ingredient.name, owned: owned)
                     VStack(alignment: .leading, spacing: 2) {

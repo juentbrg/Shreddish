@@ -59,8 +59,8 @@ public struct PurchaseLink: Sendable, Equatable {
     public let edibleYield: Double
 }
 
-/// Prix France (médiane des relevés Open Prices, licence ODbL) par code Ciqual, générés par
-/// `tools/prices/build_prices.py`. Les prix de l'IA ne servent qu'aux aliments absents, bornés par groupe.
+/// Prix France (3e quartile des relevés Open Prices, licence ODbL) par code Ciqual, générés par
+/// `tools/prices/build_prices.py`. Aliment absent : médiane de son groupe Ciqual, sinon de son rayon (spec 018).
 public final class PriceCatalog: Sendable {
     public static let attribution = "Prix : relevés Open Prices (Open Food Facts), licence ODbL."
 
@@ -75,17 +75,29 @@ public final class PriceCatalog: Sendable {
     let prices: [Int: FoodPrice]
     /// Fourchette de prix au kg par groupe Ciqual (10e et 90e centiles de la table).
     let groupRanges: [Int: ClosedRange<Double>]
+    /// Prix médian au kg par groupe Ciqual.
+    let groupMedians: [Int: Double]
+    /// Prix médian au kg (ou L) des produits de chaque rayon.
+    let aisleMedians: [Aisle: Double]
     let links: [Int: PurchaseLink]
     /// Produits par libellé ou identifiant normalisé, pour les ingrédients sans code Ciqual.
     let productsByName: [String: PurchaseProduct]
     let productsById: [String: PurchaseProduct]
 
     public init(
-        prices: [Int: FoodPrice], groupRanges: [Int: ClosedRange<Double>] = [:], links: [Int: PurchaseLink] = [:]
+        prices: [Int: FoodPrice], groupRanges: [Int: ClosedRange<Double>] = [:], groupMedians: [Int: Double] = [:],
+        links: [Int: PurchaseLink] = [:]
     ) {
         self.prices = prices
         self.groupRanges = groupRanges
+        self.groupMedians = groupMedians
         self.links = links
+        var byAisle: [Aisle: [Double]] = [:]
+        let products = Dictionary(links.values.map { ($0.product.id, $0.product) }) { first, _ in first }.values
+        for product in products where product.unit != .piece {
+            if let price = product.price { byAisle[product.aisle, default: []].append(price) }
+        }
+        aisleMedians = byAisle.mapValues { $0.sorted()[$0.count / 2] }
         var byName: [String: PurchaseProduct] = [:]
         var byId: [String: PurchaseProduct] = [:]
         for product in links.values.map(\.product) {
@@ -130,11 +142,14 @@ public final class PriceCatalog: Sendable {
             }
         }
         var ranges: [Int: ClosedRange<Double>] = [:]
+        var medians: [Int: Double] = [:]
+        // [10e centile, médiane, 90e centile] ; ancien format sans médiane : milieu de la fourchette.
         for (group, row) in file.groups {
-            guard let group = Int(group), row.count == 2, row[0] <= row[1] else { continue }
-            ranges[group] = row[0]...row[1]
+            guard let group = Int(group), row.count >= 2, let low = row.first, let high = row.last, low <= high else { continue }
+            ranges[group] = low...high
+            medians[group] = row.count >= 3 ? row[1] : (low + high) / 2
         }
-        self.init(prices: prices, groupRanges: ranges, links: links)
+        self.init(prices: prices, groupRanges: ranges, groupMedians: medians, links: links)
     }
 
     /// Ligne `products` (libellé, unité d'achat, poids d'une pièce, rayon, prix, paquets, périssable) ;
@@ -161,23 +176,25 @@ public final class PriceCatalog: Sendable {
         return productsByName[TextNormalizer.singular(ingredient.name)].map { PurchaseLink(product: $0, edibleYield: 1) }
     }
 
-    /// Prix unitaire dans l'unité de l'ingrédient (€/kg, €/L ou €/pièce) : prix de la table, sinon prix de
-    /// l'IA ramené dans la fourchette du groupe ; `nil` si rien n'est connu.
+    /// Prix unitaire dans l'unité de l'ingrédient (€/kg, €/L ou €/pièce) : prix de la table, sinon médiane du
+    /// groupe Ciqual, sinon du rayon (spec 018) ; `nil` si rien n'est connu.
     public func unitPrice(for ingredient: IngredientDTO, group: Int?) -> Double? {
         guard let unit = ingredient.measureUnit else { return ingredient.unitPriceEur }
-        if let code = ingredient.foodCode, let price = prices[code] {
-            switch unit {
-            case .g, .ml: return BudgetMath.cents(price.eurPerEdibleKg)
-            case .piece:
-                // Poids d'une pièce entière : prix au kg acheté, sans part comestible.
-                guard let pieceG = ingredient.pieceG, pieceG > 0 else { return ingredient.unitPriceEur }
-                return BudgetMath.cents(price.eurPerKg * pieceG / 1000)
-            }
+        let perKg = ingredient.foodCode.flatMap { prices[$0] }.map { (bought: $0.eurPerKg, eaten: $0.eurPerEdibleKg) }
+            ?? fallbackPerKg(group: group, aisle: ingredient.aisle).map { (bought: $0, eaten: $0) }
+        guard let perKg else { return ingredient.unitPriceEur }
+        switch unit {
+        case .g, .ml: return BudgetMath.cents(perKg.eaten)
+        case .piece:
+            // Poids d'une pièce entière : prix au kg acheté, sans part comestible.
+            guard let pieceG = ingredient.pieceG, pieceG > 0 else { return ingredient.unitPriceEur }
+            return BudgetMath.cents(perKg.bought * pieceG / 1000)
         }
-        guard let aiPrice = ingredient.unitPriceEur, unit != .piece, let group, let range = groupRanges[group] else {
-            return ingredient.unitPriceEur
-        }
-        return min(max(aiPrice, range.lowerBound), range.upperBound)
+    }
+
+    /// Prix au kg d'un aliment absent de la table : médiane de son groupe Ciqual, sinon de son rayon.
+    func fallbackPerKg(group: Int?, aisle: Aisle) -> Double? {
+        group.flatMap { groupMedians[$0] } ?? aisleMedians[aisle]
     }
 }
 

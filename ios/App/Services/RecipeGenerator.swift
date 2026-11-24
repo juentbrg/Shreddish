@@ -70,7 +70,9 @@ final class RecipeGenerator {
                 model: request.model, apiKey: request.apiKey
             )
             let parsed = steps.flatMap { try? AIResponseDecoder.decodeRecipe($0) }
-            if let parsed, let meal = context.model(for: id) as? Meal, meal.needsRecipe {
+            // Repas remplacé ou supprimé pendant la rédaction : recherché par identifiant, jamais lu supprimé.
+            let fetch = FetchDescriptor<Meal>(predicate: #Predicate { $0.persistentModelID == id })
+            if let parsed, let meal = try? context.fetch(fetch).first, !meal.isDeleted, meal.needsRecipe {
                 meal.steps = parsed
                 try? context.save()
             }

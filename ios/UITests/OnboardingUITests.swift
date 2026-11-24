@@ -89,6 +89,31 @@ final class OnboardingUITests: XCTestCase {
         XCTAssertTrue(app.buttons["day-0"].waitForExistence(timeout: 10))
         app.tabBars.buttons["Courses"].tap()
         XCTAssertTrue(app.descendants(matching: .any)["weekCost"].waitForExistence(timeout: 5))
+        // Spec 018 : article coché (déjà chez soi) retiré du reste à acheter.
+        let remaining = app.descendants(matching: .any)["remainingCost"]
+        XCTAssertTrue(remaining.waitForExistence(timeout: 5))
+        let before = remaining.label
+        let item = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'shopping-'")).firstMatch
+        reveal(item, in: app)
+        item.tap()
+        let changed = NSPredicate { _, _ in remaining.label != before }
+        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: changed, object: nil)], timeout: 3), .completed)
+        Self.saveScreenshot(app, name: "shopping-remaining")
+        // Spec 019 : tout coché → valider les courses, liste figée, rouvrable.
+        var guardCount = 0
+        while !app.buttons["validateShopping"].exists && guardCount < 40 {
+            let row = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'shopping-'")).allElementsBoundByIndex
+                .first { !$0.isSelected && $0.isHittable }
+            if let row { row.tap() } else { app.swipeUp() }
+            guardCount += 1
+        }
+        Self.saveScreenshot(app, name: "shopping-loop-end")
+        let validate = app.buttons["validateShopping"]
+        XCTAssertTrue(validate.waitForExistence(timeout: 3))
+        Self.saveScreenshot(app, name: "shopping-validate")
+        validate.tap()
+        XCTAssertTrue(app.buttons["reopenShopping"].waitForExistence(timeout: 3))
+        Self.saveScreenshot(app, name: "shopping-validated")
     }
 
     /// Étapes de recette : glisser vers la gauche passe à l'étape suivante, vers la droite revient.

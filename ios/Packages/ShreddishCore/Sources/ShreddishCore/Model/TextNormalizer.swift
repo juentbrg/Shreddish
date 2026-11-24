@@ -26,6 +26,20 @@ public enum TextNormalizer {
             .joined(separator: " ")
     }
 
+    /// Mots au singulier, ponctuation retirée : « Beurre d'arachides, » → ["beurre", "d", "arachide"].
+    public static func words(_ text: String) -> [String] {
+        singular(String(basic(text).map { $0.isLetter || $0.isNumber ? $0 : " " })).split(separator: " ").map(String.init)
+    }
+
+    /// Les mots de `needle` se suivent dans `text` : « lait » trouvé dans « lait demi-écrémé », pas dans
+    /// « laitue » ; « ail » pas dans « volaille ».
+    public static func containsWords(_ text: String, _ needle: String) -> Bool {
+        let haystack = words(text)
+        let target = words(needle)
+        guard !target.isEmpty, haystack.count >= target.count else { return false }
+        return (0...(haystack.count - target.count)).contains { Array(haystack[$0..<($0 + target.count)]) == target }
+    }
+
     /// `basic` puis singulier simple par mot de plus de 3 lettres : « ux » → « u », « s » final retiré
     /// (sauf « ss »). Pas de grammaire complète : il suffit que deux formes d'un même aliment
     /// donnent la même clé (research R11).

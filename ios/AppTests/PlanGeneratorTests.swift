@@ -58,6 +58,8 @@ struct PlanGeneratorTests {
         let birth = clock.calendar.date(byAdding: .year, value: -30, to: clock.now)!
         profile = Profile(sex: .male, birthDate: birth, heightCm: 180, weightKg: 80, activity: .moderate, goal: .cut)
         preferences = Preferences()
+        // Budget large : la semaine simulée reste sous le plafond, sauf dans les tests de budget (spec 018).
+        preferences.weeklyBudgetEUR = 300
         context.insert(profile)
         context.insert(preferences)
     }
@@ -169,39 +171,43 @@ struct PlanGeneratorTests {
         #expect(inputs.filter { $0.contains("Créatine : 5 g") }.allSatisfy { $0.contains("\"type\":\"snack\"") })
     }
 
-    @Test func weekAboveBudgetCeilingIsRegenerated() async throws {
-        // Viande et poisson à 30 €/kg : plus de 100 € pour un plafond de 70 € × 1,10 = 77 € : nouvel essai.
-        // Second essai aux prix médians de la table (spec 013) : sous le plafond.
-        preferences.weeklyBudgetEUR = 70
-        let expensive = try weekText().replacingOccurrences(of: "\"unit_price_eur\":7}", with: "\"unit_price_eur\":30}")
-            .replacingOccurrences(of: "\"unit_price_eur\":9}", with: "\"unit_price_eur\":30}")
-        let transport = ScriptedTransport([.output(expensive), .output(try weekText())])
+    /// Jours simulés à la viande la moins chère (poulet) : moins chers que bœuf et thon aux prix de la table.
+    func cheapDayText(_ offset: Int) throws -> String {
+        try dayText(offset).replacingOccurrences(of: "Boeuf, steak haché 5% MG cru", with: "Poulet, filet sans peau cru")
+            .replacingOccurrences(of: "Thon, au naturel, appertisé, égoutté", with: "Poulet, filet sans peau cru")
+    }
+
+    static func beefAndTuna(_ plan: WeeklyPlan) -> Int {
+        plan.sortedDays.flatMap(\.meals).flatMap(\.ingredients).filter { $0.name.hasPrefix("Boeuf") || $0.name.hasPrefix("Thon") }.count
+    }
+
+    /// Spec 018 : coût calculé par l'application au-dessus du plafond : jours les plus chers régénérés avec leurs
+    /// ingrédients les plus chers, gardés s'ils coûtent moins.
+    @Test func overBudgetDaysAreRegeneratedCheaper() async throws {
+        preferences.weeklyBudgetEUR = 20
+        let days = try (0..<7).map { Step.output(try cheapDayText($0)) }
+        let transport = ScriptedTransport([.output(try weekText())] + days)
         try await generator(transport).generateWeek(profile: profile, preferences: preferences, in: context)
-        #expect(transport.requestCount == 2)
-        let plan = try #require(PlanStore.currentPlan(in: context))
-        #expect(plan.sortedDays.reduce(0) { $0 + $1.plannedCostEUR } <= preferences.budgetCeiling)
-        // Le second essai reçoit le coût obtenu (spec 004).
+        #expect(transport.requestCount > 1)
         let body = try #require(try JSONSerialization.jsonObject(with: transport.requests[1].httpBody ?? Data()) as? [String: Any])
         let input = try #require(body["input"] as? String)
-        #expect(input.contains("previous_attempt_feedback"))
-        #expect(input.contains("plafond de 77"))
+        #expect(input.contains("Les plus chers"))
+        #expect(input.contains("plafond de"))
+        let plan = try #require(PlanStore.currentPlan(in: context))
+        let week = try weekText()
+        let reference = week.components(separatedBy: "Boeuf, steak").count + week.components(separatedBy: "Thon, au").count - 2
+        #expect(Self.beefAndTuna(plan) < reference)
     }
 
     @Test func weekStillAboveCeilingIsKeptWithWarning() async throws {
-        // Spec 004 : deux essais au-dessus du plafond → le moins cher est gardé et signalé, pas d'échec.
-        // Spec 011 : coût final recalculé avec la table de prix, d'où un budget bas pour rester au-dessus.
-        preferences.weeklyBudgetEUR = 40
-        let expensive = try weekText().replacingOccurrences(of: "\"unit_price_eur\":7}", with: "\"unit_price_eur\":30}")
-            .replacingOccurrences(of: "\"unit_price_eur\":9}", with: "\"unit_price_eur\":30}")
-        let lessExpensive = try weekText().replacingOccurrences(of: "\"unit_price_eur\":7}", with: "\"unit_price_eur\":20}")
-            .replacingOccurrences(of: "\"unit_price_eur\":9}", with: "\"unit_price_eur\":20}")
-        let transport = ScriptedTransport([.output(expensive), .output(lessExpensive)])
+        // Régénération pas moins chère : semaine gardée et signalée, pas d'échec.
+        preferences.weeklyBudgetEUR = 20
+        let days = try (0..<7).map { Step.output(try dayText($0)) }
+        let transport = ScriptedTransport([.output(try weekText())] + days)
         let warnings = try await generator(transport).generateWeek(profile: profile, preferences: preferences, in: context)
-        #expect(transport.requestCount == 2)
+        #expect(transport.requestCount > 1)
         #expect(warnings.contains { if case .weekOverBudget = $0 { true } else { false } })
-        let plan = try #require(PlanStore.currentPlan(in: context))
-        let finalCost = plan.sortedDays.reduce(0) { $0 + $1.plannedCostEUR }
-        #expect(finalCost < 100)
+        #expect(PlanStore.currentPlan(in: context) != nil)
     }
 
     @Test func upcomingWeekStartsOnChosenDayAndKeepsCurrentWeek() async throws {
@@ -227,7 +233,7 @@ struct PlanGeneratorTests {
         #expect(input.contains("\"owned_supplements\":[{\"kind\":\"macro\",\"name\":\"Whey\"}]"))
         #expect(input.contains("\"training_time\":\"18:30\""))
         #expect(!input.contains("\"location\""))
-        #expect(input.contains("\"reference_prices_eur_per_kg\":\"poulet filet"))
+        #expect(!input.contains("reference_prices_eur_per_kg"))
     }
 
     @Test func allergiesReachThePromptWithoutStore() async throws {
@@ -239,7 +245,7 @@ struct PlanGeneratorTests {
         let input = try #require(body["input"] as? String)
         #expect(!input.contains("Lidl"))
         #expect(input.contains("arachide"))
-        #expect(input.contains("\"weekly_budget_eur\":56"))
+        #expect(input.contains("\"weekly_budget_eur\":300"))
     }
 
     /// Spec 013 : ingrédients à écouler envoyés à l'IA, gardés sur le planning et déduits des courses.
@@ -347,7 +353,7 @@ struct PlanGeneratorTests {
         #expect(PlanStore.currentPlan(in: context) != nil)
         #expect(transport.requestCount == 3)
         let body = String(bytes: transport.requests[2].httpBody ?? Data(), encoding: .utf8) ?? ""
-        #expect(body.contains(#"weekly_budget_eur\":112"#))
+        #expect(body.contains(#"weekly_budget_eur\":600"#))
     }
 
     @Test func replaceMealChangesOnlyThatMeal() async throws {

@@ -49,6 +49,9 @@ public enum PlanStore {
     ) throws -> WeeklyPlan {
         let today = today ?? startDay
         let endDay = startDay.adding(days: max(week.days.map(\.dayOffset).max() ?? 6, 0))
+        // Aujourd'hui remplacé : repas déjà cochés et extras repris dans le nouveau planning (journal visible).
+        let startedToday = startDay <= today && today <= endDay
+            ? activePlans(in: context).flatMap(\.days).filter { $0.day == today } : []
         for plan in activePlans(in: context) {
             carve(plan, from: startDay, to: endDay, today: today, in: context)
             if plan.isCurrent, plan.endDay < today { plan.isCurrent = false }
@@ -64,9 +67,36 @@ public enum PlanStore {
                 day.meals.append(Meal(dto: mealDTO, order: index))
             }
         }
+        if let target = plan.days.first(where: { $0.day == today }) {
+            for source in startedToday { carryLogged(from: source, to: target, in: context) }
+        }
         rebuildShoppingList(for: plan, in: context)
         try context.save()
         return plan
+    }
+
+    /// Repas déjà mangés ou sautés et extras de `source` repris dans `target` ; un repas prévu de `target` du même
+    /// type qu'un repas repris est supprimé (petit-déjeuner mangé : pas de second petit-déjeuner). Rangs recalculés.
+    static func carryLogged(from source: DayPlan, to target: DayPlan, in context: ModelContext) {
+        let logged = source.sortedMeals.filter { $0.status != .planned }
+        let extras = source.extras
+        guard !logged.isEmpty || !extras.isEmpty else { return }
+        var types = Dictionary(logged.map { ($0.type, 1) }, uniquingKeysWith: +)
+        for meal in target.sortedMeals where meal.status == .planned {
+            guard let count = types[meal.type], count > 0 else { continue }
+            types[meal.type] = count - 1
+            target.meals.removeAll { $0.persistentModelID == meal.persistentModelID }
+            context.delete(meal)
+        }
+        let loggedIDs = Set(logged.map(\.persistentModelID))
+        source.meals.removeAll { loggedIDs.contains($0.persistentModelID) }
+        source.extras = []
+        target.meals.append(contentsOf: logged)
+        target.extras.append(contentsOf: extras)
+        let ordered = target.meals.sorted {
+            ($0.type.sortIndex, $0.status == .planned ? 1 : 0, $0.order) < ($1.type.sortIndex, $1.status == .planned ? 1 : 0, $1.order)
+        }
+        for (index, meal) in ordered.enumerated() { meal.order = index }
     }
 
     /// Retire d'un planning actif les jours de `start...end`. Jours d'après la période séparés dans leur propre
@@ -125,13 +155,23 @@ public enum PlanStore {
         }
     }
 
-    /// Remplace les repas d'un jour (régénération) ; extras conservés.
+    /// Remplace les repas prévus d'un jour (régénération) ; repas déjà mangés ou sautés et extras conservés.
+    /// Un nouveau repas du même type qu'un repas gardé est écarté (déjeuner mangé : pas de second déjeuner).
     public static func replaceDay(_ day: DayPlan, with dto: DayPlanDTO, in context: ModelContext) throws {
-        for meal in day.meals { context.delete(meal) }
-        day.meals = []
-        for (index, mealDTO) in sortedMeals(dto.meals).enumerated() {
-            day.meals.append(Meal(dto: mealDTO, order: index))
+        let kept = day.sortedMeals.filter { $0.status != .planned }
+        for meal in day.meals where meal.status == .planned { context.delete(meal) }
+        var keptTypes = Dictionary(kept.map { ($0.type, 1) }, uniquingKeysWith: +)
+        let fresh = sortedMeals(dto.meals).filter { meal in
+            guard let count = keptTypes[meal.type], count > 0 else { return true }
+            keptTypes[meal.type] = count - 1
+            return false
         }
+        let new = fresh.map { Meal(dto: $0, order: 0) }
+        day.meals = kept + new
+        // Rang par type de repas, puis gardés avant nouveaux.
+        let ordered = (kept.map { ($0, 0) } + new.map { ($0, 1) })
+            .sorted { ($0.0.type.sortIndex, $0.1) < ($1.0.type.sortIndex, $1.1) }
+        for (index, entry) in ordered.enumerated() { entry.0.order = index }
         if let plan = day.plan { rebuildShoppingList(for: plan, in: context) }
         try context.save()
     }
@@ -159,6 +199,8 @@ public enum PlanStore {
 
     /// Reconstruit la liste de courses depuis le planning ; coches conservées par clé.
     public static func rebuildShoppingList(for plan: WeeklyPlan, in context: ModelContext) {
+        // Courses validées : liste figée telle qu'achetée (spec 019).
+        guard !isShoppingValidated(plan, in: context) else { return }
         let checked = Set(plan.shoppingItems.filter(\.isChecked).map(\.key))
         for item in plan.shoppingItems { context.delete(item) }
         plan.shoppingItems = []
@@ -167,9 +209,12 @@ public enum PlanStore {
         }
     }
 
-    static func shoppingLines(for plan: WeeklyPlan, in context: ModelContext) -> [ShoppingLine] {
+    /// Lignes de courses. Avant validation, repas déjà mangés ou sautés retirés (spec 019) ; `allMeals` : tous
+    /// les repas (coût de la semaine comparé au budget).
+    static func shoppingLines(for plan: WeeklyPlan, in context: ModelContext, allMeals: Bool = false) -> [ShoppingLine] {
         let owned = (try? context.fetch(FetchDescriptor<Preferences>()))?.first?.supplementList ?? []
-        let ingredients = plan.days.flatMap { $0.meals.flatMap(\.ingredients) }
+        let meals = plan.days.flatMap(\.meals).filter { allMeals || $0.status == .planned }
+        let ingredients = meals.flatMap(\.ingredients)
         return ShoppingListBuilder.build(
             from: Household.scaled(ingredients, portions: Household.portions(in: context)), owned: owned,
             pantry: plan.pantry + carriedStock(for: plan, in: context)
@@ -183,15 +228,54 @@ public enum PlanStore {
     }
 
     /// Reconstruit une liste faite par une version antérieure (ex. œufs en double avant la spec 012).
-    static func rebuildStaleShoppingList(for plan: WeeklyPlan, in context: ModelContext) {
-        let keys = Set(shoppingLines(for: plan, in: context).map(\.key))
-        if keys != Set(plan.shoppingItems.map(\.key)) { rebuildShoppingList(for: plan, in: context) }
+    public static func rebuildStaleShoppingList(for plan: WeeklyPlan, in context: ModelContext) {
+        guard !isShoppingValidated(plan, in: context) else { return }
+        let lines = shoppingLines(for: plan, in: context)
+        let keys = Set(lines.map(\.key))
+        // Planning actif : quantités (repas mangés, spec 019) et prix (table mise à jour) aussi comparés ;
+        // historique figé.
+        let values = Set(lines.map { "\($0.key)=\($0.totalQuantity)=\($0.costEur)" })
+        let stale = keys != Set(plan.shoppingItems.map(\.key))
+            || (plan.isCurrent && values != Set(plan.shoppingItems.map { "\($0.key)=\($0.totalQuantity)=\($0.costEUR)" }))
+        if stale { rebuildShoppingList(for: plan, in: context) }
+    }
+
+    public static func isShoppingValidated(_ plan: WeeklyPlan, in context: ModelContext) -> Bool {
+        ShoppingValidation.find(planID: plan.id, in: context) != nil
+    }
+
+    /// Ticket de tous les repas du planning, mangés compris : coût de la semaine face au budget (spec 019).
+    public static func fullShoppingSummary(for plan: WeeklyPlan, in context: ModelContext) -> ShoppingSummary {
+        ShoppingListBuilder.summary(shoppingLines(for: plan, in: context, allMeals: true))
+    }
+
+    /// Repas prévus des plannings actifs remis aux prix de la table (mise à jour de `prices.json`, spec 018) ;
+    /// repas mangés ou sautés et historique inchangés. Renvoie le nombre de repas modifiés.
+    @discardableResult
+    public static func repriceActivePlans(in context: ModelContext, today: LocalDay? = nil) -> Int {
+        let owned = (try? context.fetch(FetchDescriptor<Preferences>()))?.first?.ownedSupplementDetails ?? []
+        let resolver = NutritionResolver(cache: InMemoryFoodMatchCache(), supplements: owned)
+        var changed = 0
+        let plans = activePlans(in: context).filter { plan in today.map { plan.endDay >= $0 } ?? true }
+        for meal in plans.flatMap(\.days).flatMap(\.meals) where meal.status == .planned {
+            let ingredients = meal.ingredients.map { $0.foodCode == nil ? $0 : resolver.priced($0) }
+            let cost = BudgetMath.cents(ingredients.reduce(0) { $0 + $1.costEur })
+            guard ingredients != meal.ingredients || cost != meal.costEUR else { continue }
+            meal.ingredientsData = (try? JSONEncoder().encode(ingredients)) ?? meal.ingredientsData
+            meal.costEUR = cost
+            changed += 1
+        }
+        return changed
     }
 
     /// Supprime un planning et tout ce qui en dépend (jours, repas, extras du journal, courses).
     public static func deletePlan(_ plan: WeeklyPlan, in context: ModelContext) throws {
+        let planID = plan.id
+        try? context.delete(model: ShoppingValidation.self, where: #Predicate { $0.planID == planID })
         context.delete(plan)
         try context.save()
+        // Restes reportés depuis ce planning : courses suivantes recalculées.
+        rebuildActiveShoppingLists(in: context)
     }
 
     private static func sortedMeals(_ meals: [MealDTO]) -> [MealDTO] {
@@ -216,7 +300,21 @@ public enum PlanStore {
     }
 
     /// Nettoyage au lancement : tirets cadratins des textes déjà générés, ancien modèle IA par défaut.
-    public static func cleanUpStoredData(in context: ModelContext) {
+    /// Courses des plannings terminés ou en historique figées (spec 019) : déjà faites, et la semaine suivante
+    /// déduit leurs restes cochés. Renvoie le nombre de listes figées.
+    @discardableResult
+    public static func validatePastShopping(today: LocalDay, in context: ModelContext) -> Int {
+        var count = 0
+        for plan in (try? context.fetch(FetchDescriptor<WeeklyPlan>())) ?? []
+        where (!plan.isCurrent || plan.endDay < today) && !isShoppingValidated(plan, in: context) {
+            context.insert(ShoppingValidation(planID: plan.id, validatedAt: plan.startDay.startDate(calendar: .current)))
+            count += 1
+        }
+        return count
+    }
+
+    public static func cleanUpStoredData(in context: ModelContext, today: LocalDay? = nil) {
+        if let today { validatePastShopping(today: today, in: context) }
         let clean = TextNormalizer.withoutDashes
         func cleanData(_ data: Data) -> Data {
             String(data: data, encoding: .utf8).map { Data(clean($0).utf8) } ?? data
@@ -228,6 +326,7 @@ public enum PlanStore {
             let ingredients = cleanData(meal.ingredientsData)
             if ingredients != meal.ingredientsData { meal.ingredientsData = ingredients }
         }
+        repriceActivePlans(in: context, today: today)
         for plan in (try? context.fetch(FetchDescriptor<WeeklyPlan>())) ?? [] {
             let sessions = cleanData(plan.prepSessionsData)
             if sessions != plan.prepSessionsData { plan.prepSessionsData = sessions }

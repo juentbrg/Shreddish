@@ -52,8 +52,11 @@ extension PlanGenerator {
     func retryOffTargetDays(_ days: [DayPlanDTO], ctx: Context) async -> [DayPlanDTO] {
         let targets = ctx.targets.macros
         let repeated = VarietyCheck.repeatedDays(days)
-        let toRetry = days.filter {
-            repeated[$0.dayOffset] != nil || Totals.needsRegeneration(Totals.planned($0.meals), targets: targets)
+        // Jours avec une recette sauvegardée gardés : la régénération la perdrait.
+        let recipeNames = Set(ctx.recipes.map(\.name))
+        let toRetry = days.filter { day in
+            !day.meals.contains { recipeNames.contains($0.name) }
+                && (repeated[day.dayOffset] != nil || Totals.needsRegeneration(Totals.planned(day.meals), targets: targets))
         }
         guard !toRetry.isEmpty else { return days }
         let dayLimit = ctx.constraints.budgetCeilingEur / Double(ctx.constraints.dayCount)

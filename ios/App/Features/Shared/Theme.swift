@@ -5,6 +5,9 @@ import UIKit
 /// Direction de design « Marché » : papier crème, vert sapin, tomate ; Bricolage Grotesque pour les
 /// titres, DM Sans pour le texte (polices OFL embarquées). Variantes sombres pour le mode nuit.
 enum Theme {
+    /// Largeur maximale du contenu (cartes, listes) sur grand écran.
+    static let readableWidth: CGFloat = 640
+
     // MARK: Couleurs
 
     static let paper = Color(light: 0xF5F1E8, dark: 0x131514)
@@ -134,11 +137,27 @@ extension View {
     func themedList() -> some View {
         scrollContentBackground(.hidden)
             .background(Theme.paper)
+            .modifier(ReadableMargins())
     }
 
     /// Écran défilant sur fond papier.
     func paperBackground() -> some View {
         background(Theme.paper.ignoresSafeArea())
+            .modifier(ReadableMargins())
+    }
+}
+
+/// Largeur de lecture : sur un grand écran (iPhone Duo ouvert), contenu défilant centré dans une colonne de
+/// `Theme.readableWidth` ; sans effet sur un iPhone classique. Suit les changements de taille de la fenêtre.
+struct ReadableMargins: ViewModifier {
+    @State private var margin: CGFloat = 0
+
+    func body(content: Content) -> some View {
+        content
+            .contentMargins(.horizontal, margin, for: .scrollContent)
+            .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width in
+                margin = max(0, (width - Theme.readableWidth) / 2)
+            }
     }
 }
 
@@ -182,6 +201,7 @@ struct InfoPill: View {
 /// Bouton plein, arrondi.
 struct PillButtonStyle: ButtonStyle {
     var prominent = true
+    @Environment(\.isEnabled) private var isEnabled
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
@@ -190,7 +210,8 @@ struct PillButtonStyle: ButtonStyle {
             .frame(maxWidth: .infinity, minHeight: 52)
             .padding(.horizontal, 16)
             .background(prominent ? Theme.accent : Theme.card, in: Capsule())
-            .opacity(configuration.isPressed ? 0.8 : 1)
+            // Désactivé (génération en cours, première étape) : grisé.
+            .opacity(!isEnabled ? 0.4 : configuration.isPressed ? 0.8 : 1)
     }
 }
 

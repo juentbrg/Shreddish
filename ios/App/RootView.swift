@@ -18,7 +18,7 @@ struct RootView: View {
         } else {
             tabs
                 .task {
-                    PlanStore.cleanUpStoredData(in: context)
+                    PlanStore.cleanUpStoredData(in: context, today: model.clock.today)
                     // Une fois : recettes écrites avant l'ajustement des portions, réécrites aux bonnes quantités.
                     if !UserDefaults.standard.bool(forKey: "staleRecipesCleared") {
                         PlanStore.clearStaleRecipes(from: model.clock.today, in: context)
@@ -121,7 +121,8 @@ struct BusyOverlay: View {
                         .foregroundStyle(Theme.accent)
                         .contentTransition(.numericText())
                     VStack(alignment: .leading, spacing: 6) {
-                        ForEach(Array(liveMeals.suffix(5).enumerated()), id: \.element) { _, name in
+                        // Plats de batch cooking au même nom : identifiés par leur rang.
+                        ForEach(Array(liveMeals.suffix(5).enumerated()), id: \.offset) { _, name in
                             Label(name, systemImage: "checkmark.circle.fill")
                                 .font(Theme.text(.footnote))
                                 .foregroundStyle(Theme.ink)

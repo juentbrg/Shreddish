@@ -66,9 +66,9 @@ struct PlanHistoryView: View {
                     titleVisibility: .visible
                 ) {
                     Button("Supprimer", role: .destructive) {
-                        context.delete(plan)
-                        try? context.save()
+                        try? PlanStore.deletePlan(plan, in: context)
                         pendingDeletion = nil
+                        Task { await model.notifications.reschedule() }
                     }
                 } message: {
                     Text("Repas, journal et courses supprimés. Irréversible.")

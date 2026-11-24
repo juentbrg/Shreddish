@@ -45,7 +45,8 @@ struct JournalView: View {
         let days = plan.sortedDays
         let todayKey = model.clock.today.key
         let defaultKey = days.first { $0.dayKey == todayKey }?.dayKey ?? days.first?.dayKey
-        let key = selectedKey ?? defaultKey
+        // Jour choisi absent du planning affiché (nouvelle semaine) : retour au jour par défaut.
+        let key = selectedKey.flatMap { selected in days.contains { $0.dayKey == selected } ? selected : nil } ?? defaultKey
         return VStack(spacing: 0) {
             DayStrip(
                 days: days, selected: days.first { $0.dayKey == key }?.offset, today: model.clock.today,
@@ -53,6 +54,7 @@ struct JournalView: View {
             ) { offset in
                 selectedKey = days.first { $0.offset == offset }?.dayKey
             }
+            .frame(maxWidth: Theme.readableWidth)
             .padding(.horizontal, 20)
             .padding(.vertical, 8)
             if let day = days.first(where: { $0.dayKey == key }) {

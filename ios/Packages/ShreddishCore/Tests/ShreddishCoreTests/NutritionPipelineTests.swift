@@ -235,15 +235,31 @@ extension NutritionPipelineTests {
         #expect(cooked.eurPerEdibleKg < dry.eurPerEdibleKg / 2)
     }
 
-    @Test func unknownPriceIsClampedToItsGroup() {
-        let prices = PriceCatalog(prices: [:], groupRanges: [4: 6...19])
+    /// Spec 018 : l'IA n'envoie plus de prix ; l'application les calcule.
+    @Test func aiMealWithoutPricesIsPricedByTheApp() throws {
+        let json = """
+        {"type":"lunch","name":"Riz","ingredients":[{"name":"Riz basmati cru","quantity":80,"unit":"g","piece_g":null,\
+        "aisle":"epicerie"}],"steps":[],"prep_minutes":15,"kcal":290,"protein_g":6,"carbs_g":63,"fat_g":1,\
+        "prep_session_ref":null,"time":"12:30"}
+        """
+        let meal = try AIResponseDecoder.decoder.decode(MealDTO.self, from: Data(json.utf8))
+        #expect(meal.costEur == 0)
+        #expect(resolver.resolve(meal).meal.costEur > 0)
+        let schema = String(describing: ResponseSchemas.schema(.week))
+        #expect(!schema.contains("cost_eur") && !schema.contains("unit_price_eur"))
+    }
+
+    @Test func unknownPriceUsesItsGroupMedian() {
+        let prices = PriceCatalog(prices: [:], groupRanges: [4: 6...19], groupMedians: [4: 12])
         let resolver = NutritionResolver(prices: prices, cache: cache)
-        var cheap = chicken(100)
-        cheap.unitPriceEur = 3
-        cheap.foodCode = 36017
-        #expect(resolver.priced(cheap).unitPriceEur == 6)
-        cheap.foodCode = nil
-        #expect(resolver.priced(cheap).unitPriceEur == 3, "sans code Ciqual : prix de l'IA")
+        var chicken = chicken(100)
+        chicken.unitPriceEur = 3
+        chicken.foodCode = 36017
+        #expect(resolver.priced(chicken).unitPriceEur == 12)
+        chicken.foodCode = nil
+        #expect(resolver.priced(chicken).unitPriceEur == 3, "sans code Ciqual ni rayon connu : prix déjà là")
+        // Rayon : médiane des produits de la table.
+        #expect(PriceCatalog.shared.fallbackPerKg(group: nil, aisle: .viandePoisson) ?? 0 > 10)
     }
 
     @Test func piecesArePricedByWeight() throws {

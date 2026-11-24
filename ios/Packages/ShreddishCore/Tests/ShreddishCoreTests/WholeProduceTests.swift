@@ -32,6 +32,9 @@ struct WholeProduceTests {
         #expect(WholeProduce.pieces(of: Self.item("Kiwi", 20, code: 13021)) == 1)
         #expect(WholeProduce.snapped(Self.item("Pomme de terre", 30, code: 4002)).quantity == 30)
         #expect(WholeProduce.snapped(Self.item("Tomate", 30)).quantity == 30)
+        // Formes transformées : quantité libre (oignon séché, zeste de citron).
+        #expect(WholeProduce.snapped(Self.item("Oignon séché", 5, code: 20180)).quantity == 5)
+        #expect(WholeProduce.snapped(Self.item("Zeste de citron", 2, code: 13125)).quantity == 2)
         // Sans code Ciqual : produit retrouvé par son nom.
         #expect(WholeProduce.snapped(Self.item("Banane", 30)).quantity == 59)
     }
