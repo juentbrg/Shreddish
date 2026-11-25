@@ -18,7 +18,7 @@ extension OnboardingUITests {
         XCTAssertTrue(app.buttons["member-Léa"].waitForExistence(timeout: 3))
         XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS '2 portions'")).firstMatch.exists)
 
-        app.tabBars.buttons["Semaine"].tap()
+        app.tab("Semaine").tap()
         app.buttons["generateWeek"].tap()
         app.buttons["startGeneration"].tap()
         XCTAssertTrue(app.buttons["day-0"].waitForExistence(timeout: 10))
@@ -29,12 +29,13 @@ extension OnboardingUITests {
     func testCreateCustomRecipe() {
         let app = launch()
         onboard(app)
-        app.tabBars.buttons["Recettes"].tap()
+        app.tab("Recettes").tap()
         app.buttons["createRecipe"].tap()
         let name = app.textFields["editMealName"]
         XCTAssertTrue(name.waitForExistence(timeout: 3))
         name.tap()
         name.typeText("Dahl maison")
+        reveal(app.buttons["addIngredient"], in: app)
         app.buttons["addIngredient"].tap()
         let search = app.searchFields.firstMatch
         XCTAssertTrue(search.waitForExistence(timeout: 3))
@@ -46,6 +47,7 @@ extension OnboardingUITests {
         let kcal = app.descendants(matching: .any)["editMealKcal"]
         reveal(kcal, in: app)
         XCTAssertFalse((kcal.label as String).contains(" 0 kcal"))
+        revealUp(app.buttons["saveMealEdit"], in: app)
         app.buttons["saveMealEdit"].tap()
         XCTAssertTrue(app.buttons["savedRecipe"].waitForExistence(timeout: 3))
     }
@@ -54,11 +56,11 @@ extension OnboardingUITests {
     func testQuickAddFromCiqual() {
         let app = launch()
         onboard(app)
-        app.tabBars.buttons["Semaine"].tap()
+        app.tab("Semaine").tap()
         app.buttons["generateWeek"].tap()
         app.buttons["startGeneration"].tap()
         XCTAssertTrue(app.buttons["day-0"].waitForExistence(timeout: 10))
-        app.tabBars.buttons["Journal"].tap()
+        app.tab("Journal").tap()
         let add = app.buttons["addExtra"]
         reveal(add, in: app)
         add.tap()
@@ -99,7 +101,7 @@ extension OnboardingUITests {
     func testAIConsentBeforeFirstGeneration() {
         let app = launch(["-uitest-no-consent"])
         onboard(app)
-        app.tabBars.buttons["Semaine"].tap()
+        app.tab("Semaine").tap()
         app.buttons["generateWeek"].tap()
         app.buttons["startGeneration"].tap()
         XCTAssertTrue(app.navigationBars["Tes données et l'IA"].waitForExistence(timeout: 5))
@@ -116,7 +118,7 @@ extension OnboardingUITests {
     func testShareWeekCard() {
         let app = launch()
         onboard(app)
-        app.tabBars.buttons["Semaine"].tap()
+        app.tab("Semaine").tap()
         app.buttons["generateWeek"].tap()
         app.buttons["startGeneration"].tap()
         XCTAssertTrue(app.buttons["day-0"].waitForExistence(timeout: 10))
@@ -129,11 +131,11 @@ extension OnboardingUITests {
     func testActualReceipt() {
         let app = launch()
         onboard(app)
-        app.tabBars.buttons["Semaine"].tap()
+        app.tab("Semaine").tap()
         app.buttons["generateWeek"].tap()
         app.buttons["startGeneration"].tap()
         XCTAssertTrue(app.buttons["day-0"].waitForExistence(timeout: 10))
-        app.tabBars.buttons["Courses"].tap()
+        app.tab("Courses").tap()
         let amount = app.textFields["receiptAmount"]
         XCTAssertTrue(amount.waitForExistence(timeout: 5))
         amount.tap()
@@ -182,11 +184,11 @@ extension OnboardingUITests {
     func testBanFoodFromShoppingList() {
         let app = launch()
         onboard(app)
-        app.tabBars.buttons["Semaine"].tap()
+        app.tab("Semaine").tap()
         app.buttons["generateWeek"].tap()
         app.buttons["startGeneration"].tap()
         XCTAssertTrue(app.buttons["day-0"].waitForExistence(timeout: 10))
-        app.tabBars.buttons["Courses"].tap()
+        app.tab("Courses").tap()
         let item = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'shopping-'")).firstMatch
         XCTAssertTrue(item.waitForExistence(timeout: 5))
         reveal(item, in: app)
@@ -200,7 +202,7 @@ extension OnboardingUITests {
         // L'article vient du planning : l'alerte propose de remplacer les repas concernés.
         XCTAssertTrue(alert.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Remplacer'")).firstMatch.exists)
         alert.buttons["Plus tard"].tap()
-        app.tabBars.buttons["Semaine"].tap()
+        app.tab("Semaine").tap()
         let replace = app.buttons["replaceBannedMeals"]
         XCTAssertTrue(replace.waitForExistence(timeout: 5))
         XCTAssertTrue(replace.label.hasPrefix("Remplacer"))
@@ -210,11 +212,11 @@ extension OnboardingUITests {
     func testShareShoppingList() {
         let app = launch()
         onboard(app)
-        app.tabBars.buttons["Semaine"].tap()
+        app.tab("Semaine").tap()
         app.buttons["generateWeek"].tap()
         app.buttons["startGeneration"].tap()
         XCTAssertTrue(app.buttons["day-0"].waitForExistence(timeout: 10))
-        app.tabBars.buttons["Courses"].tap()
+        app.tab("Courses").tap()
         let share = app.buttons["shareShoppingList"]
         XCTAssertTrue(share.waitForExistence(timeout: 5))
         share.tap()
@@ -226,7 +228,7 @@ extension OnboardingUITests {
     func testRegenerateDayWithLeftovers() {
         let app = launch()
         onboard(app)
-        app.tabBars.buttons["Semaine"].tap()
+        app.tab("Semaine").tap()
         app.buttons["generateWeek"].tap()
         app.buttons["startGeneration"].tap()
         XCTAssertTrue(app.buttons["day-0"].waitForExistence(timeout: 10))
@@ -252,7 +254,7 @@ extension OnboardingUITests {
     func testPantrySuggestionsToggleInPlace() {
         let app = launch()
         onboard(app)
-        app.tabBars.buttons["Semaine"].tap()
+        app.tab("Semaine").tap()
         app.buttons["generateWeek"].tap()
         app.buttons["startGeneration"].tap()
         XCTAssertTrue(app.buttons["day-0"].waitForExistence(timeout: 10))
@@ -278,13 +280,13 @@ extension OnboardingUITests {
         continueAfterFailure = true
         let app = launch()
         onboard(app)
-        app.tabBars.buttons["Semaine"].tap()
+        app.tab("Semaine").tap()
         app.buttons["generateWeek"].tap()
         app.buttons["startGeneration"].tap()
         XCTAssertTrue(app.buttons["day-0"].waitForExistence(timeout: 10))
         for tab in ["Semaine", "Journal", "Courses", "Recettes", "Profil"] {
-            app.tabBars.buttons[tab].tap()
-            let tabBarTop = app.tabBars.firstMatch.frame.minY
+            app.tab(tab).tap()
+            let tabBarTop = app.tabBars.firstMatch.exists ? app.tabBars.firstMatch.frame.minY : app.frame.maxY
             let audits: XCUIAccessibilityAuditType = [
                 .contrast, .elementDetection, .hitRegion, .sufficientElementDescription, .dynamicType, .textClipped,
             ]
@@ -314,13 +316,13 @@ extension OnboardingUITests {
         for (language, week, groceries) in [("en", "Week", "Groceries"), ("de", "Woche", "Einkauf")] {
             let app = launch(["-AppleLanguages", "(\(language))", "-AppleLocale", language == "en" ? "en_US" : "de_DE"])
             onboard(app)
-            XCTAssertTrue(app.tabBars.buttons[week].waitForExistence(timeout: 5))
-            app.tabBars.buttons[week].tap()
+            XCTAssertTrue(app.tab(week).waitForExistence(timeout: 5))
+            app.tab(week).tap()
             app.buttons["generateWeek"].tap()
             app.buttons["startGeneration"].tap()
             XCTAssertTrue(app.buttons["day-0"].waitForExistence(timeout: 10))
             Self.saveScreenshot(app, name: "\(language)-week")
-            app.tabBars.buttons[groceries].tap()
+            app.tab(groceries).tap()
             Self.saveScreenshot(app, name: "\(language)-groceries")
             app.terminate()
         }
@@ -335,7 +337,7 @@ extension OnboardingUITests {
     func testPlanCustomRangeKeepsToday() {
         let app = launch()
         onboard(app)
-        app.tabBars.buttons["Semaine"].tap()
+        app.tab("Semaine").tap()
         app.buttons["generateWeek"].tap()
         app.buttons["startGeneration"].tap()
         XCTAssertTrue(app.buttons["day-0"].waitForExistence(timeout: 10))
@@ -345,12 +347,14 @@ extension OnboardingUITests {
         XCTAssertTrue(tomorrow.waitForExistence(timeout: 3))
         tomorrow.tap()
         let end = app.buttons.matching(identifier: "endDay").firstMatch
+        reveal(end, in: app)
         XCTAssertTrue(end.waitForExistence(timeout: 3))
         end.tap()
         XCTAssertTrue(end.isSelected)
         let summary = app.staticTexts["periodSummary"]
         XCTAssertTrue(summary.label.contains("prévus remplacés, les autres restent"), summary.label)
         Self.saveScreenshot(app, name: "plan-range")
+        revealUp(app.buttons["startGeneration"], in: app)
         app.buttons["startGeneration"].tap()
         let status = app.staticTexts["weekStatus"]
         XCTAssertTrue(status.waitForExistence(timeout: 10))
@@ -367,7 +371,7 @@ extension OnboardingUITests {
     func testReplaceMealAsksThenUndo() {
         let app = launch()
         onboard(app)
-        app.tabBars.buttons["Semaine"].tap()
+        app.tab("Semaine").tap()
         app.buttons["generateWeek"].tap()
         app.buttons["startGeneration"].tap()
         XCTAssertTrue(app.buttons["day-0"].waitForExistence(timeout: 10))

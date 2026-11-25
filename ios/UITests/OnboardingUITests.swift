@@ -23,6 +23,11 @@ final class OnboardingUITests: XCTestCase {
         }
     }
 
+    /// Bouton de barre d'outils d'une feuille, masqué après défilement sur grand écran : remonte jusqu'à lui.
+    func revealUp(_ element: XCUIElement, in app: XCUIApplication) {
+        for _ in 0..<5 where !element.exists { app.swipeDown() }
+    }
+
     func onboard(_ app: XCUIApplication) {
         app.buttons["acceptDisclaimer"].tap()
         let height = app.textFields["height"]
@@ -70,7 +75,7 @@ final class OnboardingUITests: XCTestCase {
     func testWithoutKeyExplainsMissingBuildKey() {
         let app = launch(["-uitest-no-key"])
         onboard(app)
-        app.tabBars.buttons["Semaine"].tap()
+        app.tab("Semaine").tap()
         XCTAssertTrue(app.staticTexts["missingAPIKey"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["generateWeek"].exists)
     }
@@ -79,7 +84,7 @@ final class OnboardingUITests: XCTestCase {
     func testGenerateWeekThenShoppingList() {
         let app = launch()
         onboard(app)
-        app.tabBars.buttons["Semaine"].tap()
+        app.tab("Semaine").tap()
         let generate = app.buttons["generateWeek"]
         XCTAssertTrue(generate.waitForExistence(timeout: 5))
         generate.tap()
@@ -87,7 +92,7 @@ final class OnboardingUITests: XCTestCase {
         XCTAssertTrue(start.waitForExistence(timeout: 3))
         start.tap()
         XCTAssertTrue(app.buttons["day-0"].waitForExistence(timeout: 10))
-        app.tabBars.buttons["Courses"].tap()
+        app.tab("Courses").tap()
         XCTAssertTrue(app.descendants(matching: .any)["weekCost"].waitForExistence(timeout: 5))
         // Spec 018 : article coché (déjà chez soi) retiré du reste à acheter.
         let remaining = app.descendants(matching: .any)["remainingCost"]
@@ -120,7 +125,7 @@ final class OnboardingUITests: XCTestCase {
     func testRecipeStepsSwipe() {
         let app = launch()
         onboard(app)
-        app.tabBars.buttons["Semaine"].tap()
+        app.tab("Semaine").tap()
         app.buttons["generateWeek"].tap()
         let start = app.buttons["startGeneration"]
         XCTAssertTrue(start.waitForExistence(timeout: 3))
@@ -164,7 +169,7 @@ final class OnboardingUITests: XCTestCase {
             element.typeText(value)
         }
         app.buttons["keyboardDone"].tap()
-        app.navigationBars.buttons.firstMatch.tap()
+        app.back()
         let summary = app.buttons["item-Whey"]
         XCTAssertTrue(summary.waitForExistence(timeout: 3))
         XCTAssertTrue(summary.label.contains("Dose de 30 g · 118 kcal · P 24 g · G 2 g · L 2 g"), summary.label)
@@ -182,7 +187,7 @@ final class OnboardingUITests: XCTestCase {
         dose.tap()
         dose.typeText("5")
         app.buttons["keyboardDone"].tap()
-        app.navigationBars.buttons.firstMatch.tap()
+        app.back()
         XCTAssertTrue(creatineItem.waitForExistence(timeout: 3))
         XCTAssertTrue(creatineItem.label.contains("5 g par prise, 1 fois par jour"), creatineItem.label)
     }
@@ -205,7 +210,7 @@ final class OnboardingUITests: XCTestCase {
     func testPlanUpcomingWeek() {
         let app = launch()
         onboard(app)
-        app.tabBars.buttons["Semaine"].tap()
+        app.tab("Semaine").tap()
         app.buttons["generateWeek"].tap()
         app.buttons["startGeneration"].tap()
         XCTAssertTrue(app.buttons["day-0"].waitForExistence(timeout: 10))
@@ -222,7 +227,7 @@ final class OnboardingUITests: XCTestCase {
     func testPlanNextWeekFromButton() {
         let app = launch()
         onboard(app)
-        app.tabBars.buttons["Semaine"].tap()
+        app.tab("Semaine").tap()
         app.buttons["generateWeek"].tap()
         app.buttons["startGeneration"].tap()
         XCTAssertTrue(app.buttons["day-0"].waitForExistence(timeout: 10))
@@ -243,7 +248,7 @@ final class OnboardingUITests: XCTestCase {
     func testSaveRecipeAndPlanItNextWeek() {
         let app = launch()
         onboard(app)
-        app.tabBars.buttons["Semaine"].tap()
+        app.tab("Semaine").tap()
         app.buttons["generateWeek"].tap()
         app.buttons["startGeneration"].tap()
         let day = app.buttons["day-0"]
@@ -258,7 +263,7 @@ final class OnboardingUITests: XCTestCase {
         save.tap()
         XCTAssertTrue(app.buttons["Retirer des recettes"].waitForExistence(timeout: 3))
 
-        app.tabBars.buttons["Recettes"].tap()
+        app.tab("Recettes").tap()
         let saved = app.buttons["savedRecipe"].firstMatch
         XCTAssertTrue(saved.waitForExistence(timeout: 3))
         saved.tap()
@@ -267,9 +272,9 @@ final class OnboardingUITests: XCTestCase {
         queue.switches.firstMatch.tap()
         XCTAssertEqual(queue.value as? String, "1")
 
-        app.tabBars.buttons["Semaine"].tap()
+        app.tab("Semaine").tap()
         // Retour du détail du repas à la semaine.
-        app.navigationBars.buttons.firstMatch.tap()
+        app.back()
         let next = app.buttons["planNextWeek"]
         XCTAssertTrue(next.waitForExistence(timeout: 3))
         for _ in 0..<5 where !next.isHittable { app.swipeUp() }
@@ -277,6 +282,7 @@ final class OnboardingUITests: XCTestCase {
         let pick = app.buttons["pickRecipe"].firstMatch
         for _ in 0..<5 where !(pick.exists && pick.isHittable) { app.swipeUp() }
         XCTAssertTrue(pick.isSelected)
+        revealUp(app.buttons["startGeneration"], in: app)
         app.buttons["startGeneration"].tap()
         assertCurrentThenUpcomingWeek(app)
     }
@@ -285,7 +291,7 @@ final class OnboardingUITests: XCTestCase {
     func testWeighInFromProfile() {
         let app = launch()
         onboard(app)
-        app.tabBars.buttons["Profil"].tap()
+        app.tab("Profil").tap()
         XCTAssertTrue(app.staticTexts["targetKcal"].waitForExistence(timeout: 5))
         app.buttons["Modifier mon profil"].firstMatch.tap()
         let input = app.textFields["weightInput"]
@@ -304,7 +310,7 @@ final class OnboardingUITests: XCTestCase {
     func testDeleteCurrentPlan() {
         let app = launch()
         onboard(app)
-        app.tabBars.buttons["Semaine"].tap()
+        app.tab("Semaine").tap()
         let generate = app.buttons["generateWeek"]
         XCTAssertTrue(generate.waitForExistence(timeout: 5))
         generate.tap()
@@ -356,7 +362,7 @@ final class OnboardingUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS '16 h 30 de jeûne'")).firstMatch
             .waitForExistence(timeout: 3))
 
-        app.tabBars.buttons["Semaine"].tap()
+        app.tab("Semaine").tap()
         let generate = app.buttons["generateWeek"]
         XCTAssertTrue(generate.waitForExistence(timeout: 5))
         generate.tap()
@@ -381,5 +387,19 @@ final class OnboardingUITests: XCTestCase {
         XCTAssertFalse(app.buttons["Moment"].exists || app.staticTexts["Moment"].exists)
         meals.switches.firstMatch.tap()
         XCTAssertTrue(app.staticTexts["Rappel de pesée"].exists)
+    }
+}
+
+extension XCUIApplication {
+    /// Onglet : barre du bas sur iPhone, barre latérale sans `TabBar` sur grand écran (iPhone Duo).
+    func tab(_ label: String) -> XCUIElement {
+        let bar = tabBars.buttons[label]
+        return bar.exists ? bar : buttons.matching(NSPredicate(format: "label == %@", label)).firstMatch
+    }
+
+    /// Retour : barre de navigation sur iPhone, colonne latérale sur grand écran.
+    func back() {
+        let bar = navigationBars.buttons.firstMatch
+        (bar.exists ? bar : buttons["BackButton"]).tap()
     }
 }

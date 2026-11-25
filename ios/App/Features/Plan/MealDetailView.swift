@@ -294,6 +294,8 @@ struct RecipeSteps: View {
                 .scrollPosition(id: $scrolledStep)
                 .contentMargins(.horizontal, 20, for: .scrollContent)
                 .padding(.horizontal, -20)
+                // Grand écran : cartes coupées au bord, pas sous la barre latérale ; ombres gardées.
+                .mask(Rectangle().padding(.vertical, -40))
                 .onChange(of: scrolledStep) { _, new in step = new ?? 0 }
                 .accessibilityIdentifier("currentStep")
                 HStack(spacing: 6) {
