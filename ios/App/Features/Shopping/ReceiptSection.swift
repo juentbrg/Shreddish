@@ -10,6 +10,8 @@ struct ReceiptSection: View {
     @Query private var members: [HouseholdMember]
     @State private var amount = ""
     @State private var sharing = false
+    /// Saisie facultative, repliée tant qu'aucun ticket n'est enregistré.
+    @State private var expanded = false
     @FocusState private var focused: Bool
     let plan: WeeklyPlan
     let budget: Double
@@ -28,6 +30,30 @@ struct ReceiptSection: View {
     }
 
     var body: some View {
+        if comparison == nil && !expanded {
+            Button {
+                expanded = true
+            } label: {
+                HStack {
+                    Label("Saisir le ticket réel", systemImage: "receipt")
+                        .font(Theme.text(.subheadline, .semibold))
+                        .foregroundStyle(Theme.ink)
+                    Spacer()
+                    Text("facultatif").font(Theme.text(.caption)).foregroundStyle(Theme.muted)
+                    Image(systemName: "chevron.down").font(Theme.text(.caption, .bold)).foregroundStyle(Theme.muted)
+                }
+                .frame(minHeight: 44)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .card(padding: 12)
+            .accessibilityIdentifier("openReceipt")
+        } else {
+            form
+        }
+    }
+
+    private var form: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Ticket réel")
                 .font(Theme.text(.headline, .bold))

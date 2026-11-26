@@ -43,34 +43,25 @@ struct TargetsView: View {
     }
 
     private func content(profile: Profile, targets: NutritionTargets) -> some View {
-        List {
-            Section {
-                TargetsHeroCard(goal: profile.goal, targets: targets)
-                    .listRowInsets(EdgeInsets())
-                    .listRowBackground(Color.clear)
-            }
-            Section {
-                NavigationLink("Modifier mon profil") { ProfileEditView() }
-                NavigationLink("Mes progrès") { BodyProgressView() }
-                    .accessibilityIdentifier("bodyProgress")
-                NavigationLink("Ajuster les macros") { MacroSettingsView() }
-                NavigationLink {
-                    CalibrationView()
-                } label: {
-                    LabeledContent("Calibration par les pesées",
-                        value: profile.isAutoCalibrationOn ? String(localized: "Auto") : String(localized: "Manuelle"))
-                }
-                .accessibilityIdentifier("calibration")
-            }
-            if let message = model.calibrationMessage {
-                Section {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 14) {
+                TargetsHeroCard(goal: profile.goal, targets: targets, adjustment: targets.breakdown.calorieAdjustment)
+                WeightSummaryCard(profile: profile) { path.append(WeighInRoute()) }
+                if let message = model.calibrationMessage {
                     Label(message, systemImage: "scalemass.fill")
+                        .font(Theme.text(.subheadline))
                         .foregroundStyle(Theme.success)
+                        .card()
                         .accessibilityIdentifier("calibrationMessage")
                 }
-            }
-            if profile.dailyActivity == nil {
-                Section {
+                ForEach(targets.warnings, id: \.self) { warning in
+                    Label(warning.message, systemImage: "exclamationmark.triangle.fill")
+                        .font(Theme.text(.subheadline))
+                        .foregroundStyle(Theme.tomatoInk)
+                        .card()
+                }
+                tiles(profile)
+                if profile.dailyActivity == nil {
                     NavigationLink {
                         ProfileEditView()
                     } label: {
@@ -78,56 +69,56 @@ struct TargetsView: View {
                             String(localized: "Précise ton activité (séances, intensité, pas) pour une dépense plus juste."),
                             systemImage: "figure.strengthtraining.traditional"
                         )
+                        .font(Theme.text(.subheadline))
+                        .foregroundStyle(Theme.ink)
+                        .card()
                     }
+                    .buttonStyle(.plain)
                 }
-            }
-            if !targets.warnings.isEmpty {
-                Section {
-                    ForEach(targets.warnings, id: \.self) { warning in
-                        Label(warning.message, systemImage: "exclamationmark.triangle.fill")
-                            .foregroundStyle(Theme.tomato)
-                    }
-                }
-            }
-            breakdownSection(targets.breakdown, targets: targets, profile: profile)
-            Section {
+                CalculationLadder(breakdown: targets.breakdown, targets: targets, profile: profile)
                 Text("Estimations, pas un avis médical.")
                     .font(Theme.text(.footnote))
                     .foregroundStyle(Theme.muted)
             }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 24)
         }
     }
 
-    private func breakdownSection(_ breakdown: CalculationBreakdown, targets: NutritionTargets, profile: Profile) -> some View {
-        ThemedSection("Détail du calcul") {
-            LabeledContent("Métabolisme de base", value: Format.kcal(breakdown.bmr))
-            if let daily = breakdown.dailyActivityFactor {
-                LabeledContent("Activité hors sport", value: "× \(Format.number(daily, digits: 2))")
-                LabeledContent("Sport (moyenne par jour)", value: "+ \(Format.kcal(breakdown.exerciseKcalPerDay ?? 0))")
-            } else {
-                LabeledContent("Activité", value: "× \(Format.number(breakdown.activityFactor, digits: 3))")
-            }
-            if let calibration = breakdown.calibrationKcal {
-                LabeledContent(
-                    String(localized: "Calibration (pesées)"),
-                    value: "\(calibration >= 0 ? "+" : "−") \(Format.kcal(abs(calibration)))"
+    private func tiles(_ profile: Profile) -> some View {
+        let age = profile.age(on: model.clock.now, calendar: model.clock.calendar)
+        return LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 10)], spacing: 10) {
+            NavigationLink { ProfileEditView() } label: {
+                ProfileTile(
+                    title: "Modifier mon profil", detail: "\(Format.number(profile.heightCm, digits: 0)) cm · \(age) ans",
+                    symbol: "person", colors: (Theme.line, Theme.ink)
                 )
             }
-            LabeledContent("Dépense estimée", value: Format.kcal(breakdown.tdee))
-            LabeledContent(
-                String(localized: "Ajustement \(profile.goal.label.lowercased())"),
-                value: Format.percent(breakdown.calorieAdjustment, signed: true)
-            )
-            if targets.floorApplied {
-                LabeledContent("Plancher de sécurité", value: Format.kcal(breakdown.floorKcal))
+            .accessibilityIdentifier("editProfile")
+            NavigationLink { BodyProgressView() } label: {
+                ProfileTile(
+                    title: "Mes progrès", detail: String(localized: "Pesées, photos, mesures"),
+                    symbol: "chart.line.downtrend.xyaxis", colors: (Theme.successSoft, Theme.success)
+                )
             }
-            LabeledContent("Protéines", value: "\(Format.number(breakdown.proteinPerKg)) g/kg")
-            LabeledContent("Lipides", value: "\(Format.number(breakdown.fatPerKg)) g/kg")
-            LabeledContent("Glucides", value: "le reste")
-            Text("Formule Mifflin-St Jeor : 10 × poids + 6,25 × taille − 5 × âge \(profile.sex == .male ? "+ 5" : "− 161").")
-                .font(Theme.text(.footnote))
-                .foregroundStyle(Theme.muted)
+            .accessibilityIdentifier("bodyProgress")
+            NavigationLink { MacroSettingsView() } label: {
+                ProfileTile(
+                    title: "Ajuster les macros", detail: String(localized: "Protéines, lipides, glucides"),
+                    symbol: "slider.horizontal.3", colors: (Theme.carbs.soft, Theme.carbs.ink)
+                )
+            }
+            NavigationLink { CalibrationView() } label: {
+                ProfileTile(
+                    title: "Calibration",
+                    detail: profile.isAutoCalibrationOn
+                        ? String(localized: "Auto, par les pesées") : String(localized: "Manuelle"),
+                    symbol: "scope", colors: (Theme.fat.soft, Theme.fat.ink)
+                )
+            }
+            .accessibilityIdentifier("calibration")
         }
+        .buttonStyle(.plain)
     }
 }
 
@@ -187,13 +178,25 @@ struct ProfileEditView: View {
 struct TargetsHeroCard: View {
     let goal: Goal
     let targets: NutritionTargets
+    /// Ajustement de l'objectif (−20 % en sèche) ; `nil` : pas de badge.
+    var adjustment: Double?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             VStack(alignment: .leading, spacing: 2) {
-                Text("\(goal.label) · par jour")
-                    .font(Theme.text(.footnote, .medium))
-                    .foregroundStyle(Theme.muted)
+                HStack {
+                    Text("\(goal.label) · cible par jour")
+                        .font(Theme.text(.footnote, .medium))
+                        .foregroundStyle(Theme.muted)
+                    Spacer()
+                    if let adjustment, abs(adjustment) > 0.001 {
+                        Text(Format.percent(adjustment, signed: true))
+                            .font(Theme.text(.caption, .bold))
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 5)
+                            .background(Theme.line, in: Capsule())
+                    }
+                }
                 Text(Format.kcal(Double(targets.targetKcal)))
                     .font(Theme.display(38, .heavy, relativeTo: .largeTitle))
                     .fixedSize(horizontal: false, vertical: true)

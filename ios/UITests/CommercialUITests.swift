@@ -136,6 +136,9 @@ extension OnboardingUITests {
         app.buttons["startGeneration"].tap()
         XCTAssertTrue(app.buttons["day-0"].waitForExistence(timeout: 10))
         app.tab("Courses").tap()
+        let open = app.buttons["openReceipt"]
+        reveal(open, in: app)
+        open.tap()
         let amount = app.textFields["receiptAmount"]
         XCTAssertTrue(amount.waitForExistence(timeout: 5))
         amount.tap()

@@ -293,7 +293,7 @@ final class OnboardingUITests: XCTestCase {
         onboard(app)
         app.tab("Profil").tap()
         XCTAssertTrue(app.staticTexts["targetKcal"].waitForExistence(timeout: 5))
-        app.buttons["Modifier mon profil"].firstMatch.tap()
+        app.buttons["editProfile"].firstMatch.tap()
         let input = app.textFields["weightInput"]
         XCTAssertTrue(input.waitForExistence(timeout: 5))
         input.tap()

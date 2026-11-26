@@ -17,6 +17,7 @@ struct ShoppingListView: View {
     /// Résultat de l'envoi vers Rappels.
     @State private var remindersMessage: String?
     @Environment(AppModel.self) private var model
+    @State private var showHelp = false
 
     private var activePlans: [WeeklyPlan] { plans.sorted { $0.startDay < $1.startDay } }
 
@@ -119,21 +120,9 @@ struct ShoppingListView: View {
                 if activePlans.count > 1 {
                     WeekNavigator(weeks: activePlans, selected: plan, today: model.clock.today) { selectedPlanID = $0 }
                 }
-                Text("Prix moyens en France, paquets entiers. Coche ce que tu as déjà. Appui long sur un article pour le bannir.")
-                    .font(Theme.text(.subheadline))
-                    .foregroundStyle(Theme.muted)
+                subtitle(plan, count: items.count)
+                ShoppingBudgetCard(summary: summary, preferences: allPreferences.first)
                 ShoppingStatus(plan: plan, validation: validation, logged: logged)
-                VStack(alignment: .leading, spacing: 12) {
-                    if let preferences = allPreferences.first {
-                        WeekCostRow(summary: summary, preferences: preferences)
-                    } else {
-                        LabeledContent("Ticket estimé", value: Format.euros(summary.checkoutEur))
-                    }
-                }
-                .font(Theme.text(.subheadline))
-                .card()
-                ReceiptSection(plan: plan, budget: allPreferences.first?.weeklyBudget ?? 0)
-                    .id(plan.id)
                 ForEach(aisles, id: \.self) { aisle in
                     AisleCard(aisle: aisle, items: grouped[aisle] ?? [], toggle: { item in
                         item.isChecked.toggle()
@@ -149,6 +138,8 @@ struct ShoppingListView: View {
                     }
                     .buttonStyle(PillButtonStyle(prominent: false))
                 }
+                ReceiptSection(plan: plan, budget: allPreferences.first?.weeklyBudget ?? 0)
+                    .id(plan.id)
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 24)
@@ -168,6 +159,35 @@ struct ShoppingListView: View {
             try? context.save()
         }
         .paperBackground()
+    }
+
+    /// Dates, nombre d'articles, aide derrière « i ».
+    private func subtitle(_ plan: WeeklyPlan, count: Int) -> some View {
+        HStack(spacing: 6) {
+            Text("\(Format.range(plan, calendar: model.clock.calendar)) · \(count) articles · prix moyens")
+                .font(Theme.text(.subheadline))
+                .foregroundStyle(Theme.muted)
+            Button {
+                showHelp = true
+            } label: {
+                Image(systemName: "info.circle")
+                    .font(Theme.text(.subheadline))
+                    .foregroundStyle(Theme.muted)
+                    .frame(minWidth: 44, minHeight: 44)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Comment sont calculés les prix")
+            .popover(isPresented: $showHelp) {
+                Text("Prix moyens en France, paquets entiers. Coche ce que tu as déjà. Appui long sur un article pour le bannir.")
+                    .font(Theme.text(.subheadline))
+                    .foregroundStyle(Theme.ink)
+                    .padding()
+                    .frame(idealWidth: 300)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .presentationCompactAdaptation(.popover)
+            }
+        }
     }
 }
 
@@ -234,7 +254,7 @@ private struct RemainingBar: View {
                 Text(validate == nil ? "Reste à acheter" : "Tout est coché").font(Theme.text(.subheadline, .semibold))
                 Text("\(checked) / \(total) articles cochés")
                     .font(Theme.text(.caption))
-                    .foregroundStyle(Theme.muted)
+                    .foregroundStyle(Theme.paper.opacity(0.75))
             }
             Spacer()
             if let validate {
@@ -243,17 +263,17 @@ private struct RemainingBar: View {
                     .accessibilityIdentifier("validateShopping")
             } else {
                 Text(Format.euros(remaining))
-                    .font(Theme.text(.title3, .bold))
+                    .font(Theme.display(24, .heavy, relativeTo: .title2))
                     .monospacedDigit()
                     .contentTransition(.numericText())
                     .animation(.snappy, value: remaining)
             }
         }
-        .foregroundStyle(Theme.ink)
+        .foregroundStyle(Theme.paper)
         .padding(.horizontal, 18)
         .padding(.vertical, 12)
-        .background(Theme.card, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-        .shadow(color: .black.opacity(0.08), radius: 12, y: 4)
+        .background(Theme.ink, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .shadow(color: .black.opacity(0.18), radius: 14, y: 6)
         .frame(maxWidth: Theme.readableWidth)
         .padding(.horizontal, 20)
         .padding(.bottom, 8)
@@ -278,6 +298,10 @@ private struct AisleCard: View {
                     .font(Theme.text(.subheadline, .bold))
                     .foregroundStyle(Theme.ink)
                     .accessibilityAddTraits(.isHeader)
+                Spacer()
+                Text("\(items.filter(\.isChecked).count) sur \(items.count)")
+                    .font(Theme.text(.caption))
+                    .foregroundStyle(Theme.muted)
             }
             .padding(.vertical, 8)
             ForEach(sorted) { item in
@@ -336,6 +360,7 @@ struct ShoppingRow: View {
             }
             .frame(minHeight: 44)
             .padding(.vertical, 6)
+            .opacity(item.isChecked ? 0.6 : 1)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

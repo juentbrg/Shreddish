@@ -8,6 +8,8 @@ struct RecipesView: View {
     @Environment(\.modelContext) private var context
     @Query(sort: \SavedRecipe.savedAt, order: .reverse) var recipes: [SavedRecipe]
     @State private var creating = false
+    @State private var search = ""
+    @State private var filter = RecipeFilter.all
 
     /// Recette perso vide (spec 017, FR-1705).
     static let blank = MealDTO(
@@ -44,65 +46,167 @@ struct RecipesView: View {
         }
     }
 
+    private var filtered: [SavedRecipe] {
+        let query = TextNormalizer.basic(search.trimmingCharacters(in: .whitespaces))
+        return recipes.filter { recipe in
+            filter.matches(recipe.type) && (query.isEmpty || TextNormalizer.basic(recipe.name).contains(query))
+        }
+    }
+
     private var list: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 10) {
-                Text("Touche « Pour la semaine prochaine » dans une recette : elle sera proposée en planifiant la suite.")
-                    .font(Theme.text(.footnote))
+        let queued = recipes.filter(\.isQueued).count
+        return ScrollView {
+            VStack(alignment: .leading, spacing: 12) {
+                let saved = recipes.count == 1
+                    ? String(localized: "1 recette sauvegardée")
+                    : String(localized: "\(recipes.count) recettes sauvegardées")
+                Text(queued == 0 ? saved : String(localized: "\(saved) · \(queued) pour la semaine prochaine"))
+                    .font(Theme.text(.subheadline))
                     .foregroundStyle(Theme.muted)
-                    .padding(.bottom, 4)
-                ForEach(recipes) { recipe in
-                    NavigationLink {
-                        SavedRecipeView(recipe: recipe)
+                searchField
+                Picker("Moment du repas", selection: $filter) {
+                    ForEach(RecipeFilter.allCases, id: \.self) { Text($0.label).tag($0) }
+                }
+                .pickerStyle(.segmented)
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 10)], spacing: 10) {
+                    ForEach(filtered) { recipe in
+                        NavigationLink {
+                            SavedRecipeView(recipe: recipe)
+                        } label: {
+                            RecipeCard(recipe: recipe)
+                        }
+                        .buttonStyle(.plain)
+                        .contextMenu {
+                            Button("Retirer des recettes", systemImage: "trash", role: .destructive) {
+                                context.delete(recipe)
+                                try? context.save()
+                            }
+                        }
+                        .accessibilityIdentifier("savedRecipe")
+                    }
+                    Button {
+                        creating = true
                     } label: {
-                        RecipeCard(recipe: recipe)
+                        Label("Créer une recette", systemImage: "plus")
+                            .labelStyle(VerticalLabelStyle())
+                            .font(Theme.text(.subheadline, .bold))
+                            .foregroundStyle(Theme.tomatoInk)
+                            .frame(maxWidth: .infinity, minHeight: 150)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                                    .strokeBorder(Theme.muted.opacity(0.4), style: StrokeStyle(lineWidth: 2, dash: [6, 5]))
+                            )
                     }
                     .buttonStyle(.plain)
-                    .contextMenu {
-                        Button("Retirer des recettes", systemImage: "trash", role: .destructive) {
-                            context.delete(recipe)
-                            try? context.save()
-                        }
-                    }
-                    .accessibilityIdentifier("savedRecipe")
                 }
+                Text("Dans une recette, « Pour la semaine prochaine » la propose en planifiant la suite.")
+                    .font(Theme.text(.footnote))
+                    .foregroundStyle(Theme.muted)
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 24)
         }
         .paperBackground()
     }
+
+    private var searchField: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass").foregroundStyle(Theme.muted).accessibilityHidden(true)
+            TextField("Chercher une recette", text: $search)
+                .font(Theme.text(.body))
+                .submitLabel(.search)
+                .accessibilityIdentifier("recipeSearch")
+        }
+        .padding(.horizontal, 14)
+        .frame(minHeight: 44)
+        .background(Theme.card, in: Capsule())
+    }
 }
 
-/// Carte d'une recette sauvegardée, même forme que la carte d'un repas.
+/// Filtre des recettes par moment du repas.
+enum RecipeFilter: CaseIterable {
+    case all, morning, meals, snacks
+
+    var label: LocalizedStringKey {
+        switch self {
+        case .all: "Toutes"
+        case .morning: "Matin"
+        case .meals: "Midi, soir"
+        case .snacks: "Collations"
+        }
+    }
+
+    func matches(_ type: MealType) -> Bool {
+        switch self {
+        case .all: true
+        case .morning: type == .breakfast
+        case .meals: type == .lunch || type == .dinner
+        case .snacks: type == .snack
+        }
+    }
+}
+
+/// Icône au-dessus du titre.
+struct VerticalLabelStyle: LabelStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        VStack(spacing: 6) {
+            configuration.icon.font(.title2)
+            configuration.title
+        }
+    }
+}
+
+/// Carte d'une recette : bandeau teinté par moment du repas, macros et prix.
 struct RecipeCard: View {
     let recipe: SavedRecipe
 
+    private var macros: String {
+        [("P", recipe.proteinG), ("G", recipe.carbsG), ("L", recipe.fatG)]
+            .map { "\($0.0) \(Format.number($0.1, digits: 0))" }
+            .joined(separator: " · ")
+    }
+
     var body: some View {
-        HStack(spacing: 12) {
-            MealTile(type: recipe.type)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(recipe.type.label)
-                    .font(Theme.text(.caption))
-                    .foregroundStyle(Theme.muted)
+        let colors = recipe.type.tileColors
+        VStack(alignment: .leading, spacing: 0) {
+            ZStack(alignment: .topLeading) {
+                Image(systemName: recipe.type.symbol)
+                    .font(.system(size: 30, weight: .medium))
+                    .foregroundStyle(colors.ink)
+                    .frame(maxWidth: .infinity, minHeight: 76)
+                    .background(colors.background)
+                    .accessibilityHidden(true)
+                if recipe.isQueued {
+                    Text("Semaine pro.")
+                        .font(Theme.text(.caption2, .bold))
+                        .foregroundStyle(Theme.paper)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Theme.ink, in: Capsule())
+                        .padding(8)
+                        .accessibilityLabel("Pour la semaine prochaine")
+                }
+            }
+            VStack(alignment: .leading, spacing: 3) {
                 Text(recipe.name)
-                    .font(Theme.text(.subheadline, .semibold))
+                    .font(Theme.text(.subheadline, .bold))
                     .foregroundStyle(Theme.ink)
                     .multilineTextAlignment(.leading)
-                Text("\(Format.kcal(recipe.kcal)) · \(recipe.prepMinutes) min · \(Format.euros(recipe.costEUR))")
+                    .lineLimit(2)
+                Text("\(Format.kcal(recipe.kcal)) · \(Format.euros(recipe.costEUR))")
+                    .font(Theme.text(.caption))
+                    .foregroundStyle(Theme.muted)
+                Text(macros)
                     .font(Theme.text(.caption))
                     .foregroundStyle(Theme.muted)
             }
-            Spacer(minLength: 0)
-            if recipe.isQueued {
-                Image(systemName: "calendar.badge.clock")
-                    .foregroundStyle(Theme.accent)
-                    .accessibilityLabel("Pour la semaine prochaine")
-            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(10)
-        .padding(.trailing, 2)
-        .background(Theme.card, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .frame(maxHeight: .infinity, alignment: .top)
+        .background(Theme.card)
+        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
         .accessibilityElement(children: .combine)
     }
 }
