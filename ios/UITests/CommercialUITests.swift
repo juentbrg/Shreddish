@@ -311,6 +311,9 @@ extension OnboardingUITests {
                 return ["Contrast nearly passed", "Dynamic Type font sizes are partially unsupported"]
                     .contains(issue.compactDescription)
             }
+            Self.saveScreenshot(app, name: "audit-\(tab)")
+            app.swipeUp()
+            Self.saveScreenshot(app, name: "audit-\(tab)-bas")
         }
     }
 

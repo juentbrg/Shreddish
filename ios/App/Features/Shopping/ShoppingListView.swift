@@ -121,7 +121,11 @@ struct ShoppingListView: View {
                     WeekNavigator(weeks: activePlans, selected: plan, today: model.clock.today) { selectedPlanID = $0 }
                 }
                 subtitle(plan, count: items.count)
-                ShoppingBudgetCard(summary: summary, preferences: allPreferences.first)
+                ShoppingBudgetCard(
+                    summary: summary, preferences: allPreferences.first,
+                    progress: validation == nil
+                        ? ShoppingProgress(remaining: plan.remainingShoppingEur, checked: checked, total: items.count) : nil
+                )
                 ShoppingStatus(plan: plan, validation: validation, logged: logged)
                 ForEach(aisles, id: \.self) { aisle in
                     AisleCard(aisle: aisle, items: grouped[aisle] ?? [], toggle: { item in
@@ -129,6 +133,14 @@ struct ShoppingListView: View {
                         PlanStore.rebuildFollowingShoppingList(after: plan, in: context)
                         try? context.save()
                     }, ban: ban)
+                }
+                // Tout coché : valider les courses, liste figée ensuite (spec 019).
+                if validation == nil, !items.isEmpty, checked == items.count {
+                    Button("Valider les courses", systemImage: "checkmark") {
+                        ShoppingValidation.validate(plan, at: model.clock.now, in: context)
+                    }
+                    .buttonStyle(PillButtonStyle())
+                    .accessibilityIdentifier("validateShopping")
                 }
                 if checked > 0, validation == nil {
                     Button("Tout décocher") {
@@ -143,15 +155,6 @@ struct ShoppingListView: View {
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 24)
-        }
-        // Reste à acheter toujours visible pendant qu'on coche (spec 018) ; tout coché : validation (spec 019).
-        .safeAreaInset(edge: .bottom) {
-            if validation == nil {
-                RemainingBar(
-                    remaining: plan.remainingShoppingEur, checked: checked, total: items.count,
-                    validate: checked == items.count ? { ShoppingValidation.validate(plan, at: model.clock.now, in: context) } : nil
-                )
-            }
         }
         // Repas cochés ou décochés ailleurs (journal, montre) : liste recalculée à l'affichage (spec 019).
         .task(id: "\(plan.id)-\(logged)") {
@@ -237,48 +240,6 @@ private struct ShoppingStatus: View {
             .foregroundStyle(Theme.success)
             .accessibilityIdentifier("carriedStock")
         }
-    }
-}
-
-/// Barre du bas : prix des articles pas encore cochés, mis à jour à chaque coche.
-private struct RemainingBar: View {
-    let remaining: Double
-    let checked: Int
-    let total: Int
-    /// Tout est coché : valider les courses (liste figée ensuite).
-    var validate: (() -> Void)?
-
-    var body: some View {
-        HStack(alignment: .center) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(validate == nil ? "Reste à acheter" : "Tout est coché").font(Theme.text(.subheadline, .semibold))
-                Text("\(checked) / \(total) articles cochés")
-                    .font(Theme.text(.caption))
-                    .foregroundStyle(Theme.paper.opacity(0.75))
-            }
-            Spacer()
-            if let validate {
-                Button("Valider les courses", systemImage: "checkmark", action: validate)
-                    .buttonStyle(CompactButtonStyle())
-                    .accessibilityIdentifier("validateShopping")
-            } else {
-                Text(Format.euros(remaining))
-                    .font(Theme.display(24, .heavy, relativeTo: .title2))
-                    .monospacedDigit()
-                    .contentTransition(.numericText())
-                    .animation(.snappy, value: remaining)
-            }
-        }
-        .foregroundStyle(Theme.paper)
-        .padding(.horizontal, 18)
-        .padding(.vertical, 12)
-        .background(Theme.ink, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-        .shadow(color: .black.opacity(0.18), radius: 14, y: 6)
-        .frame(maxWidth: Theme.readableWidth)
-        .padding(.horizontal, 20)
-        .padding(.bottom, 8)
-        .accessibilityElement(children: validate == nil ? .combine : .contain)
-        .accessibilityIdentifier("remainingCost")
     }
 }
 

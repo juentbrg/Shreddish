@@ -329,24 +329,80 @@ struct WeekPlanList: View {
     private var weekCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             SectionTitle(title: "La semaine", trailing: Format.range(plan, calendar: model.clock.calendar))
-            VStack(alignment: .leading, spacing: 10) {
-                if let targets = plan.targets {
-                    LabeledContent("Cible", value: Format.kcal(Double(targets.targetKcal)))
-                }
-                if let preferences = allPreferences.first {
-                    WeekCostRow(summary: plan.shoppingSummary, preferences: preferences)
+            VStack(alignment: .leading, spacing: 0) {
+                HStack(alignment: .top, spacing: 0) {
+                    if let targets = plan.targets {
+                        WeekStat(title: "Cible par jour", value: Format.kcal(Double(targets.targetKcal))) {
+                            Text("P \(targets.proteinG) · G \(targets.carbsG) · L \(targets.fatG)")
+                                .font(Theme.text(.caption))
+                                .foregroundStyle(Theme.muted)
+                        }
+                    }
+                    if let preferences = allPreferences.first {
+                        let summary = plan.shoppingSummary
+                        let status = BudgetStatus(cost: summary.weekCostEur, preferences: preferences)
+                        WeekStat(title: "Ticket estimé", value: Format.euros(summary.checkoutEur)) {
+                            BudgetBar(cost: summary.weekCostEur, preferences: preferences)
+                                .frame(height: 6)
+                                .padding(.vertical, 6)
+                            Text(status.text).font(Theme.text(.caption, .bold)).foregroundStyle(status.ink)
+                        }
+                        .padding(.leading, plan.targets == nil ? 0 : 14)
+                        .overlay(alignment: .leading) {
+                            if plan.targets != nil { Rectangle().fill(Theme.line).frame(width: 1) }
+                        }
+                    }
                 }
                 if !plan.prepSessions.isEmpty {
+                    Rectangle().fill(Theme.line).frame(height: 1).padding(.vertical, 12)
                     NavigationLink {
                         PrepSessionView(sessions: plan.prepSessions, startDay: plan.startDay)
                     } label: {
-                        Label("\(plan.prepSessions.count) session(s) de batch cooking", systemImage: "frying.pan")
+                        HStack(spacing: 10) {
+                            Image(systemName: "frying.pan")
+                                .font(.system(size: 15, weight: .semibold))
+                                .foregroundStyle(Theme.wheatInk)
+                                .frame(width: 32, height: 32)
+                                .background(Theme.wheat, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                                .accessibilityHidden(true)
+                            Text("\(plan.prepSessions.count) session(s) de batch cooking")
+                                .font(Theme.text(.subheadline, .semibold))
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(Theme.muted)
+                                .accessibilityHidden(true)
+                        }
+                        .foregroundStyle(Theme.ink)
+                        .contentShape(Rectangle())
                     }
+                    .buttonStyle(.plain)
                 }
             }
-            .font(Theme.text(.subheadline))
-            .card()
+            .card(padding: 16, radius: 22)
         }
+    }
+}
+
+/// Chiffre clé de la carte semaine : libellé, valeur, détail.
+private struct WeekStat<Detail: View>: View {
+    let title: LocalizedStringKey
+    let value: String
+    @ViewBuilder let detail: Detail
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(title).font(Theme.text(.footnote, .medium)).foregroundStyle(Theme.muted)
+            Text(value)
+                .font(Theme.display(22, .heavy, relativeTo: .title3))
+                .monospacedDigit()
+                .foregroundStyle(Theme.ink)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+            detail
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .combine)
     }
 }
 
@@ -406,48 +462,6 @@ struct DayBadges: View {
             WarningBadge(
                 text: String(localized: "Glucides \(Format.percent(carbsDeviation, signed: true))"), systemImage: "leaf.fill"
             )
-        }
-    }
-}
-
-/// Coût estimé de la semaine face au budget et à la tolérance (spec 003, FR-207).
-struct WeekCostRow: View {
-    let summary: ShoppingSummary
-    let preferences: Preferences
-
-    /// Coût réel de la semaine (ticket moins les restes qui se gardent), comparé au budget (spec 013).
-    private var cost: Double { summary.weekCostEur }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            LabeledContent("Ticket estimé", value: Format.euros(summary.checkoutEur))
-                .accessibilityIdentifier("weekCost")
-            if summary.keptEur >= 0.5 {
-                LabeledContent("Coût de la semaine", value: Format.euros(cost))
-                Text("Ticket moins \(Format.euros(summary.keptEur)) de produits qui te resteront (riz, huile…)")
-                    .font(Theme.text(.caption))
-                    .foregroundStyle(Theme.muted)
-            }
-            if summary.wastedEur >= 0.5 {
-                Text("Dont \(Format.euros(summary.wastedEur)) de restes à finir vite (paquets entamés)")
-                    .font(Theme.text(.caption))
-                    .foregroundStyle(Theme.tomato)
-            }
-            let budget = Format.euros(preferences.weeklyBudget)
-            ProgressView(value: min(cost, preferences.budgetCeiling), total: max(preferences.budgetCeiling, 1))
-                .tint(cost > preferences.weeklyBudget + 0.005 ? Theme.tomato : Theme.success)
-            Text("Budget \(budget) · tolérance \(Format.percent(preferences.tolerance))")
-                .font(Theme.text(.caption))
-                .foregroundStyle(Theme.muted)
-            if cost > preferences.weeklyBudget + 0.005 {
-                let beyond = cost > preferences.budgetCeiling + 0.005
-                WarningBadge(
-                    text: beyond
-                        ? String(localized: "Au-dessus de la tolérance")
-                        : String(localized: "Au-dessus du budget, dans la tolérance"),
-                    systemImage: "eurosign.circle.fill"
-                )
-            }
         }
     }
 }

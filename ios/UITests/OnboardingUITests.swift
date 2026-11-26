@@ -115,6 +115,7 @@ final class OnboardingUITests: XCTestCase {
         Self.saveScreenshot(app, name: "shopping-loop-end")
         let validate = app.buttons["validateShopping"]
         XCTAssertTrue(validate.waitForExistence(timeout: 3))
+        reveal(validate, in: app)
         Self.saveScreenshot(app, name: "shopping-validate")
         validate.tap()
         XCTAssertTrue(app.buttons["reopenShopping"].waitForExistence(timeout: 3))

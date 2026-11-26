@@ -46,11 +46,12 @@
       }
     },
     "%@ %@ pesées": {
+      "extractionState": "stale",
       "localizations": {
-        "fr": {
+        "de": {
           "stringUnit": {
-            "state": "new",
-            "value": "%1$@ %2$@ pesées"
+            "state": "translated",
+            "value": "%1$@ %2$@ Wiegungen"
           }
         },
         "en": {
@@ -65,10 +66,10 @@
             "value": "%1$@ %2$@ pesajes"
           }
         },
-        "de": {
+        "fr": {
           "stringUnit": {
-            "state": "translated",
-            "value": "%1$@ %2$@ Wiegungen"
+            "state": "new",
+            "value": "%1$@ %2$@ pesées"
           }
         },
         "it": {
@@ -129,6 +130,12 @@
     },
     "%@ au-dessus du budget": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ über dem Budget"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -141,12 +148,6 @@
             "value": "%@ por encima del presupuesto"
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ über dem Budget"
-          }
-        },
         "it": {
           "stringUnit": {
             "state": "translated",
@@ -156,7 +157,14 @@
       }
     },
     "%@ base": {
+      "extractionState": "stale",
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ Grundumsatz"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -167,12 +175,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ base"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ Grundumsatz"
           }
         },
         "it": {
@@ -304,6 +306,12 @@
     },
     "%@ en trop": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ zu viel"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -314,12 +322,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ de más"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ zu viel"
           }
         },
         "it": {
@@ -654,6 +656,12 @@
     },
     "%@ te resteront": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ bleiben dir übrig"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -664,12 +672,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ te sobrarán"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ bleiben dir übrig"
           }
         },
         "it": {
@@ -692,10 +694,10 @@
     },
     "%@ · %lld articles · prix moyens": {
       "localizations": {
-        "fr": {
+        "de": {
           "stringUnit": {
-            "state": "new",
-            "value": "%1$@ · %2$lld articles · prix moyens"
+            "state": "translated",
+            "value": "%1$@ · %2$lld Artikel · Durchschnittspreise"
           }
         },
         "en": {
@@ -710,10 +712,10 @@
             "value": "%1$@ · %2$lld artículos · precios medios"
           }
         },
-        "de": {
+        "fr": {
           "stringUnit": {
-            "state": "translated",
-            "value": "%1$@ · %2$lld Artikel · Durchschnittspreise"
+            "state": "new",
+            "value": "%1$@ · %2$lld articles · prix moyens"
           }
         },
         "it": {
@@ -760,10 +762,10 @@
     },
     "%@ · %lld pour la semaine prochaine": {
       "localizations": {
-        "fr": {
+        "de": {
           "stringUnit": {
-            "state": "new",
-            "value": "%1$@ · %2$lld pour la semaine prochaine"
+            "state": "translated",
+            "value": "%1$@ · %2$lld für nächste Woche"
           }
         },
         "en": {
@@ -778,10 +780,10 @@
             "value": "%1$@ · %2$lld para la próxima semana"
           }
         },
-        "de": {
+        "fr": {
           "stringUnit": {
-            "state": "translated",
-            "value": "%1$@ · %2$lld für nächste Woche"
+            "state": "new",
+            "value": "%1$@ · %2$lld pour la semaine prochaine"
           }
         },
         "it": {
@@ -862,6 +864,12 @@
     },
     "%@ · cible par jour": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · Tagesziel"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -872,12 +880,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ · objetivo diario"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ · Tagesziel"
           }
         },
         "it": {
@@ -919,6 +921,12 @@
     },
     "%@ · À venir": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · Als Nächstes"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -929,12 +937,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ · A continuación"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ · Als Nächstes"
           }
         },
         "it": {
@@ -991,10 +993,10 @@
     },
     "%@%@ kg en %@": {
       "localizations": {
-        "fr": {
+        "de": {
           "stringUnit": {
-            "state": "new",
-            "value": "%1$@%2$@ kg en %3$@"
+            "state": "translated",
+            "value": "%1$@%2$@ kg in %3$@"
           }
         },
         "en": {
@@ -1009,10 +1011,10 @@
             "value": "%1$@%2$@ kg en %3$@"
           }
         },
-        "de": {
+        "fr": {
           "stringUnit": {
-            "state": "translated",
-            "value": "%1$@%2$@ kg in %3$@"
+            "state": "new",
+            "value": "%1$@%2$@ kg en %3$@"
           }
         },
         "it": {
@@ -1088,6 +1090,12 @@
     },
     "%lld": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -1095,12 +1103,6 @@
           }
         },
         "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld"
-          }
-        },
-        "de": {
           "stringUnit": {
             "state": "translated",
             "value": "%lld"
@@ -1116,9 +1118,9 @@
     },
     "%lld / %lld": {
       "localizations": {
-        "fr": {
+        "de": {
           "stringUnit": {
-            "state": "new",
+            "state": "translated",
             "value": "%1$lld / %2$lld"
           }
         },
@@ -1134,9 +1136,9 @@
             "value": "%1$lld / %2$lld"
           }
         },
-        "de": {
+        "fr": {
           "stringUnit": {
-            "state": "translated",
+            "state": "new",
             "value": "%1$lld / %2$lld"
           }
         },
@@ -1149,6 +1151,7 @@
       }
     },
     "%lld / %lld articles cochés": {
+      "extractionState": "stale",
       "localizations": {
         "de": {
           "stringUnit": {
@@ -1268,6 +1271,12 @@
     },
     "%lld j": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld T."
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -1278,12 +1287,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld d"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld T."
           }
         },
         "it": {
@@ -1351,6 +1354,7 @@
         }
       }
     },
+    "%lld kcal": {},
     "%lld min avant": {
       "localizations": {
         "de": {
@@ -1549,6 +1553,12 @@
     },
     "%lld recettes sauvegardées": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld gespeicherte Rezepte"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -1559,12 +1569,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld recetas guardadas"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld gespeicherte Rezepte"
           }
         },
         "it": {
@@ -1690,6 +1694,12 @@
     },
     "%lld sem.": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld Wo."
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -1700,12 +1710,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld sem."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld Wo."
           }
         },
         "it": {
@@ -1746,10 +1750,10 @@
     },
     "%lld sur %lld": {
       "localizations": {
-        "fr": {
+        "de": {
           "stringUnit": {
-            "state": "new",
-            "value": "%1$lld sur %2$lld"
+            "state": "translated",
+            "value": "%1$lld von %2$lld"
           }
         },
         "en": {
@@ -1764,10 +1768,10 @@
             "value": "%1$lld de %2$lld"
           }
         },
-        "de": {
+        "fr": {
           "stringUnit": {
-            "state": "translated",
-            "value": "%1$lld von %2$lld"
+            "state": "new",
+            "value": "%1$lld sur %2$lld"
           }
         },
         "it": {
@@ -1778,12 +1782,46 @@
         }
       }
     },
-    "%lld sur %lld cochés": {
+    "%lld sur %lld articles cochés": {
       "localizations": {
         "fr": {
           "stringUnit": {
             "state": "new",
-            "value": "%1$lld sur %2$lld cochés"
+            "value": "%1$lld sur %2$lld articles cochés"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld of %lld items checked"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld de %lld artículos marcados"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld von %lld Artikeln abgehakt"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld su %lld articoli spuntati"
+          }
+        }
+      }
+    },
+    "%lld sur %lld cochés": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld von %2$lld abgehakt"
           }
         },
         "en": {
@@ -1798,10 +1836,10 @@
             "value": "%1$lld de %2$lld marcadas"
           }
         },
-        "de": {
+        "fr": {
           "stringUnit": {
-            "state": "translated",
-            "value": "%1$lld von %2$lld abgehakt"
+            "state": "new",
+            "value": "%1$lld sur %2$lld cochés"
           }
         },
         "it": {
@@ -1959,7 +1997,14 @@
       }
     },
     "+ %@ sport": {
+      "extractionState": "stale",
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+ %@ Sport"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -1970,12 +2015,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "+ %@ deporte"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "+ %@ Sport"
           }
         },
         "it": {
@@ -2102,6 +2141,12 @@
     },
     "1 recette sauvegardée": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 gespeichertes Rezept"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -2112,12 +2157,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "1 receta guardada"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "1 gespeichertes Rezept"
           }
         },
         "it": {
@@ -2524,6 +2563,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Attività"
+          }
+        }
+      }
+    },
+    "Activité au quotidien": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Daily activity"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actividad diaria"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alltagsaktivität"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Attività quotidiana"
           }
         }
       }
@@ -3008,6 +3075,34 @@
         }
       }
     },
+    "Ajusté par tes pesées": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adjusted by your weigh-ins"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ajustado por tus pesajes"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "An deine Wiegungen angepasst"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adattato dalle tue pesate"
+          }
+        }
+      }
+    },
     "Aliment": {
       "localizations": {
         "de": {
@@ -3406,6 +3501,7 @@
       }
     },
     "Au-dessus de la tolérance": {
+      "extractionState": "stale",
       "localizations": {
         "de": {
           "stringUnit": {
@@ -3434,6 +3530,7 @@
       }
     },
     "Au-dessus du budget, dans la tolérance": {
+      "extractionState": "stale",
       "localizations": {
         "de": {
           "stringUnit": {
@@ -3689,6 +3786,12 @@
     },
     "Auto, par les pesées": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatisch, über Wiegungen"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -3699,12 +3802,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Auto, por los pesajes"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Automatisch, über Wiegungen"
           }
         },
         "it": {
@@ -4765,6 +4862,12 @@
     },
     "Chercher une recette": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rezept suchen"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -4775,12 +4878,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Buscar una receta"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rezept suchen"
           }
         },
         "it": {
@@ -4849,6 +4946,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Obiettivo attuale: %@ (calcolato su %@ kg)."
+          }
+        }
+      }
+    },
+    "Cible par jour": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Daily target"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Objetivo diario"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tagesziel"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Obiettivo giornaliero"
           }
         }
       }
@@ -5057,6 +5182,12 @@
     },
     "Collations": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Snacks"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -5067,12 +5198,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tentempiés"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Snacks"
           }
         },
         "it": {
@@ -5113,6 +5238,12 @@
     },
     "Comment sont calculés les prix": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wie die Preise berechnet werden"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -5123,12 +5254,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Cómo se calculan los precios"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wie die Preise berechnet werden"
           }
         },
         "it": {
@@ -5568,6 +5693,7 @@
       }
     },
     "Coût de la semaine": {
+      "extractionState": "stale",
       "localizations": {
         "de": {
           "stringUnit": {
@@ -5681,6 +5807,12 @@
     },
     "D'où vient ta cible": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Woher dein Ziel kommt"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -5691,12 +5823,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "De dónde sale tu objetivo"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Woher dein Ziel kommt"
           }
         },
         "it": {
@@ -5737,6 +5863,12 @@
     },
     "Dans la tolérance": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Innerhalb der Toleranz"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -5749,12 +5881,6 @@
             "value": "Dentro de la tolerancia"
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Innerhalb der Toleranz"
-          }
-        },
         "it": {
           "stringUnit": {
             "state": "translated",
@@ -5765,6 +5891,12 @@
     },
     "Dans le budget": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Im Budget"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -5775,12 +5907,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dentro del presupuesto"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Im Budget"
           }
         },
         "it": {
@@ -5821,6 +5947,12 @@
     },
     "Dans une recette, « Pour la semaine prochaine » la propose en planifiant la suite.": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In einem Rezept schlägt „Für nächste Woche“ es bei der nächsten Planung vor."
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -5831,12 +5963,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "En una receta, «Para la próxima semana» la propone al planificar la siguiente."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "In einem Rezept schlägt „Für nächste Woche“ es bei der nächsten Planung vor."
           }
         },
         "it": {
@@ -6462,7 +6588,6 @@
       }
     },
     "Dépense estimée": {
-      "extractionState": "stale",
       "localizations": {
         "de": {
           "stringUnit": {
@@ -7224,6 +7349,7 @@
       }
     },
     "Formule Mifflin-St Jeor : 10 × poids + 6,25 × taille − 5 × âge %@.": {
+      "extractionState": "stale",
       "localizations": {
         "de": {
           "stringUnit": {
@@ -8941,6 +9067,12 @@
     },
     "Mangé : %@": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gegessen: %@"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -8951,12 +9083,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Comido: %@"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Gegessen: %@"
           }
         },
         "it": {
@@ -8997,6 +9123,12 @@
     },
     "Mangé aujourd'hui": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Heute gegessen"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -9007,12 +9139,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Comido hoy"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Heute gegessen"
           }
         },
         "it": {
@@ -9053,6 +9179,12 @@
     },
     "Mangé ce jour": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "An diesem Tag gegessen"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -9063,12 +9195,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Comido ese día"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "An diesem Tag gegessen"
           }
         },
         "it": {
@@ -9165,6 +9291,12 @@
     },
     "Matin": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Morgens"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -9175,12 +9307,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mañana"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Morgens"
           }
         },
         "it": {
@@ -9277,6 +9403,12 @@
     },
     "Midi, soir": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mittag, Abend"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -9287,12 +9419,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Comida, cena"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mittag, Abend"
           }
         },
         "it": {
@@ -9559,6 +9685,12 @@
     },
     "Moitié": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hälfte"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -9569,12 +9701,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mitad"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Hälfte"
           }
         },
         "it": {
@@ -9615,6 +9741,12 @@
     },
     "Moment du repas": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mahlzeit"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -9625,12 +9757,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Momento de la comida"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mahlzeit"
           }
         },
         "it": {
@@ -9868,7 +9994,6 @@
       }
     },
     "Métabolisme de base": {
-      "extractionState": "stale",
       "localizations": {
         "de": {
           "stringUnit": {
@@ -10345,6 +10470,40 @@
         }
       }
     },
+    "P %lld · G %lld · L %lld": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "new",
+            "value": "P %1$lld · G %2$lld · L %3$lld"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "P %lld · C %lld · F %lld"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "P %lld · HC %lld · G %lld"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "E %lld · K %lld · F %lld"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "P %lld · C %lld · G %lld"
+          }
+        }
+      }
+    },
     "Par dose": {
       "localizations": {
         "de": {
@@ -10740,6 +10899,12 @@
     },
     "Pas de pesée aujourd'hui": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Heute nicht gewogen"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -10750,12 +10915,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sin pesaje hoy"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Heute nicht gewogen"
           }
         },
         "it": {
@@ -11189,6 +11348,12 @@
     },
     "Peser": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wiegen"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -11199,12 +11364,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Pesarse"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wiegen"
           }
         },
         "it": {
@@ -11329,6 +11488,12 @@
     },
     "Pesées, photos, mesures": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wiegungen, Fotos, Maße"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -11339,12 +11504,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Pesajes, fotos, medidas"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wiegungen, Fotos, Maße"
           }
         },
         "it": {
@@ -11524,7 +11683,6 @@
       }
     },
     "Plancher de sécurité": {
-      "extractionState": "stale",
       "localizations": {
         "de": {
           "stringUnit": {
@@ -11553,7 +11711,14 @@
       }
     },
     "Plancher de sécurité : %@": {
+      "extractionState": "stale",
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sicherheitsuntergrenze: %@"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -11564,12 +11729,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mínimo de seguridad: %@"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sicherheitsuntergrenze: %@"
           }
         },
         "it": {
@@ -12597,10 +12756,10 @@
     },
     "Protéines %@ g/kg · lipides %@ g/kg · glucides le reste": {
       "localizations": {
-        "fr": {
+        "de": {
           "stringUnit": {
-            "state": "new",
-            "value": "Protéines %1$@ g/kg · lipides %2$@ g/kg · glucides le reste"
+            "state": "translated",
+            "value": "Eiweiß %1$@ g/kg · Fett %2$@ g/kg · Kohlenhydrate der Rest"
           }
         },
         "en": {
@@ -12615,10 +12774,10 @@
             "value": "Proteínas %1$@ g/kg · grasas %2$@ g/kg · carbohidratos el resto"
           }
         },
-        "de": {
+        "fr": {
           "stringUnit": {
-            "state": "translated",
-            "value": "Eiweiß %1$@ g/kg · Fett %2$@ g/kg · Kohlenhydrate der Rest"
+            "state": "new",
+            "value": "Protéines %1$@ g/kg · lipides %2$@ g/kg · glucides le reste"
           }
         },
         "it": {
@@ -12749,6 +12908,12 @@
     },
     "Protéines, lipides, glucides": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eiweiß, Fett, Kohlenhydrate"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -12759,12 +12924,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Proteínas, grasas, carbohidratos"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Eiweiß, Fett, Kohlenhydrate"
           }
         },
         "it": {
@@ -13704,6 +13863,12 @@
     },
     "Remettre à prévu": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wieder als geplant"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -13716,12 +13881,6 @@
             "value": "Volver a previsto"
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wieder als geplant"
-          }
-        },
         "it": {
           "stringUnit": {
             "state": "translated",
@@ -13732,6 +13891,12 @@
     },
     "Remettre à prévu : %@": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wieder als geplant: %@"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -13742,12 +13907,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Volver a previsto: %@"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wieder als geplant: %@"
           }
         },
         "it": {
@@ -14277,6 +14436,12 @@
     },
     "Reste %@": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Noch %@"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -14287,12 +14452,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Quedan %@"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Noch %@"
           }
         },
         "it": {
@@ -14953,6 +15112,12 @@
     },
     "Saisir le ticket réel": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Echten Kassenbon eingeben"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -14963,12 +15128,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Introducir el ticket real"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Echten Kassenbon eingeben"
           }
         },
         "it": {
@@ -15289,6 +15448,12 @@
     },
     "Semaine pro.": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nächste Wo."
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -15299,12 +15464,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Próx. sem."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nächste Wo."
           }
         },
         "it": {
@@ -15507,6 +15666,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Shreddish conserva i tuoi dati sul tuo iPhone. Nessun account, nessuna pubblicità, nessun tracciamento.\n\nDati inviati a OpenAI, solo con il tuo consenso: i tuoi obiettivi nutrizionali, il tuo traguardo, le tue preferenze alimentari e gli ingredienti dei pasti da scrivere. Mai la tua età, peso, altezza, diario, foto o dati sanitari. OpenAI non conserva queste richieste (opzione store disattivata).\n\nCodici a barre: viene inviato a Open Food Facts solo il codice scansionato per trovare il prodotto.\n\nSalute di Apple: disattivato per impostazione predefinita. Una volta attivato, i dati restano tra Shreddish e Salute, sul tuo iPhone.\n\nI tuoi diritti (GDPR): esportare i dati (Impostazioni → Privacy), eliminarli (Impostazioni → Elimina tutti i miei dati), revocare in qualsiasi momento il consenso all'invio a OpenAI."
+          }
+        }
+      }
+    },
+    "Sport": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exercise"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deporte"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sport"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sport"
           }
         }
       }
@@ -16101,6 +16288,34 @@
         }
       }
     },
+    "Ta cible": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your target"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu objetivo"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dein Ziel"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il tuo obiettivo"
+          }
+        }
+      }
+    },
     "Table Ciqual": {
       "extractionState": "manual",
       "localizations": {
@@ -16497,6 +16712,7 @@
       }
     },
     "Ticket moins %@ de produits qui te resteront (riz, huile…)": {
+      "extractionState": "stale",
       "localizations": {
         "de": {
           "stringUnit": {
@@ -17005,6 +17221,12 @@
     },
     "Toutes": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alle"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -17015,12 +17237,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Todas"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Alle"
           }
         },
         "it": {
@@ -17808,6 +18024,12 @@
     },
     "facultatif": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "optional"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -17818,12 +18040,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "opcional"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "optional"
           }
         },
         "it": {
@@ -17914,6 +18130,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "ml"
+          }
+        }
+      }
+    },
+    "moyenne par jour": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "daily average"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "media diaria"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tagesdurchschnitt"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "media giornaliera"
           }
         }
       }

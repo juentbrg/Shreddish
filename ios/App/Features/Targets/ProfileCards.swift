@@ -96,110 +96,86 @@ struct ProfileTile: View {
     }
 }
 
-/// D'où vient la cible : métabolisme, activité, sport, calibration, dépense, ajustement, cible.
+/// D'où vient la cible, ligne par ligne comme un ticket : base, activité, sport, pesées, dépense, objectif, cible.
 struct CalculationLadder: View {
     let breakdown: CalculationBreakdown
     let targets: NutritionTargets
     let profile: Profile
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 0) {
             Text("D'où vient ta cible")
                 .font(Theme.text(.subheadline, .bold))
                 .accessibilityAddTraits(.isHeader)
-            FlowLayout(spacing: 6) {
-                chip(String(localized: "\(Format.number(breakdown.bmr, digits: 0)) base"))
-                if let daily = breakdown.dailyActivityFactor {
-                    step("× \(Format.number(daily, digits: 2))")
-                    step(String(localized: "+ \(Format.number(breakdown.exerciseKcalPerDay ?? 0, digits: 0)) sport"))
-                } else {
-                    step("× \(Format.number(breakdown.activityFactor, digits: 3))")
-                }
-                if let calibration = breakdown.calibrationKcal {
-                    step(String(localized: "\(calibration >= 0 ? "+" : "−") \(Format.number(abs(calibration), digits: 0)) pesées"))
-                }
-                step("=")
-                chip(Format.number(breakdown.tdee, digits: 0))
-                step(Format.percent(breakdown.calorieAdjustment, signed: true))
-                step("=")
-                chip(Format.kcal(Double(targets.targetKcal)), strong: true)
+                .padding(.bottom, 6)
+            row(Text("Métabolisme de base"), detail: "Mifflin-St Jeor", value: Format.number(breakdown.bmr, digits: 0))
+            if let daily = breakdown.dailyActivityFactor {
+                row(
+                    Text("Activité au quotidien"), detail: "× \(Format.number(daily, digits: 2))",
+                    value: Self.signed(breakdown.bmr * (daily - 1))
+                )
+                row(Text("Sport"), detail: String(localized: "moyenne par jour"), value: Self.signed(breakdown.exerciseKcalPerDay ?? 0))
+            } else {
+                row(
+                    Text("Activité"), detail: "× \(Format.number(breakdown.activityFactor, digits: 3))",
+                    value: Self.signed(breakdown.bmr * (breakdown.activityFactor - 1))
+                )
             }
-            .accessibilityElement(children: .combine)
+            if let calibration = breakdown.calibrationKcal, abs(calibration) >= 1 {
+                row(Text("Ajusté par tes pesées"), detail: nil, value: Self.signed(calibration))
+            }
+            row(Text("Dépense estimée"), detail: nil, value: Format.number(breakdown.tdee, digits: 0), strong: true)
+            row(
+                Text(profile.goal.label), detail: Format.percent(breakdown.calorieAdjustment, signed: true),
+                value: Self.signed(breakdown.adjustedKcal - breakdown.tdee)
+            )
             if targets.floorApplied {
-                Text("Plancher de sécurité : \(Format.kcal(breakdown.floorKcal))")
-                    .font(Theme.text(.caption))
-                    .foregroundStyle(Theme.tomatoInk)
+                row(Text("Plancher de sécurité"), detail: nil, value: Self.signed(breakdown.floorKcal - breakdown.adjustedKcal))
             }
+            HStack {
+                Text("Ta cible").font(Theme.text(.subheadline, .bold))
+                Spacer()
+                Text(Format.kcal(Double(targets.targetKcal)))
+                    .font(Theme.display(20, .heavy, relativeTo: .title3))
+                    .monospacedDigit()
+            }
+            .foregroundStyle(Theme.paper)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .background(Theme.ink, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .accessibilityElement(children: .combine)
+            .padding(.top, 10)
             let protein = Format.number(breakdown.proteinPerKg), fat = Format.number(breakdown.fatPerKg)
             Text("Protéines \(protein) g/kg · lipides \(fat) g/kg · glucides le reste")
                 .font(Theme.text(.caption))
                 .foregroundStyle(Theme.muted)
-            Text("Formule Mifflin-St Jeor : 10 × poids + 6,25 × taille − 5 × âge \(profile.sex == .male ? "+ 5" : "− 161").")
-                .font(Theme.text(.caption))
-                .foregroundStyle(Theme.muted)
+                .padding(.top, 10)
         }
         .foregroundStyle(Theme.ink)
         .card(padding: 16, radius: 22)
     }
 
-    private func chip(_ text: String, strong: Bool = false) -> some View {
-        Text(text)
-            .font(Theme.text(.footnote, strong ? .bold : .medium))
-            .monospacedDigit()
-            .foregroundStyle(strong ? Theme.paper : Theme.ink)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(strong ? Theme.ink : Theme.line, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-    }
-
-    private func step(_ text: String) -> some View {
-        Text(text).font(Theme.text(.footnote)).foregroundStyle(Theme.muted).padding(.vertical, 4)
-    }
-}
-
-/// Éléments en ligne, retour à la ligne quand la largeur manque.
-struct FlowLayout: Layout {
-    var spacing: CGFloat = 6
-
-    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        let rows = arrange(width: proposal.width ?? .infinity, subviews: subviews)
-        let width = rows.map { $0.width }.max() ?? 0
-        let height = rows.reduce(0) { $0 + $1.height } + spacing * CGFloat(max(rows.count - 1, 0))
-        return CGSize(width: proposal.width ?? width, height: height)
-    }
-
-    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        var y = bounds.minY
-        for row in arrange(width: bounds.width, subviews: subviews) {
-            var x = bounds.minX
-            for index in row.indices {
-                let size = subviews[index].sizeThatFits(.unspecified)
-                subviews[index].place(at: CGPoint(x: x, y: y + (row.height - size.height) / 2), proposal: .unspecified)
-                x += size.width + spacing
+    private func row(_ title: Text, detail: String?, value: String, strong: Bool = false) -> some View {
+        VStack(spacing: 0) {
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                title.font(Theme.text(.subheadline, strong ? .bold : .regular))
+                if let detail {
+                    Text(detail).font(Theme.text(.caption)).foregroundStyle(Theme.muted)
+                }
+                Spacer(minLength: 8)
+                Text(value)
+                    .font(Theme.text(.subheadline, strong ? .bold : .medium))
+                    .monospacedDigit()
+                    .foregroundStyle(strong ? Theme.ink : Theme.muted)
             }
-            y += row.height + spacing
+            .padding(.vertical, 9)
+            .accessibilityElement(children: .combine)
+            Rectangle().fill(Theme.line).frame(height: 1)
         }
     }
 
-    private struct Row {
-        var indices: [Int] = []
-        var width: CGFloat = 0
-        var height: CGFloat = 0
-    }
-
-    private func arrange(width: CGFloat, subviews: Subviews) -> [Row] {
-        var rows = [Row()]
-        for index in subviews.indices {
-            let size = subviews[index].sizeThatFits(.unspecified)
-            let extra = rows[rows.count - 1].indices.isEmpty ? size.width : size.width + spacing
-            if rows[rows.count - 1].width + extra > width, !rows[rows.count - 1].indices.isEmpty {
-                rows.append(Row())
-            }
-            let added = rows[rows.count - 1].indices.isEmpty ? size.width : size.width + spacing
-            rows[rows.count - 1].indices.append(index)
-            rows[rows.count - 1].width += added
-            rows[rows.count - 1].height = max(rows[rows.count - 1].height, size.height)
-        }
-        return rows
+    private static func signed(_ value: Double) -> String {
+        let rounded = value.rounded()
+        return "\(rounded < 0 ? "−" : "+") \(Format.number(abs(rounded), digits: 0))"
     }
 }
