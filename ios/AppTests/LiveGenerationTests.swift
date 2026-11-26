@@ -239,6 +239,13 @@ struct LiveReport {
         ))
         for item in plan.shoppingItems.sorted(by: { $0.name < $1.name }) {
             let packing = item.packing
+            lines.append(String(
+                format: "LIVE article %@ | %@ | besoin %.0f %@ | %d × %.0f | %.2f €", item.name, item.key,
+                item.totalQuantity, item.unitRaw, packing.packCount, packing.packSize ?? 0, item.costEUR
+            ))
+        }
+        for item in plan.shoppingItems.sorted(by: { $0.name < $1.name }) {
+            let packing = item.packing
             guard packing.perishable, packing.leftover > 0 else { continue }
             lines.append(String(
                 format: "LIVE reste périssable %@ : %.0f %@ (%d × %.0f)", item.name, packing.leftover, item.unitRaw,

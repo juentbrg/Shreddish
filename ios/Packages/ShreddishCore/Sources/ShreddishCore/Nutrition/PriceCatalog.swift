@@ -59,7 +59,7 @@ public struct PurchaseLink: Sendable, Equatable {
     public let edibleYield: Double
 }
 
-/// Prix France (3e quartile des relevés Open Prices, licence ODbL) par code Ciqual, générés par
+/// Prix France (médiane des relevés Open Prices, licence ODbL) par code Ciqual, générés par
 /// `tools/prices/build_prices.py`. Aliment absent : médiane de son groupe Ciqual, sinon de son rayon (spec 018).
 public final class PriceCatalog: Sendable {
     public static let attribution = "Prix : relevés Open Prices (Open Food Facts), licence ODbL."
@@ -83,6 +83,8 @@ public final class PriceCatalog: Sendable {
     /// Produits par libellé ou identifiant normalisé, pour les ingrédients sans code Ciqual.
     let productsByName: [String: PurchaseProduct]
     let productsById: [String: PurchaseProduct]
+    /// Mots de l'identifiant de chaque produit, pour rattacher un nom libre (« tomates concassées en conserve »).
+    let productWords: [(words: [String], product: PurchaseProduct)]
 
     public init(
         prices: [Int: FoodPrice], groupRanges: [Int: ClosedRange<Double>] = [:], groupMedians: [Int: Double] = [:],
@@ -107,6 +109,7 @@ public final class PriceCatalog: Sendable {
         }
         productsByName = byName
         productsById = byId
+        productWords = byId.values.map { (TextNormalizer.words($0.id), $0) }.sorted { $0.product.id < $1.product.id }
     }
 
     /// Produit par identifiant (clé d'une ligne de courses).
@@ -170,10 +173,29 @@ public final class PriceCatalog: Sendable {
 
     public func price(code: Int) -> FoodPrice? { prices[code] }
 
-    /// Produit acheté : par code Ciqual, sinon par nom exact (« Œufs », « avocat ») pour les plans sans code.
+    /// Produit acheté : par code Ciqual, sinon par nom exact (« Œufs », « avocat »), sinon par mots (spec 020 :
+    /// « Mélange de légumes surgelés » et « légumes surgelés » sur une seule ligne de courses).
     public func purchase(for ingredient: IngredientDTO) -> PurchaseLink? {
-        if let code = ingredient.foodCode { return links[code] }
-        return productsByName[TextNormalizer.singular(ingredient.name)].map { PurchaseLink(product: $0, edibleYield: 1) }
+        if let link = ingredient.foodCode.flatMap({ links[$0] }) { return link }
+        let product = productsByName[TextNormalizer.singular(ingredient.name)] ?? product(matching: ingredient.name)
+        return product.map { PurchaseLink(product: $0, edibleYield: 1) }
+    }
+
+    /// Mots qui changent le poids acheté (riz cuit) : sans part comestible connue, pas de rattachement par mots.
+    private static let cookedWords: Set<String> = ["cuit", "cuite", "bouilli", "bouillie", "vapeur"]
+
+    /// Produit dont tous les mots de l'identifiant figurent dans le nom : le plus précis (« coulis tomate »
+    /// avant « tomate »), puis celui nommé en premier (« compote de pommes » : compote).
+    func product(matching name: String) -> PurchaseProduct? {
+        let words = TextNormalizer.words(name)
+        guard !words.isEmpty, Self.cookedWords.isDisjoint(with: words) else { return nil }
+        // Score : mots de l'identifiant d'abord, position du premier mot ensuite (noms de moins de 100 mots).
+        let candidates = productWords.compactMap { entry -> (score: Int, product: PurchaseProduct)? in
+            guard !entry.words.isEmpty, entry.words.allSatisfy(words.contains),
+                  let position = words.firstIndex(of: entry.words[0]) else { return nil }
+            return (entry.words.count * 100 - position, entry.product)
+        }
+        return candidates.max { $0.score < $1.score }?.product
     }
 
     /// Prix unitaire dans l'unité de l'ingrédient (€/kg, €/L ou €/pièce) : prix de la table, sinon médiane du

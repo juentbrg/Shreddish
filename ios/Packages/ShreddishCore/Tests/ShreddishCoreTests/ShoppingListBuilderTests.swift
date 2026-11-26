@@ -65,7 +65,7 @@ struct ShoppingListBuilderTests {
         #expect(lines.count == 1)
         #expect(lines.first?.totalQuantity == 30)
         #expect(lines.first?.unit == .ml)
-        #expect(lines.first?.costEur == 1.53) // bouteille de 75 cl à 2,04 €/L
+        #expect(lines.first?.costEur == 1.51) // bouteille de 1 L, prix médian
     }
 
     @Test func eggsAreOneLineInPieces() {
@@ -84,7 +84,7 @@ struct ShoppingListBuilderTests {
         #expect(lines.first?.unit == .piece)
         #expect(lines.first?.totalQuantity == 11)
         #expect(lines.first?.aisle == .epicerie)
-        #expect(lines.first?.costEur == 6.18) // boîte de 12 à 0,515 € l'œuf
+        #expect(lines.first?.costEur == 5.92) // boîte de 12 à 0,493 € l'œuf
     }
 
     @Test func fruitsInGramsAreCountedInPieces() {
@@ -140,13 +140,13 @@ struct ShoppingListBuilderTests {
         let line = try? #require(lines.first)
         #expect(line?.totalQuantity == 250) // 150 g égouttés ÷ 0,6
         let packing = ShoppingListBuilder.packing(key: line?.key ?? "", quantity: 250, unit: .g)
-        #expect(packing.packSize == 265)
+        #expect(packing.packSize == 400) // boîte de 400 g (265 g égouttés)
         #expect(packing.packCount == 1)
-        #expect(packing.leftover == 15)
+        #expect(packing.leftover == 150)
         #expect(packing.perishable)
-        #expect(line?.costEur == 1.28) // 265 g à 4,84 €/kg
+        #expect(line?.costEur == 1.51) // 400 g à 3,78 €/kg
         let summary = ShoppingListBuilder.summary(lines)
-        #expect(abs(summary.wastedEur - 0.0726) < 0.001)
+        #expect(abs(summary.wastedEur - 0.567) < 0.001)
         #expect(summary.keptEur == 0)
     }
 
@@ -154,9 +154,9 @@ struct ShoppingListBuilderTests {
         var rice = ingredient("Riz basmati cru", 560, aisle: .epicerie)
         rice.foodCode = 9100
         let summary = ShoppingListBuilder.summary(ShoppingListBuilder.build(from: [rice]))
-        #expect(summary.checkoutEur == 5.32) // paquet de 1 kg
-        #expect(abs(summary.keptEur - 0.44 * 5.32) < 0.001)
-        #expect(abs(summary.weekCostEur - 0.56 * 5.32) < 0.01)
+        #expect(summary.checkoutEur == 3.78) // un paquet de 1 kg plutôt que 2 × 500 g
+        #expect(abs(summary.keptEur - 0.44 * 3.78) < 0.001)
+        #expect(abs(summary.weekCostEur - 0.56 * 3.78) < 0.01)
     }
 
     @Test func frozenVegetablesComeInBags() {
@@ -221,5 +221,35 @@ struct ShoppingListBuilderTests {
             owned: ["whey", "Créatine"]
         )
         #expect(lines.map(\.name) == ["Riz"])
+    }
+
+    /// Spec 020 : formats mélangés (1 kg + 500 g de riz), le moins de reste puis le moins de paquets.
+    @Test func mixedFormatsCoverTheNeedWithLeastLeftover() {
+        #expect(ShoppingListBuilder.combination(of: [500, 1000, 2000], covering: 1100)
+            == [PackCount(size: 1000, count: 1), PackCount(size: 500, count: 1)])
+        #expect(ShoppingListBuilder.combination(of: [500, 1000, 2000], covering: 2600)
+            == [PackCount(size: 2000, count: 1), PackCount(size: 1000, count: 1)])
+        #expect(ShoppingListBuilder.combination(of: [6, 10, 12], covering: 16)
+            == [PackCount(size: 10, count: 1), PackCount(size: 6, count: 1)])
+        #expect(ShoppingListBuilder.combination(of: [400, 800], covering: 300) == [PackCount(size: 400, count: 1)])
+    }
+
+    /// Spec 020 : un nom libre rattaché au produit connu, une seule ligne de courses.
+    @Test func freeNamesMergeWithTheirProduct() {
+        var tinned = ingredient("Tomates concassées en conserve", 400, aisle: .epicerie)
+        tinned.foodCode = 999_999
+        let lines = ShoppingListBuilder.build(from: [
+            ingredient("Mélange de légumes surgelés", 300, aisle: .surgeles),
+            ingredient("Légumes surgelés", 200, aisle: .surgeles),
+            tinned, ingredient("Tomates en conserve", 300, aisle: .epicerie),
+            ingredient("Coulis de tomate", 100, aisle: .epicerie), ingredient("Riz cuit", 150, aisle: .epicerie),
+        ])
+        #expect(lines.filter { $0.key.hasPrefix("legumes surgeles") }.count == 1)
+        #expect(lines.first { $0.key.hasPrefix("legumes surgeles") }?.totalQuantity == 500)
+        #expect(lines.first { $0.key.hasPrefix("tomates conserve") }?.totalQuantity == 700)
+        #expect(lines.contains { $0.key.hasPrefix("coulis tomate") })
+        // Poids cuit sans part comestible connue : pas de rattachement au riz cru.
+        #expect(!lines.contains { $0.key.hasPrefix("riz blanc") })
+        #expect(lines.count == 4)
     }
 }

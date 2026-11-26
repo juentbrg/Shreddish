@@ -44,11 +44,14 @@ enum Format {
         return String(localized: "\(text) pièce")
     }
 
-    /// Paquets à acheter : « 2 × 400 g », « 1 × 12 », ou la quantité au détail (spec 013).
+    /// Paquets à acheter : « 2 × 400 g », « 1 × 1 kg + 1 × 500 g », « 1 × 12 », ou la quantité au détail
+    /// (specs 013 et 020).
     static func packing(_ packing: Packing, quantity: Double, unit: MeasureUnit) -> String {
-        guard let size = packing.packSize, packing.packCount > 0 else { return Self.quantity(quantity, unit: unit) }
-        let pack = unit == .piece ? number(size) : Self.quantity(size, unit: unit)
-        return String(localized: "\(packing.packCount) × \(pack)")
+        guard !packing.packs.isEmpty else { return Self.quantity(quantity, unit: unit) }
+        return packing.packs.map { part in
+            let pack = unit == .piece ? number(part.size) : Self.quantity(part.size, unit: unit)
+            return String(localized: "\(part.count) × \(pack)")
+        }.joined(separator: " + ")
     }
 
     static func day(_ day: LocalDay, calendar: Calendar, style: Date.FormatStyle? = nil) -> String {

@@ -201,7 +201,16 @@ public enum PlanStore {
     public static func rebuildShoppingList(for plan: WeeklyPlan, in context: ModelContext) {
         // Courses validées : liste figée telle qu'achetée (spec 019).
         guard !isShoppingValidated(plan, in: context) else { return }
-        let checked = Set(plan.shoppingItems.filter(\.isChecked).map(\.key))
+        // Coches suivies sous la clé actuelle de l'article (spec 020 : « tomate concassee en conserve » devenu
+        // « tomates conserve ») ; ligne fusionnée cochée seulement si tous ses anciens articles l'étaient.
+        var states: [String: [Bool]] = [:]
+        for item in plan.shoppingItems {
+            states[item.key, default: []].append(item.isChecked)
+            if let current = ShoppingListBuilder.currentKey(of: item.name, unit: item.unit, aisle: item.aisle), current != item.key {
+                states[current, default: []].append(item.isChecked)
+            }
+        }
+        let checked = Set(states.filter { !$0.value.isEmpty && $0.value.allSatisfy { $0 } }.keys)
         for item in plan.shoppingItems { context.delete(item) }
         plan.shoppingItems = []
         for line in shoppingLines(for: plan, in: context) {

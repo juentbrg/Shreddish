@@ -1,4 +1,4 @@
-"""Construit prices.json (prix France moyens-hauts, Open Prices) pour Shreddish, specs 011 et 018.
+"""Construit prices.json (prix France médians, Open Prices) pour Shreddish, specs 011, 018 et 020.
 
 Usage : python build_prices.py prices.parquet ciqual.json foods.json sortie.json
 Entrée de foods.json avec "price" : prix de repli (€/kg) si moins de 8 relevés.
@@ -6,9 +6,10 @@ Dépendance : duckdb (pip install duckdb). Source : Open Prices (Open Food Facts
 
 Prix au kg acheté (au litre pour les liquides) et part comestible ; aliment cuit : prix ramené au poids cuit.
 Chaque aliment Ciqual est rattaché à son produit acheté (libellé, unité d'achat, rayon) pour la liste de courses.
-Prix par aliment : 3e quartile des 12 derniers mois (prix promo exclus) dès 8 relevés ; en dessous,
-fenêtre de 24 mois et moyenne des 3es quartiles par enseigne (spec 018 : la médiane sous-estimait encore le ticket).
-Formats vendus : tailles les plus relevées des produits emballés de l'aliment (spec 018) ; sinon ceux de foods.json.
+Prix par aliment : médiane des 12 derniers mois (prix promo exclus) dès 8 relevés ; en dessous, fenêtre de
+24 mois et moyenne des médianes par enseigne (spec 020 : le 3e quartile dépassait les prix des drives).
+Formats vendus : ceux de foods.json (formats réels en rayon, plusieurs par produit), chacun calé sur la taille
+la plus relevée à moins de 8 % (boîte de thon 140 g, pas 130 g) ; jamais de format absent de foods.json (spec 020).
 """
 import datetime
 import json
@@ -20,11 +21,9 @@ import unicodedata
 import duckdb
 
 MIN_COUNT = 8
-QUANTILE = 0.75
-# Format retenu : au moins 3 relevés et 10 % des relevés emballés de l'aliment ; 3 formats au plus.
+QUANTILE = 0.5
+# Taille relevée retenue pour caler un format : au moins 3 relevés.
 PACK_MIN_COUNT = 3
-PACK_SHARE = 0.10
-MAX_PACKS = 3
 # Aliment Ciqual cuit : prix au g cuit = prix au g cru × "cooked" (g crus par g cuit) ; sans "cooked", non tarifé.
 COOKED = re.compile(r"\b(cuit|cuite|cuits|cuites|bouilli|bouillie|roti|rotie|grille|grillee|poele|poelee|frit|frite|vapeur|poche|coque)\b|^oeuf dur")
 
@@ -90,11 +89,11 @@ def quantile(values, q=QUANTILE):
 
 
 def estimate(rows, key):
-    """(prix, méthode, nombre) : 3e quartile sur 12 mois, sinon moyenne des 3es quartiles par enseigne sur 24 mois."""
+    """(prix, méthode, nombre) : médiane sur 12 mois, sinon moyenne des médianes par enseigne sur 24 mois."""
     cutoff = datetime.date.today() - datetime.timedelta(days=365)
     recent = trimmed([r[key] for r in rows if r[key] and r["date"] >= cutoff])
     if len(recent) >= MIN_COUNT:
-        return quantile(recent), "q3", len(recent)
+        return quantile(recent), "mediane", len(recent)
     by_brand = {}
     for r in rows:
         if r[key]:
@@ -122,21 +121,22 @@ def standard_rows(entry, rows):
 
 
 def observed_packs(entry, rows):
-    """Formats les plus relevés (g ou ml) des produits emballés de l'aliment, proches des formats de foods.json
-    (0,5 à 2 fois) pour écarter les produits voisins ; vide pour un produit à la pièce ou au détail."""
+    """Formats de foods.json, chacun remplacé par la taille la plus relevée à moins de 8 % (relevés emballés de
+    l'aliment) ; vide pour un produit à la pièce ou au détail. Les tailles relevées hors de ces formats viennent
+    surtout de produits voisins (pâtes aux œufs en 250 g, huile vierge en 750 ml) : ignorées."""
     packs = entry.get("packs", [])
     # Légumes frais en filet (pommes de terre, oignons) : relevés surtout de produits voisins (grenaille, frits).
     if entry.get("piece") or not packs or entry["aisle"] == "fruits_legumes":
         return []
-    sizes = [round(r["qty"]) for r in rows if r["qty"] and min(packs) * 0.5 <= r["qty"] <= max(packs) * 2]
-    if not sizes:
-        return []
     counts = {}
-    for size in sizes:
-        counts[size] = counts.get(size, 0) + 1
-    floor = max(PACK_MIN_COUNT, len(sizes) * PACK_SHARE)
-    common = sorted((c, s) for s, c in counts.items() if c >= floor)[::-1][:MAX_PACKS]
-    return sorted(s for _, s in common)
+    for r in rows:
+        if r["qty"]:
+            counts[round(r["qty"])] = counts.get(round(r["qty"]), 0) + 1
+    snapped = []
+    for pack in packs:
+        near_sizes = [(c, s) for s, c in counts.items() if abs(s - pack) < pack * 0.08 and c >= PACK_MIN_COUNT]
+        snapped.append(max(near_sizes)[1] if near_sizes else pack)
+    return sorted(set(snapped))
 
 
 def product_price(entry, per_kg):
@@ -156,8 +156,9 @@ def main(parquet, ciqual_path, foods_path, out_path):
     for entry in entries:
         selected = [r for r in rows if matches(entry, r)]
         per_kg, method, count = estimate(standard_rows(entry, selected), "per_kg")
-        # Relevés trop rares (filet mignon : surtout des plats préparés) : prix de repli de foods.json.
-        if entry.get("price") and count < MIN_COUNT:
+        # Relevés trop rares ou anciens (filet mignon : surtout des plats préparés ; dinde : 2 enseignes) : prix de
+        # repli de foods.json dès que la médiane récente manque.
+        if entry.get("price") and method != "mediane":
             per_kg, method = entry["price"], "repli"
         per_unit, _, unit_count = estimate(selected, "per_unit")
         piece = entry.get("piece")
@@ -198,7 +199,7 @@ def main(parquet, ciqual_path, foods_path, out_path):
         groups[group] = [round(values[int(len(values) * q)], 2) for q in (0.1, 0.5, 0.9)]
 
     out = {
-        "source": "Open Prices (Open Food Facts), ODbL — prix France (3e quartile) relevés au " + datetime.date.today().isoformat(),
+        "source": "Open Prices (Open Food Facts), ODbL — prix France (médiane) relevés au " + datetime.date.today().isoformat(),
         "columns": ["eur_per_kg", "edible_yield", "product"],
         "foods": foods, "groups": groups,
         # Produit acheté en magasin (liste de courses) : libellé, unité d'achat (g, ml, piece), poids d'une pièce, rayon,

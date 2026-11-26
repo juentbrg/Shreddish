@@ -16,11 +16,25 @@ public struct ShoppingLine: Sendable, Equatable {
     public var fromPantry: Double = 0
 }
 
-/// Achat d'une ligne : paquets entiers et reste (spec 013).
+/// Paquets d'un même format : « 2 × 500 g ».
+public struct PackCount: Sendable, Equatable {
+    public var size: Double
+    public var count: Int
+
+    public init(size: Double, count: Int) {
+        self.size = size
+        self.count = count
+    }
+}
+
+/// Achat d'une ligne : paquets entiers et reste (spec 013), formats mélangés (spec 020 : 1 kg + 500 g de riz).
 public struct Packing: Sendable, Equatable {
-    /// Taille d'un paquet dans l'unité d'achat ; `nil` au détail.
-    public var packSize: Double?
-    public var packCount: Int
+    /// Paquets par format, du plus grand au plus petit ; vide au détail.
+    public var packs: [PackCount] = []
+    /// Plus grand format acheté ; `nil` au détail.
+    public var packSize: Double? { packs.first?.size }
+    /// Nombre total de paquets.
+    public var packCount: Int { packs.reduce(0) { $0 + $1.count } }
     /// Quantité achetée.
     public var bought: Double
     /// Reste après la semaine.
@@ -125,6 +139,12 @@ public enum ShoppingListBuilder {
         )
     }
 
+    /// Clé qu'aurait aujourd'hui un article enregistré sous ce nom (rattachement aux produits amélioré).
+    static func currentKey(of name: String, unit: MeasureUnit, aisle: Aisle, prices: PriceCatalog = .shared) -> String? {
+        let probe = IngredientDTO(name: name, quantity: 100, unit: unit.rawValue, aisle: aisle, costEur: 0)
+        return purchase(of: probe, prices: prices)?.key
+    }
+
     private static let frozenSuffix = " surgele"
 
     /// Quantité dans l'unité d'achat du produit ; `nil` si une pièce sans poids empêche la conversion.
@@ -180,8 +200,8 @@ public enum ShoppingListBuilder {
     /// Légumes surgelés en sachet (prix au kg des versions surgelées).
     private static let frozenVegetablesId = "legumes surgeles"
 
-    /// Paquets à acheter pour une ligne : la combinaison d'un seul format qui laisse le moins de reste, puis le
-    /// moins de paquets ; au détail sans format connu.
+    /// Paquets à acheter pour une ligne : la combinaison de formats (mélangés au besoin) qui laisse le moins de
+    /// reste, puis le moins de paquets, puis les plus grands formats ; au détail sans format connu.
     public static func packing(
         key: String, quantity: Double, unit: MeasureUnit, prices: PriceCatalog = .shared
     ) -> Packing {
@@ -190,20 +210,47 @@ public enum ShoppingListBuilder {
         let sizes = frozen ? frozenPacks : product?.packs ?? []
         let perishable = !frozen && product?.perishable == true
         guard quantity > 0, !sizes.isEmpty else {
-            return Packing(packSize: nil, packCount: 0, bought: quantity, leftover: 0, perishable: perishable, leftoverValue: 0)
+            return Packing(bought: quantity, leftover: 0, perishable: perishable, leftoverValue: 0)
         }
-        let best = sizes.map { size in (size: size, count: Int((quantity / size - 1e-6).rounded(.up))) }
-            .min { lhs, rhs in
-                let left = Double(lhs.count) * lhs.size
-                let right = Double(rhs.count) * rhs.size
-                return left != right ? left < right : lhs.count < rhs.count
-            } ?? (size: quantity, count: 1)
-        let bought = Double(best.count) * best.size
+        let packs = combination(of: sizes, covering: quantity)
+        let bought = packs.reduce(0) { $0 + Double($1.count) * $1.size }
         let leftover = bought - quantity
         return Packing(
-            packSize: best.size, packCount: best.count, bought: bought, leftover: leftover, perishable: perishable,
+            packs: packs, bought: bought, leftover: leftover, perishable: perishable,
             leftoverValue: product?.cost(of: leftover) ?? 0
         )
+    }
+
+    /// Meilleure combinaison de formats couvrant `quantity` : quantité achetée minimale, puis moins de paquets,
+    /// puis plus grands formats d'abord. Recherche exhaustive : 3 formats au plus par produit.
+    static func combination(of sizes: [Double], covering quantity: Double) -> [PackCount] {
+        let sizes = Array(Set(sizes.filter { $0 > 0 })).sorted(by: >)
+        guard let smallest = sizes.last else { return [] }
+        // Nombre de paquets par format, du plus grand au plus petit, et quantité achetée.
+        var best: (bought: Double, counts: [Int])?
+        func better(_ bought: Double, _ counts: [Int]) -> Bool {
+            guard let best else { return true }
+            if abs(bought - best.bought) > 1e-6 { return bought < best.bought }
+            let count = counts.reduce(0, +), bestCount = best.counts.reduce(0, +)
+            if count != bestCount { return count < bestCount }
+            // Plus de grands formats : comptes lexicographiquement supérieurs.
+            return best.counts.lexicographicallyPrecedes(counts)
+        }
+        func search(_ index: Int, _ counts: [Int], _ total: Double) {
+            if total >= quantity - 1e-6 {
+                let filled = counts + Array(repeating: 0, count: sizes.count - counts.count)
+                if better(total, filled) { best = (total, filled) }
+                return
+            }
+            guard index < sizes.count else { return }
+            let maxCount = Int(((quantity - total) / sizes[index] - 1e-6).rounded(.up))
+            for count in stride(from: maxCount, through: 0, by: -1) {
+                search(index + 1, counts + [count], total + Double(count) * sizes[index])
+            }
+        }
+        search(0, [], 0)
+        let counts = best?.counts ?? [Int((quantity / smallest - 1e-6).rounded(.up))]
+        return zip(sizes, counts).filter { $0.1 > 0 }.map { PackCount(size: $0.0, count: $0.1) }
     }
 
     /// Ticket estimé : prix en caisse, restes qui se gardent et restes perdus.

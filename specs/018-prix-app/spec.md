@@ -7,9 +7,9 @@
 - Budget contrôlé sur le coût estimé par l'IA, puis recalculé autrement par l'application.
 
 ## Exigences
-- FR-1801 : prix d'un aliment = 3e quartile (moyen-haut) des relevés Open Prices sur 12 mois, vrac et paquets aux
+- FR-1801 (remplacé par FR-2001, médiane) : prix d’un aliment = 3e quartile (moyen-haut) des relevés Open Prices sur 12 mois, vrac et paquets aux
   formats courants (± 10 %) seulement : sans sachets micro-ondes, frais traiteur ni mini-formats.
-- FR-1802 : formats vendus = tailles les plus relevées des produits emballés de l'aliment (3 au plus, ≥ 3 relevés et
+- FR-1802 (remplacé par FR-2002) : formats vendus = tailles les plus relevées des produits emballés de l'aliment (3 au plus, ≥ 3 relevés et
   10 % des relevés), entre 0,5 et 2 fois les formats de `foods.json` ; légumes frais et produits à la pièce : formats
   de `foods.json`.
 - FR-1803 : l'IA n'envoie plus de prix (schéma sans `unit_price_eur` ni `cost_eur`) et ne reçoit plus
