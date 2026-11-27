@@ -6,9 +6,13 @@ extension PlanGenerator {
     /// Période au-dessus du plafond : les jours les plus chers, assez pour combler l'écart, sont régénérés une fois
     /// avec leurs ingrédients les plus chers ; chaque jour est gardé s'il coûte moins sans s'écarter des cibles.
     func retryOverBudgetDays(_ days: [DayPlanDTO], ctx: Context) async -> [DayPlanDTO] {
-        let ceiling = ctx.constraints.budgetCeilingEur
         let total = Self.cost(of: days)
-        guard ceiling > 0, !days.isEmpty, total > ceiling + 0.01 else { return days }
+        let weekCost = Self.weekCost(of: days, ctx: ctx)
+        guard ctx.constraints.budgetCeilingEur > 0, !days.isEmpty, weekCost > ctx.constraints.budgetCeilingEur + 0.01,
+              total > 0 else { return days }
+        // Plafond ramené à la part mangée : les jours se comparent au coût de leurs repas (additif), la semaine au
+        // ticket en paquets entiers (spec 013 FR-1305, spec 021 FR-2112).
+        let ceiling = ctx.constraints.budgetCeilingEur * total / weekCost
         let dayLimit = ceiling / Double(days.count)
         var excess = total - ceiling
         var toRetry: [DayPlanDTO] = []
@@ -56,5 +60,11 @@ extension PlanGenerator {
 
     static func cost(of days: [DayPlanDTO]) -> Double {
         days.flatMap(\.meals).reduce(0) { $0 + $1.costEur }
+    }
+
+    /// Coût de la semaine comme l'onglet Courses : paquets entiers moins restes qui se gardent, une portion.
+    static func weekCost(of days: [DayPlanDTO], ctx: Context) -> Double {
+        let owned = ctx.constraints.ownedSupplements
+        return ShoppingListBuilder.summary(ShoppingListBuilder.build(from: days, owned: owned, pantry: ctx.pantry)).weekCostEur
     }
 }

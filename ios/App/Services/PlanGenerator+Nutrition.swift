@@ -110,12 +110,13 @@ extension PlanGenerator {
     /// Avertissements après recalcul : écarts et budget sur les valeurs finales, plus les repas non vérifiés.
     static func finalWarnings(
         _ warnings: [ValidationIssue], days: [DayPlanDTO], constraints: GenerationConstraints, unverified: Int,
-        includeBudget: Bool = true
+        weekCost: Double? = nil
     ) -> [ValidationIssue] {
+        let includeBudget = weekCost != nil
         var result = warnings.filter { !$0.isRecomputed && (!includeBudget || !$0.isBudget) }
         result += AIOutputValidator.offTargetWarnings(days: days, targets: constraints.targets)
         if includeBudget {
-            result += AIOutputValidator.budgetWarnings(cost: days.flatMap(\.meals).reduce(0) { $0 + $1.costEur }, constraints: constraints)
+            result += AIOutputValidator.budgetWarnings(cost: weekCost ?? 0, constraints: constraints)
         }
         if unverified > 0 { result.append(.unverifiedMeals(count: unverified)) }
         return result

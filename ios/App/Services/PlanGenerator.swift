@@ -116,7 +116,10 @@ final class PlanGenerator {
         } catch {
             throw .unexpected("Enregistrement impossible")
         }
-        return Self.finalWarnings(week.warnings, days: days, constraints: ctx.constraints, unverified: finished.unverified)
+        return Self.finalWarnings(
+            week.warnings, days: days, constraints: ctx.constraints, unverified: finished.unverified,
+            weekCost: Self.weekCost(of: days, ctx: ctx)
+        )
     }
 
     private func requestWeek(_ ctx: Context) async throws(AIError) -> ValidationResult<WeekPlanDTO> {
@@ -150,7 +153,7 @@ final class PlanGenerator {
                     group.addTask {
                         try await self.requestDay(
                             ctx, offset: offset, avoid: [], costLimit: dayLimit,
-                            recipes: SavedRecipeMatcher.recipes(ctx.recipes, forDay: offset)
+                            recipes: SavedRecipeMatcher.recipes(ctx.recipes, forDay: offset, dayCount: dayCount)
                         )
                     }
                 }
@@ -169,6 +172,7 @@ final class PlanGenerator {
         var result = AIOutputValidator.validate(week: WeekPlanDTO(prepSessions: [], days: days), constraints: constraints)
         guard result.isValid else { throw .invalidOutput(String(describing: result.fatal)) }
         result.warnings = warnings + result.warnings
+        if ctx.constraints.batchCooking { result.warnings.append(.batchCookingSkipped) }
         return result
     }
 
@@ -252,7 +256,7 @@ final class PlanGenerator {
         }
         do { try PlanStore.replaceDay(day, with: newDay, in: store) } catch { throw .unexpected("Enregistrement impossible") }
         return Self.finalWarnings(
-            result.warnings, days: [newDay], constraints: ctx.constraints, unverified: finished.unverified, includeBudget: false
+            result.warnings, days: [newDay], constraints: ctx.constraints, unverified: finished.unverified
         )
     }
 
@@ -316,7 +320,7 @@ final class PlanGenerator {
 
     /// Budget hebdo ramené aux jours du planning (planning de 3 jours : 3/7 du budget).
     static func periodBudget(_ preferences: Preferences, plan: WeeklyPlan) -> Double {
-        preferences.weeklyBudget * Double(min(max(plan.days.count, 1), 7)) / 7
+        preferences.budget(days: plan.days.count)
     }
 
     // MARK: Retry

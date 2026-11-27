@@ -182,7 +182,11 @@ public final class PriceCatalog: Sendable {
     }
 
     /// Mots qui changent le poids acheté (riz cuit) : sans part comestible connue, pas de rattachement par mots.
-    private static let cookedWords: Set<String> = ["cuit", "cuite", "bouilli", "bouillie", "vapeur"]
+    /// Cuissons du pipeline de prix (`tools/prices/build_prices.py`, COOKED), au singulier sans accents, sauf les mots
+    /// qui nomment aussi un produit acheté tel quel (« poêlée de légumes », « frites », « blé dur », « œuf dur »).
+    static let cookedWords: Set<String> = [
+        "cuit", "cuite", "bouilli", "bouillie", "vapeur", "roti", "rotie", "grille", "grillee", "frit", "poche", "pochee",
+    ]
 
     /// Produit dont tous les mots de l'identifiant figurent dans le nom : le plus précis (« coulis tomate »
     /// avant « tomate »), puis celui nommé en premier (« compote de pommes » : compote).

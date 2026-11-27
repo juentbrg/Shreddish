@@ -18818,6 +18818,35 @@
           }
         }
       }
+    },
+    "pas de batch cooking cette semaine (planning fait jour par jour)": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "diese Woche kein Batch Cooking (Plan Tag für Tag erstellt)"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "no batch cooking this week (plan built day by day)"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "sin batch cooking esta semana (planificación hecha día a día)"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "niente batch cooking questa settimana (piano creato giorno per giorno)"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

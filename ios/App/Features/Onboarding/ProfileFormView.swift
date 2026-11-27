@@ -9,9 +9,11 @@ struct ProfileDraft: Equatable {
     var weight = ""
     /// Ancien niveau unique, conservé pour les profils d'avant la spec 002 (non affiché).
     var activity: ActivityLevel = .moderate
-    var dailyActivity: DailyActivity = .sedentary
-    var training: TrainingLoad = .defaultLoad
+    var dailyActivity: DailyActivity = .sedentary { didSet { usesLegacyActivity = false } }
+    var training: TrainingLoad = .defaultLoad { didSet { usesLegacyActivity = false } }
     var goal: Goal = .cut
+    /// Profil d'avant la spec 002 dont l'activité n'a pas été retouchée : ancien facteur gardé (FR-104).
+    private(set) var usesLegacyActivity = false
 
     /// Défaut : 30 ans à la date du jour.
     init(clock: any AppClock) {
@@ -27,6 +29,7 @@ struct ProfileDraft: Equatable {
         dailyActivity = profile.dailyActivity ?? .sedentary
         training = profile.training ?? .defaultLoad
         goal = profile.goal
+        usesLegacyActivity = profile.dailyActivity == nil
     }
 
     func input(clock: any AppClock) -> ProfileInput? {
@@ -34,7 +37,7 @@ struct ProfileDraft: Equatable {
         let age = clock.calendar.dateComponents([.year], from: birthDate, to: clock.now).year ?? 0
         return ProfileInput(
             sex: sex, age: age, heightCm: height, weightKg: weight, activity: activity, goal: goal,
-            dailyActivity: dailyActivity, training: training
+            dailyActivity: usesLegacyActivity ? nil : dailyActivity, training: usesLegacyActivity ? nil : training
         )
     }
 
@@ -58,8 +61,10 @@ struct ProfileDraft: Equatable {
         profile.heightCm = height
         profile.weightKg = weight
         profile.activity = activity
-        profile.dailyActivity = dailyActivity
-        profile.training = training
+        if !usesLegacyActivity {
+            profile.dailyActivity = dailyActivity
+            profile.training = training
+        }
         profile.goal = goal
     }
 }

@@ -69,8 +69,16 @@ struct WeightEntrySection: View {
     @Query var profiles: [Profile]
     @State private var input = ""
     @State private var pendingRecalc: Double?
+    /// Pesée (jour et poids) dont le recalcul a été remis à plus tard : pas reproposée.
+    @AppStorage("weightRecalcDismissed") private var dismissedWeighIn = ""
 
     var body: some View {
+        Group { content }
+            .onAppear(perform: proposeLatestWeighIn)
+            .onChange(of: entries.last?.weightKg) { proposeLatestWeighIn() }
+    }
+
+    @ViewBuilder private var content: some View {
         Section {
             HStack {
                 TextField("Poids du jour (kg)", text: $input)
@@ -100,6 +108,16 @@ struct WeightEntrySection: View {
         }
     }
 
+    /// Dernière pesée, saisie ici, sur la montre ou importée d'Apple Santé (FR-017) : recalcul proposé si elle
+    /// diffère du poids du profil.
+    private func proposeLatestWeighIn() {
+        guard pendingRecalc == nil, let last = entries.last, let profile = profiles.first,
+              abs(profile.weightKg - last.weightKg) >= 0.1, weighInKey(last) != dismissedWeighIn else { return }
+        pendingRecalc = last.weightKg
+    }
+
+    private func weighInKey(_ entry: WeightEntry) -> String { "\(entry.dayKey)=\(entry.weightKg)" }
+
     private func recalcSection(weight: Double, profile: Profile) -> some View {
         Section {
             VStack(alignment: .leading, spacing: 8) {
@@ -119,7 +137,10 @@ struct WeightEntrySection: View {
                     }
                     .buttonStyle(CompactButtonStyle())
                     .accessibilityIdentifier("recalcTargets")
-                    Button("Plus tard") { pendingRecalc = nil }
+                    Button("Plus tard") {
+                        if let last = entries.last { dismissedWeighIn = weighInKey(last) }
+                        pendingRecalc = nil
+                    }
                         .buttonStyle(CompactButtonStyle(prominent: false))
                 }
             }

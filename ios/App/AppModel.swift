@@ -141,6 +141,8 @@ final class AppModel {
             needsAIConsent = true
             return
         }
+        // Droits relus avant de refuser : au lancement, ceux déjà acquis ne sont pas encore chargés.
+        if !subscriptions.hasAccess { await subscriptions.refresh() }
         guard subscriptions.hasAccess else {
             try? await Task.sleep(for: .milliseconds(700))
             needsPaywall = true
@@ -220,6 +222,8 @@ final class AppModel {
         if offTarget > 0 { parts.append(String(localized: "\(offTarget) jour(s) à plus de 10 % de ta cible")) }
         if unverified > 0 { parts.append(String(localized: "\(unverified) repas aux macros estimées par l'IA")) }
         if let budget = budgetText(overCeiling: overCeiling, overBudget: overBudget) { parts.append(budget) }
+        parts += warnings.contains(.batchCookingSkipped)
+            ? [String(localized: "pas de batch cooking cette semaine (planning fait jour par jour)")] : []
         return parts.isEmpty ? nil : String(localized: "\(parts.joined(separator: " · ")). Signalé(s) dans le planning.")
     }
 

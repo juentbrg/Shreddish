@@ -22,6 +22,8 @@ final class SubscriptionStore {
         isEnforced = enforced
         self.defaults = defaults
         updates = Task { [weak self] in
+            // Droits déjà acquis chargés dès le lancement (`Transaction.updates` ne les rejoue pas).
+            await self?.refresh()
             for await update in Transaction.updates {
                 if case let .verified(transaction) = update { await transaction.finish() }
                 await self?.refresh()

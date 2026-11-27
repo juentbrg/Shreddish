@@ -47,5 +47,8 @@ struct SavedRecipeTests {
         let recipes = (0..<9).map { meal(name: "R\($0)") }
         #expect(SavedRecipeMatcher.recipes(recipes, forDay: 0).map(\.name) == ["R0", "R7"])
         #expect(SavedRecipeMatcher.recipes(recipes, forDay: 3).map(\.name) == ["R3"])
+        // Période de 3 jours : les 9 recettes réparties sur les 3 jours, aucune perdue.
+        let short = (0..<3).flatMap { SavedRecipeMatcher.recipes(recipes, forDay: $0, dayCount: 3) }
+        #expect(short.count == 9)
     }
 }

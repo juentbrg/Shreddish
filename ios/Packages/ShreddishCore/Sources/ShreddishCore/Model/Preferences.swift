@@ -91,6 +91,12 @@ public final class Preferences {
     /// Plafond : budget × (1 + tolérance).
     public var budgetCeiling: Double { weeklyBudget * (1 + tolerance) }
 
+    /// Budget d'une période de 1 à 7 jours : budget hebdo au prorata (spec 021, FR-2101).
+    public func budget(days: Int) -> Double { weeklyBudget * Double(min(max(days, 1), 7)) / 7 }
+
+    /// Plafond d'une période : budget de la période × (1 + tolérance).
+    public func budgetCeiling(days: Int) -> Double { budget(days: days) * (1 + tolerance) }
+
     public var allergyList: [String] {
         get { allergies ?? [] }
         set { allergies = newValue }

@@ -94,6 +94,8 @@ public enum ValidationIssue: Equatable, Sendable {
     case overCostLimit(costEur: Double, limitEur: Double)
     /// Repas dont un ingrédient n'a pas été trouvé dans Ciqual : macros de l'IA (spec 010).
     case unverifiedMeals(count: Int)
+    /// Semaine faite jour par jour (repli) : batch cooking demandé mais aucune session (spec 001, FR-014).
+    case batchCookingSkipped
 
     /// Écart à la cible : recalculé après les macros Ciqual et l'ajustement des portions (spec 010).
     public var isRecomputed: Bool {

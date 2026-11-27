@@ -180,7 +180,8 @@ public enum ShoppingListBuilder {
     }
 
     /// Produit d'une ligne d'après sa clé, dans la même unité d'achat (« oignon|piece » sans code n'est pas le
-    /// produit « oignon » vendu au poids). Version surgelée : prix du frais plafonné à celui des légumes surgelés.
+    /// produit « oignon » vendu au poids). Version surgelée d'un fruit ou légume : prix du frais plafonné à celui des
+    /// légumes surgelés ; viande, poisson et autres gardent leur prix (spec 021, FR-2110).
     static func product(forKey key: String, prices: PriceCatalog) -> PurchaseProduct? {
         let parts = key.split(separator: "|").map(String.init)
         guard let id = parts.first else { return nil }
@@ -188,12 +189,14 @@ public enum ShoppingListBuilder {
         guard let product = prices.product(id: frozen ? String(id.dropLast(frozenSuffix.count)) : id) else { return nil }
         let unitKey = product.unit == .ml ? MeasureUnit.g : product.unit
         guard parts.count < 2 || parts[1] == unitKey.rawValue else { return nil }
-        guard frozen, let fresh = product.price, let bag = prices.product(id: frozenVegetablesId)?.price, bag < fresh else {
-            return product
+        guard frozen else { return product }
+        var price = product.price
+        if product.aisle == .fruitsLegumes, let fresh = price, let bag = prices.product(id: frozenVegetablesId)?.price {
+            price = min(fresh, bag)
         }
         return PurchaseProduct(
             id: product.id, label: product.label, unit: product.unit, pieceG: product.pieceG, aisle: .surgeles,
-            price: bag, packs: product.packs, perishable: product.perishable
+            price: price, packs: product.packs, perishable: product.perishable
         )
     }
 

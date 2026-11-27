@@ -122,7 +122,7 @@ struct ShoppingListView: View {
                 }
                 subtitle(plan, count: items.count)
                 ShoppingBudgetCard(
-                    summary: summary, preferences: allPreferences.first,
+                    summary: summary, preferences: allPreferences.first, days: plan.days.count,
                     progress: validation == nil
                         ? ShoppingProgress(remaining: plan.remainingShoppingEur, checked: checked, total: items.count) : nil
                 )
@@ -150,7 +150,7 @@ struct ShoppingListView: View {
                     }
                     .buttonStyle(PillButtonStyle(prominent: false))
                 }
-                ReceiptSection(plan: plan, budget: allPreferences.first?.weeklyBudget ?? 0)
+                ReceiptSection(plan: plan, budget: allPreferences.first?.budget(days: plan.days.count) ?? 0)
                     .id(plan.id)
             }
             .padding(.horizontal, 20)

@@ -133,6 +133,17 @@ struct ShoppingListBuilderTests {
         #expect(lines.contains { $0.name == "Haricots verts" && $0.aisle == .fruitsLegumes })
     }
 
+    /// Cabillaud surgelé : rayon surgelés, mais au prix du cabillaud, pas à celui des légumes surgelés (FR-2110).
+    @Test func frozenFishKeepsItsOwnPrice() {
+        var cod = ingredient("Cabillaud surgelé", 300, aisle: .surgeles, cost: 5)
+        cod.foodCode = 24998
+        let line = ShoppingListBuilder.build(from: [cod]).first
+        #expect(line?.aisle == .surgeles)
+        let product = ShoppingListBuilder.product(forKey: line?.key ?? "", prices: .shared)
+        #expect(product?.aisle == .surgeles)
+        #expect(product?.price == 18.35)
+    }
+
     @Test func cannedChickpeasAreBoughtByTheCan() {
         var chickpeas = ingredient("Pois chiches en conserve égouttés", 150, aisle: .epicerie, cost: 0.6)
         chickpeas.foodCode = 20532
@@ -232,6 +243,27 @@ struct ShoppingListBuilderTests {
         #expect(ShoppingListBuilder.combination(of: [6, 10, 12], covering: 16)
             == [PackCount(size: 10, count: 1), PackCount(size: 6, count: 1)])
         #expect(ShoppingListBuilder.combination(of: [400, 800], covering: 300) == [PackCount(size: 400, count: 1)])
+    }
+
+    /// FR-2004 : cuisson qui change le poids acheté (rôties, grillé) : pas de rattachement par mots.
+    @Test func roastedNamesAreNotMatchedByWords() {
+        #expect(PriceCatalog.shared.product(matching: "Pommes de terre rôties") == nil)
+        #expect(PriceCatalog.shared.product(matching: "Poulet grillé") == nil)
+        #expect(PriceCatalog.shared.product(matching: "Tomates en conserve") != nil)
+        // Produits achetés tels quels : toujours rattachés.
+        #expect(PriceCatalog.shared.product(matching: "Poêlée de légumes surgelés") != nil)
+        #expect(PriceCatalog.shared.product(matching: "Semoule de blé dur") != nil)
+    }
+
+    /// Spec 021, FR-2101 : budget hebdo au prorata des jours de la période, 1 à 7 jours.
+    @Test func periodBudgetIsProrated() {
+        let preferences = Preferences()
+        preferences.weeklyBudget = 70
+        preferences.tolerance = 0.1
+        #expect(preferences.budget(days: 3) == 30)
+        #expect(abs(preferences.budgetCeiling(days: 3) - 33) < 0.001)
+        #expect(preferences.budget(days: 0) == 10)
+        #expect(preferences.budget(days: 9) == 70)
     }
 
     /// Spec 020 : un nom libre rattaché au produit connu, une seule ligne de courses.

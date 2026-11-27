@@ -122,8 +122,9 @@ public enum SavedRecipeMatcher {
         }
     }
 
-    /// Recettes d'un jour quand la semaine est demandée jour par jour : la n-ième recette au jour n mod 7.
-    public static func recipes(_ recipes: [MealDTO], forDay offset: Int) -> [MealDTO] {
-        recipes.enumerated().filter { $0.offset % 7 == offset }.map(\.element)
+    /// Recettes d'un jour quand la période est demandée jour par jour : la n-ième recette au jour n mod `dayCount`
+    /// (période de moins de 7 jours : aucune recette sans jour).
+    public static func recipes(_ recipes: [MealDTO], forDay offset: Int, dayCount: Int = 7) -> [MealDTO] {
+        recipes.enumerated().filter { $0.offset % max(dayCount, 1) == offset }.map(\.element)
     }
 }

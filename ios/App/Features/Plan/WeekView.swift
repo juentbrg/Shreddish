@@ -67,7 +67,10 @@ struct WeekView: View {
                 if let plan = shownPlan {
                     ShareCardSheet(
                         title: "Ma semaine",
-                        card: WeekShareCard(plan: plan, budget: allPreferences.first?.weeklyBudget ?? 0)
+                        card: WeekShareCard(
+                            plan: plan, cost: PlanStore.fullShoppingSummary(for: plan, in: context).weekCostEur,
+                            budget: allPreferences.first?.budget(days: plan.days.count) ?? 0
+                        )
                     )
                 }
             }
@@ -280,6 +283,7 @@ struct WeekNavigator: View {
 /// Planning de 7 jours (courant ou historique) : sélecteur de jour, carte du jour et repas (design « Marché »).
 struct WeekPlanList: View {
     @Environment(AppModel.self) private var model
+    @Environment(\.modelContext) private var context
     @Query var allPreferences: [Preferences]
     let plan: WeeklyPlan
     /// Planifier la semaine qui suit ce planning ; `nil` hors dernier planning actif.
@@ -300,6 +304,20 @@ struct WeekPlanList: View {
                     WarningBadge(text: warning).card()
                 }
                 if plan.isCurrent {
+                    // Ajustement auto des cibles (spec 002, US2) : vu à l'ouverture, pas seulement dans Profil.
+                    if let message = model.calibrationMessage {
+                        HStack(alignment: .top) {
+                            Label(message, systemImage: "scalemass.fill")
+                                .font(Theme.text(.subheadline))
+                                .foregroundStyle(Theme.success)
+                            Spacer(minLength: 8)
+                            Button("Fermer", systemImage: "xmark") { model.calibrationMessage = nil }
+                                .labelStyle(.iconOnly)
+                                .foregroundStyle(Theme.muted)
+                                .frame(minWidth: 44, minHeight: 44)
+                        }
+                        .card()
+                    }
                     BannedMealsBanner()
                 }
                 DayStrip(days: days, selected: selectedDay?.offset, today: model.clock.today) { selectedOffset = $0 }
@@ -339,10 +357,12 @@ struct WeekPlanList: View {
                         }
                     }
                     if let preferences = allPreferences.first {
-                        let summary = plan.shoppingSummary
-                        let status = BudgetStatus(cost: summary.weekCostEur, preferences: preferences)
+                        // Même ticket que l'onglet Courses : tous les repas, mangés compris (spec 019, FR-1904).
+                        let summary = PlanStore.fullShoppingSummary(for: plan, in: context)
+                        let days = plan.days.count
+                        let status = BudgetStatus(cost: summary.weekCostEur, preferences: preferences, days: days)
                         WeekStat(title: "Ticket estimé", value: Format.euros(summary.checkoutEur)) {
-                            BudgetBar(cost: summary.weekCostEur, preferences: preferences)
+                            BudgetBar(cost: summary.weekCostEur, preferences: preferences, days: days)
                                 .frame(height: 6)
                                 .padding(.vertical, 6)
                             Text(status.text).font(Theme.text(.caption, .bold)).foregroundStyle(status.ink)

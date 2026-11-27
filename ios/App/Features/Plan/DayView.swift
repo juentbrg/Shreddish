@@ -204,17 +204,25 @@ struct MealCard: View {
                     .foregroundStyle(meal.type.tileColors.ink)
                 Text(meal.name)
                     .font(Theme.text(.subheadline, .semibold))
-                    .foregroundStyle(Theme.ink)
+                    .foregroundStyle(meal.status == .skipped ? Theme.muted : Theme.ink)
+                    .strikethrough(meal.status == .skipped)
                     .multilineTextAlignment(.leading)
                 Text("\(Format.kcal(meal.kcal)) · \(meal.prepMinutes) min · \(Format.euros(meal.costEUR))")
                     .font(Theme.text(.caption))
                     .foregroundStyle(Theme.muted)
             }
             Spacer(minLength: 0)
-            if meal.status == .eaten {
+            switch meal.status {
+            case .eaten:
                 Image(systemName: "checkmark.circle.fill")
                     .foregroundStyle(Theme.success)
                     .accessibilityLabel("Mangé")
+            case .skipped:
+                Image(systemName: "xmark.circle.fill")
+                    .foregroundStyle(Theme.muted)
+                    .accessibilityLabel("Sauté")
+            case .planned:
+                EmptyView()
             }
         }
         .padding(10)

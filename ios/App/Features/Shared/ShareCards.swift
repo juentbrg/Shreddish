@@ -10,6 +10,9 @@ enum ShareCardSize {
 /// « Ma semaine » : 7 jours de plats, kcal par jour, coût face au budget.
 struct WeekShareCard: View {
     let plan: WeeklyPlan
+    /// Coût de la semaine, tous les repas (spec 019, FR-1904).
+    let cost: Double
+    /// Budget de la période (spec 021, FR-2101).
     let budget: Double
 
     var body: some View {
@@ -38,7 +41,6 @@ struct WeekShareCard: View {
             .padding(14)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(Theme.card, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-            let cost = plan.shoppingSummary.weekCostEur
             Text("\(Format.euros(cost)) de courses pour la semaine\(cost <= budget ? String(localized: ", dans le budget") : "")")
                 .font(Theme.text(.subheadline, .semibold))
                 .foregroundStyle(Theme.onAccent)

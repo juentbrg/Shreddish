@@ -10,6 +10,8 @@ final class ScriptedTransport: AITransport, @unchecked Sendable {
         case output(String)
         case status(Int)
         case failure(URLError.Code)
+        /// Réponse au jour demandé (`day_offset` de la requête) : requêtes parallèles servies sans dépendre de leur ordre.
+        case dayOutput(@Sendable (Int) throws -> String)
     }
 
     private let lock = NSLock()
@@ -28,7 +30,13 @@ final class ScriptedTransport: AITransport, @unchecked Sendable {
             return steps.isEmpty ? .status(500) : steps.removeFirst()
         }
         let url = request.url ?? AIConfig.baseURL
-        switch step {
+        var resolved = step
+        if case let .dayOutput(text) = step {
+            resolved = .output(try text(Self.dayOffset(of: request)))
+        }
+        switch resolved {
+        case .dayOutput:
+            throw URLError(.badServerResponse)
         case let .output(text):
             let envelope: [String: Any] = [
                 "status": "completed",
@@ -41,6 +49,12 @@ final class ScriptedTransport: AITransport, @unchecked Sendable {
         case let .failure(code):
             throw URLError(code)
         }
+    }
+
+    static func dayOffset(of request: URLRequest) -> Int {
+        let body = (try? JSONSerialization.jsonObject(with: request.httpBody ?? Data())) as? [String: Any]
+        let input = (body?["input"] as? String).flatMap { try? JSONSerialization.jsonObject(with: Data($0.utf8)) } as? [String: Any]
+        return input?["day_offset"] as? Int ?? 0
     }
 }
 
@@ -185,7 +199,8 @@ struct PlanGeneratorTests {
     /// ingrédients les plus chers, gardés s'ils coûtent moins.
     @Test func overBudgetDaysAreRegeneratedCheaper() async throws {
         preferences.weeklyBudgetEUR = 20
-        let days = try (0..<7).map { Step.output(try cheapDayText($0)) }
+        let texts = try (0..<7).map { try cheapDayText($0) }
+        let days = (0..<7).map { _ in Step.dayOutput { texts[$0] } }
         let transport = ScriptedTransport([.output(try weekText())] + days)
         try await generator(transport).generateWeek(profile: profile, preferences: preferences, in: context)
         #expect(transport.requestCount > 1)

@@ -5,6 +5,8 @@ import SwiftUI
 struct ShoppingBudgetCard: View {
     let summary: ShoppingSummary
     let preferences: Preferences?
+    /// Jours du planning : budget au prorata (spec 021, FR-2101).
+    var days = 7
     /// Avancement des courses ; `nil` une fois validées.
     var progress: ShoppingProgress?
 
@@ -21,9 +23,9 @@ struct ShoppingBudgetCard: View {
                 .monospacedDigit()
                 .accessibilityIdentifier("weekCost")
             if let preferences {
-                BudgetBar(cost: cost, preferences: preferences).frame(height: 10)
+                BudgetBar(cost: cost, preferences: preferences, days: days).frame(height: 10)
                 HStack(alignment: .firstTextBaseline) {
-                    Text("Budget \(Format.euros(preferences.weeklyBudget)) · tolérance \(Format.percent(preferences.tolerance))")
+                    Text("Budget \(Format.euros(preferences.budget(days: days))) · tolérance \(Format.percent(preferences.tolerance))")
                     Spacer(minLength: 8)
                     if summary.keptEur >= 0.5 {
                         Text("\(Format.euros(summary.keptEur)) te resteront")
@@ -48,7 +50,7 @@ struct ShoppingBudgetCard: View {
     }
 
     private func badge(cost: Double, preferences: Preferences) -> some View {
-        let status = BudgetStatus(cost: cost, preferences: preferences)
+        let status = BudgetStatus(cost: cost, preferences: preferences, days: days)
         return Text(status.text)
             .font(Theme.text(.caption, .bold))
             .foregroundStyle(status.ink)
@@ -107,12 +109,12 @@ struct BudgetStatus {
     let inBudget: Bool
     let text: String
 
-    init(cost: Double, preferences: Preferences) {
-        let gap = cost - preferences.weeklyBudget
+    init(cost: Double, preferences: Preferences, days: Int) {
+        let gap = cost - preferences.budget(days: days)
         inBudget = gap <= 0.005
         text = if inBudget {
             String(localized: "Dans le budget")
-        } else if cost > preferences.budgetCeiling + 0.005 {
+        } else if cost > preferences.budgetCeiling(days: days) + 0.005 {
             String(localized: "\(Format.euros(gap)) au-dessus du budget")
         } else {
             String(localized: "Dans la tolérance")
@@ -126,17 +128,19 @@ struct BudgetStatus {
 struct BudgetBar: View {
     let cost: Double
     let preferences: Preferences
+    let days: Int
 
     var body: some View {
-        let ceiling = max(preferences.budgetCeiling, 1)
-        let over = cost > preferences.weeklyBudget + 0.005
+        let budget = preferences.budget(days: days)
+        let ceiling = max(preferences.budgetCeiling(days: days), 1)
+        let over = cost > budget + 0.005
         GeometryReader { proxy in
             ZStack(alignment: .leading) {
                 Capsule().fill(Theme.line)
                 Capsule().fill(over ? Theme.tomato : Theme.success).frame(width: proxy.size.width * min(cost / ceiling, 1))
                 Rectangle().fill(Theme.ink)
                     .frame(width: 2, height: proxy.size.height + 8)
-                    .offset(x: proxy.size.width * min(preferences.weeklyBudget / ceiling, 1) - 1)
+                    .offset(x: proxy.size.width * min(budget / ceiling, 1) - 1)
             }
         }
         .accessibilityHidden(true)

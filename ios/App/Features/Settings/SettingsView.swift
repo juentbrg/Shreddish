@@ -68,7 +68,15 @@ extension SettingsView {
         try? context.delete(model: MemberWeight.self)
         try? context.delete(model: HouseholdMember.self)
         try? context.delete(model: ShoppingReceipt.self)
+        try? context.delete(model: ShoppingValidation.self)
         UserDefaultsFoodMatchCache().removeAll()
+        // Réglages stockés hors de la base : consentement IA, Santé, rappels, pesée remise à plus tard.
+        // Accès gratuit déjà utilisé gardé : pas de nouvel essai en effaçant ses données.
+        AIConsent.revoke()
+        model.health.isEnabled = false
+        model.notifications.settings = NotificationSettings()
+        UserDefaults.standard.removeObject(forKey: NotificationService.settingsKey)
+        UserDefaults.standard.removeObject(forKey: "weightRecalcDismissed")
         try? context.delete(model: Profile.self)
         try? context.save()
         model.calibrationMessage = nil
