@@ -314,7 +314,7 @@ struct MigrationTests {
         try? context.save()
     }
 
-    /// Copie de la vraie base de l'iPhone (`tools/backup/backup.sh`) : `SHREDDISH_REAL_STORE=<dossier>`.
+    /// Copie de la vraie base de l'iPhone (`ios/scripts/backup/backup.sh`) : `SHREDDISH_REAL_STORE=<dossier>`.
     @Test(.enabled(if: ProcessInfo.processInfo.environment["SHREDDISH_REAL_STORE"] != nil))
     func realBackupOpensWithCurrentSchema() throws {
         let source = URL(fileURLWithPath: try #require(ProcessInfo.processInfo.environment["SHREDDISH_REAL_STORE"]))

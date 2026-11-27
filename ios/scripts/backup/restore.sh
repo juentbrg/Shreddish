@@ -1,6 +1,6 @@
 #!/bin/zsh
 # Réinjecte une sauvegarde dans l'app sur l'iPhone (écrase les données actuelles).
-# Usage : tools/backup/restore.sh <dossier de sauvegarde>
+# Usage : ios/scripts/backup/restore.sh <dossier de sauvegarde>
 set -euo pipefail
 DEVICE=${DEVICE:-00008030-001A5D423C31802E}
 SRC=${1:?dossier de sauvegarde}
