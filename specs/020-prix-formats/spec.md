@@ -9,7 +9,9 @@ surgelés » à côté de « Légumes surgelés »).
   spec 018) ; repli par enseigne sur 24 mois, moyenne des médianes.
 - FR-2002 : formats vendus = ceux de `tools/prices/foods.json`, relevés à la main en rayon ; chacun est calé sur
   la taille la plus relevée à moins de 8 % (thon 140 g). Une taille relevée hors de ces formats est ignorée :
-  elle vient surtout de produits voisins (pâtes aux œufs, huile vierge).
+  elle vient surtout de produits voisins (pâtes aux œufs, huile vierge). Calage seulement sur une taille relevée au moins 3 fois.
+  Produits à la pièce, rayon fruits et légumes et produits sans format : jamais recalés, formats de `foods.json`
+  tels quels.
 - FR-2003 : plusieurs formats par produit (riz 500 g, 1 kg, 2 kg) ; la liste combine les formats : quantité
   achetée minimale, puis le moins de paquets, puis les plus grands formats (1 100 g de riz : 1 kg + 500 g).
   Affichage « 1 × 1 kg + 1 × 500 g ».

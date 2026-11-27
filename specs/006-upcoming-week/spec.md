@@ -23,12 +23,12 @@ prochain, lendemain du planning actuel, ou une date jusqu'à J+13.
 2. **Given** planification à partir d'aujourd'hui, **When** génération, **Then** le planning actuel passe en
    historique, intact (journal conservé), comme avant.
 3. **Given** deux plannings actifs, **When** onglet Semaine, **Then** bascule « En cours » / « À venir » ;
-   Journal sur la semaine du jour ; Courses sur la semaine à venir par défaut, avec la même bascule.
+   Journal sur la semaine du jour ; Courses sur la semaine à venir par défaut, avec la même bascule. — *Remplacé par FR-2103 (spec 021) : navigation entre semaines.*
 
 ## Requirements *(mandatory)*
 
 - **FR-501**: Premier jour entre aujourd'hui et J+13.
 - **FR-502**: Semaine future : plannings actifs commençant le même jour ou après → historique ; chevauchants →
-  jours à partir du premier jour remplacés, liste de courses reconstruite ; terminés avant aujourd'hui → historique.
-- **FR-503**: Semaine démarrant aujourd'hui : plannings actifs → historique, sans suppression.
-- **FR-504**: Plusieurs plannings actifs (au plus deux en pratique), sans changement de schéma (`isCurrent`).
+  jours à partir du premier jour remplacés, liste de courses reconstruite ; terminés avant aujourd'hui → historique. — *Remplacée par FR-2102 (spec 021).*
+- **FR-503**: Semaine démarrant aujourd'hui : plannings actifs → historique, sans suppression. — *Remplacée par FR-2102 (spec 021).*
+- **FR-504**: Plusieurs plannings actifs (au plus deux en pratique), sans changement de schéma (`isCurrent`). — *Remplacée par FR-2102 (spec 021) : un planning coupé par une période peut en donner trois.*

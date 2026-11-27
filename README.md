@@ -4,8 +4,12 @@ Shred + dish : app iPhone perso pour préparer une sèche (ou une prise de masse
 Cibles caloriques calculées par formule, planning de 7 jours généré par l'IA (repas simples, pas
 chers, rapides), journal alimentaire, liste de courses, suivi du poids.
 
-- iOS 26+, iPhone, SwiftUI + SwiftData, aucune dépendance tierce.
-- Données sur l'appareil seulement ; clé OpenAI fournie au build (spec 009).
+- iOS 26+, iPhone + app Apple Watch compagnon (watchOS 26+, WatchConnectivity), SwiftUI + SwiftData, aucune
+  dépendance tierce.
+- Spec 017 (version commercialisable) : foyer (plusieurs personnes), abonnement StoreKit 2, 5 langues (fr, en,
+  es, de, it).
+- Données sur l'appareil seulement : synchro iCloud (spec 017 FR-1701) non implémentée. Clé OpenAI fournie au
+  build (spec 009).
 - Spec Kit : constitution `.specify/memory/constitution.md`, feature `specs/001-shreddish-meal-planner/`.
 
 ## Structure
@@ -14,6 +18,8 @@ chers, rapides), journal alimentaire, liste de courses, suivi du poids.
 ios/
 ├── project.yml               # XcodeGen (Shreddish.xcodeproj non versionné)
 ├── App/                      # cible app : vues, services (OpenAI, Keychain, génération)
+├── Watch/                    # cible Apple Watch (spec 017 FR-1711)
+├── Shared/                   # code commun iPhone / Watch
 ├── Packages/ShreddishCore/      # logique pure + modèles SwiftData, testée en `swift test`
 ├── AppTests/                 # génération avec transport simulé
 ├── UITests/                  # parcours, IA simulée (`-uitest`)
@@ -50,7 +56,8 @@ SwiftLint tourne en pré-build (`ios/.swiftlint.yml`).
 
 ## Macros et prix embarqués
 
-- Macros : table Ciqual 2025 (ANSES, Licence Ouverte), `python3 tools/ciqual/build_catalog.py`.
+- Macros : table Ciqual 2025 (ANSES, Licence Ouverte) :
+  `python3 -I tools/ciqual/build_catalog.py "Table Ciqual 2025_FR.xlsx" ios/Packages/ShreddishCore/Sources/ShreddishCore/Resources/ciqual.json`.
 - Prix : relevés Open Prices (Open Food Facts, ODbL), prix France médians, formats réels en rayon (mélangés : 1 kg + 500 g), sans magasin
   (spec 011). Export : `prices.parquet` du dépôt Hugging Face `openfoodfacts/open-prices`.
 
@@ -61,9 +68,18 @@ python3 tools/prices/build_prices.py prices.parquet \
   tools/prices/foods.json ios/Packages/ShreddishCore/Sources/ShreddishCore/Resources/prices.json
 ```
 
-Correspondance aliments Ciqual ↔ catégories Open Prices : `tools/prices/foods.json`.
+`tools/prices/foods.json` : un produit acheté par entrée. Correspondance aliments Ciqual ↔ catégories Open Prices,
+libellé, rayon, formats vendus (`packs`), prix de repli (`price`), part comestible (`yield`), rapport cru / cuit
+(`cooked`), périssabilité (`perishable`), unité (`unit`), poids à la pièce (`piece`).
 
 ## Installer sur l'iPhone
 
 Ouvrir `ios/Shreddish.xcodeproj`, choisir son équipe dans Signing & Capabilities de la cible
 Shreddish, sélectionner l'iPhone, Run.
+
+Sans compte Apple Developer payant, la cible `ShreddishWatch` ne se signe pas en ligne de commande. La cible
+`Shreddish` en dépend (`ios/project.yml`) : pour un build iPhone seul, retirer la dépendance
+`- target: ShreddishWatch`, puis regénérer avec XcodeGen.
+
+Sauvegarde / restauration des données de l'iPhone (devicectl, hors dépôt) : `tools/backup/backup.sh [dossier]`,
+`tools/backup/restore.sh <dossier>` ; autre appareil : `DEVICE=<UDID>`.

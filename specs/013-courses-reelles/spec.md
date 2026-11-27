@@ -8,12 +8,12 @@ Semaine estimée à 60 €, ticket réel de 80 €. Trois causes :
 
 ## Exigences
 - FR-1301 : prix = médiane des relevés sur 12 mois (repli inchangé) ; prix de repli saisi dans `foods.json`
-  (`price`) quand moins de 8 relevés (filet mignon : surtout des plats préparés dans Open Prices).
+  (`price`) quand moins de 8 relevés (filet mignon : surtout des plats préparés dans Open Prices). — *Médiane remplacée par le 3e quartile, FR-1801 (spec 018), puis rétablie par FR-2001 (spec 020) ; prix de repli toujours appliqué.*
 - FR-1302 : filet mignon séparé du porc courant (rôti, côtes, échine).
 - FR-1303 : chaque produit a ses formats vendus (`packs`, dans l'unité d'achat) et `perishable` (frais,
   conserve : se perd une fois ouvert). `prices.json` exporte prix d'achat, formats et périssabilité.
 - FR-1304 : la liste achète des paquets entiers : un seul format, le moins de reste, puis le moins de paquets ;
-  version surgelée d'un produit frais en sachets de 750 g ou 1 kg ; au détail sans format.
+  version surgelée d'un produit frais en sachets de 750 g ou 1 kg ; au détail sans format. — *Limitée par FR-2003 (spec 020) : plusieurs formats combinés au lieu d'un seul.*
 - FR-1305 : ticket estimé = prix des paquets ; coût de la semaine = ticket − restes qui se gardent ; restes
   périssables signalés (« à finir sous 3 jours ») et comptés comme dépensés. Le budget se compare au coût
   de la semaine.

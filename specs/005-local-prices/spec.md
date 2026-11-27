@@ -21,9 +21,9 @@ estimation réaliste sur le secteur. »
 
 ## Requirements *(mandatory)*
 
-- **FR-401**: Champ « Ville » (optionnel) dans « Où tu fais tes courses » ; vide = France.
+- **FR-401**: Champ « Ville » (optionnel) dans « Où tu fais tes courses » ; vide = France. — *Remplacée par FR-1106 (spec 011) : ville retirée.*
 - **FR-402**: L'IA renvoie `unit_price_eur` par ingrédient ; l'app calcule coût ingrédient =
-  quantité × prix unitaire (÷ 1000 pour g et ml) et coût du repas = somme des ingrédients.
+  quantité × prix unitaire (÷ 1000 pour g et ml) et coût du repas = somme des ingrédients. — *Limitée par FR-1803 (spec 018) : l'IA n'envoie plus `unit_price_eur` ; prix unitaire tiré de la table embarquée (spec 011).*
 - **FR-403**: Prompt : positionnement de l'enseigne et du secteur (grande ville moins chère, petite
-  ville, montagne ou zone touristique plus chère).
+  ville, montagne ou zone touristique plus chère). — *Remplacée par FR-1106 (spec 011).*
 - **FR-404**: Migration légère V4 → V5 sans perte (`Preferences` V4 figées).

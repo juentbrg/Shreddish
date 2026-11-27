@@ -23,7 +23,7 @@ Deux couches :
 | Champ | Type | Règle |
 |---|---|---|
 | sex | Sex | requis |
-| birthDate | Date | âge calculé 16–90 ans |
+| birthDate | Date | âge calculé 16–90 ans — *Remplacé par 18–90, FR-1714 (spec 017).* |
 | heightCm | Double | 120–230 |
 | weightKg | Double | 35–250 ; mis à jour par dernière pesée acceptée |
 | activity | ActivityLevel | requis |

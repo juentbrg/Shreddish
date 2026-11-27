@@ -7,11 +7,11 @@
 - Budget contrôlé sur le coût estimé par l'IA, puis recalculé autrement par l'application.
 
 ## Exigences
-- FR-1801 (remplacé par FR-2001, médiane) : prix d’un aliment = 3e quartile (moyen-haut) des relevés Open Prices sur 12 mois, vrac et paquets aux
-  formats courants (± 10 %) seulement : sans sachets micro-ondes, frais traiteur ni mini-formats.
-- FR-1802 (remplacé par FR-2002) : formats vendus = tailles les plus relevées des produits emballés de l'aliment (3 au plus, ≥ 3 relevés et
+- FR-1801 (3e quartile remplacé par FR-2001, médiane) : prix d’un aliment = 3e quartile (moyen-haut) des relevés Open Prices sur 12 mois, vrac et paquets aux
+  formats courants (± 10 %) seulement : sans sachets micro-ondes, frais traiteur ni mini-formats. — *Toujours en vigueur : relevés limités au vrac et aux paquets aux formats de `foods.json` (± 10 %), `standard_rows` de `tools/prices/build_prices.py`.*
+- FR-1802 (remplacé en partie par FR-2002) : formats vendus = tailles les plus relevées des produits emballés de l'aliment (3 au plus, ≥ 3 relevés et
   10 % des relevés), entre 0,5 et 2 fois les formats de `foods.json` ; légumes frais et produits à la pièce : formats
-  de `foods.json`.
+  de `foods.json`. — *Toujours en vigueur : taille retenue seulement si relevée au moins 3 fois ; produits à la pièce et rayon fruits et légumes gardent les formats de `foods.json` (`observed_packs` de `tools/prices/build_prices.py`).*
 - FR-1803 : l'IA n'envoie plus de prix (schéma sans `unit_price_eur` ni `cost_eur`) et ne reçoit plus
   `reference_prices_eur_per_kg` ni `pack_sizes`. Le prompt garde le budget comme objectif et la consigne de finir
   les paquets entamés.

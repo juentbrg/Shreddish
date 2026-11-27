@@ -60,7 +60,7 @@ la cible.
 3. **Given** planning généré, **When** fermeture puis réouverture de l'app, **Then** planning
    toujours présent, sans nouvel appel IA.
 4. **Given** aucune clé API, **When** demande de planning, **Then** invitation à saisir la clé,
-   calculateur toujours accessible.
+   calculateur toujours accessible. — *Remplacé par FR-903 (spec 009) : « Clé API absente du build ».*
 
 ---
 
@@ -170,21 +170,21 @@ propose de recalculer les cibles avec le nouveau poids.
 - **FR-005**: Le système MUST afficher le détail du calcul et la mention « outil personnel, pas
   un avis médical ».
 - **FR-006**: Le système MUST valider les bornes des saisies (âge 16–90, taille 120–230 cm,
-  poids 35–250 kg).
+  poids 35–250 kg). — *Limitée par FR-1714 (spec 017) : âge 18–90, mineurs exclus.*
 
 **Préférences**
 
 - **FR-007**: L'utilisateur MUST pouvoir définir : nombre de repas par jour (2 à 5, collations
   incluses), temps de préparation max par repas, budget indicatif par jour, aliments exclus /
-  allergies, aliments appréciés, équipement disponible.
+  allergies, aliments appréciés, équipement disponible. — *Budget par jour remplacé par le budget hebdo et sa tolérance, FR-201 (spec 003).*
 - **FR-008**: Valeurs par défaut : 4 repas / jour (3 repas + 1 collation), 20 min max,
-  budget 8 € / jour.
+  budget 8 € / jour. — *Budget par jour remplacé par le budget hebdo, FR-201 (spec 003).*
 
 **Planning**
 
 - **FR-009**: Le système MUST générer via IA un planning de 7 jours consécutifs, du jour de
   la génération (inclus) à J+6, respectant cibles et préférences. Coût d'un jour au-delà de
-  110 % du budget journalier : jour signalé.
+  110 % du budget journalier : jour signalé. — *Limitée par FR-501 (spec 006) : premier jour jusqu'à J+13. Seuil de 110 % par jour remplacé par FR-202 (spec 003), puis FR-304 (spec 004) et FR-801/802 (spec 008) : budget hebdo, jamais bloquant.*
 - **FR-010**: Chaque repas MUST comporter : nom, ingrédients avec quantités, étapes courtes,
   temps de préparation, coût estimé, kcal et macros.
 - **FR-011**: Le système MUST recalculer localement les totaux journaliers à partir des valeurs
@@ -200,7 +200,7 @@ propose de recalculer les cibles avec le nouveau poids.
 **Courses**
 
 - **FR-015**: Le système MUST produire une liste de courses agrégée par rayon depuis le planning,
-  avec quantités cumulées, coût total estimé et cases à cocher persistantes.
+  avec quantités cumulées, coût total estimé et cases à cocher persistantes. — *Limitée par les specs 012 (par produit acheté), 013 (paquets entiers, ticket estimé) et 019 (liste dynamique, puis validée).*
 
 **Suivi**
 
@@ -214,9 +214,9 @@ propose de recalculer les cibles avec le nouveau poids.
 **IA et clé API**
 
 - **FR-019**: L'utilisateur MUST pouvoir saisir, tester, remplacer et supprimer sa clé API ;
-  clé stockée de façon sécurisée sur l'appareil, jamais affichée en clair après saisie.
+  clé stockée de façon sécurisée sur l'appareil, jamais affichée en clair après saisie. — *Remplacée par FR-902 (spec 009) : clé fournie au build, aucune saisie.*
 - **FR-020**: Appels IA seulement sur action explicite ; aucune génération automatique en tâche
-  de fond.
+  de fond. — *Limitée par FR-1007 (spec 010) : recettes générées en arrière-plan ; et FR-1702 (spec 017) : génération en file d'attente, reprise au retour du réseau.*
 - **FR-021**: Données envoyées à l'IA limitées aux cibles, préférences et contraintes ; aucune
   donnée d'identité.
 
@@ -258,7 +258,7 @@ propose de recalculer les cibles avec le nouveau poids.
   d'enseigne.
 - Valeurs nutritionnelles des repas : estimations de l'IA, contrôlées par cohérence
   (kcal ≈ 4 × protéines + 4 × glucides + 9 × lipides), sans base de données nutritionnelle
-  officielle en v1.
+  officielle en v1. — *Remplacée par FR-1001/1003 (spec 010) : macros Ciqual.*
 - Formule de dépense de base : Mifflin-St Jeor (référence courante) ; facteurs d'activité
   standards 1,2 à 1,9.
 - Unités métriques uniquement ; interface en français.

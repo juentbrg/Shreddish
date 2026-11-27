@@ -7,12 +7,12 @@
 
 ## Exigences
 - FR-1101 : table de prix embarquée (`Resources/prices.json`), générée hors ligne par `tools/prices/build_prices.py` depuis l'export Open Prices (Open Food Facts, ODbL) : prix France, hors promotions, au kg acheté (au litre pour les liquides), par code Ciqual.
-- FR-1102 : prix d'un aliment = quartile bas des relevés des 12 derniers mois dès 8 relevés ; sinon fenêtre de 24 mois et moyenne des médianes par enseigne.
+- FR-1102 : prix d'un aliment = quartile bas des relevés des 12 derniers mois dès 8 relevés ; sinon fenêtre de 24 mois et moyenne des médianes par enseigne. — *Remplacée par FR-1301 (spec 013, médiane), puis FR-1801 (spec 018, 3e quartile), puis FR-2001 (spec 020, médiane) ; repli inchangé.*
 - FR-1103 : part comestible par aliment (avocat 0,7, banane 0,65, conserves égouttées 0,6 à 0,75) ; aliment Ciqual cuit : prix ramené au poids cuit (riz, pâtes, légumineuses, viandes).
-- FR-1104 : l'app recalcule le prix de chaque ingrédient rapproché de Ciqual ; aliment sans prix : prix de l'IA borné aux 10e et 90e centiles de son groupe Ciqual ; sans rapprochement : prix de l'IA. Compléments possédés : coût 0.
+- FR-1104 : l'app recalcule le prix de chaque ingrédient rapproché de Ciqual ; aliment sans prix : prix de l'IA borné aux 10e et 90e centiles de son groupe Ciqual ; sans rapprochement : prix de l'IA. Compléments possédés : coût 0. — *Limitée par FR-1803/1804 (spec 018) : l'IA n'envoie plus de prix ; aliment sans prix = médiane de son groupe Ciqual, sinon de son rayon.*
 - FR-1105 : le prompt reçoit les prix de référence de 27 aliments courants (`reference_prices_eur_per_kg`) pour estimer le budget comme l'app.
 - FR-1106 : choix du magasin et ville retirés (réglages, prompt, liste de courses) ; champs gardés en base pour la migration.
 - FR-1107 : crédit Open Prices (ODbL) dans « À propos ».
 
 ## Hors champ
-- Liste de courses en emballages entiers : stock d'une semaine sur l'autre, coût trompeur.
+- Liste de courses en emballages entiers : stock d'une semaine sur l'autre, coût trompeur. — *Fait par FR-1304 (spec 013).*

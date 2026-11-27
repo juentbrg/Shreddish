@@ -68,6 +68,34 @@ mention « option » ou « à décider ».
   ticket de courses estimé contre réel, progrès (courbe, avant / après avec photos si l'utilisateur le
   choisit). Sans donnée sensible par défaut, filigrane discret de l'app.
 
+## Statut au 2026-11-27 (audit spec ↔ code)
+Compte Apple Developer gratuit : iCloud et vente App Store bloqués tant qu'il n'y a pas de compte payant.
+
+- Non implémentés :
+  - FR-1701 iCloud : base locale (`cloudKitDatabase: .none`), `.unique` encore présents. Bloqué par le compte.
+  - FR-1706 partage par lien.
+  - FR-1710 widgets.
+  - FR-1711 complication Watch (reste de l'app Watch fait).
+  - FR-1712 mention « estimation France » hors France.
+  - FR-1715 : offre de lancement, gestion de l'abonnement dans l'app, quota IA côté serveur.
+- Partiels :
+  - FR-1702 : action IA en attente gardée en mémoire seulement, une seule à la fois, génération reprise de zéro.
+  - FR-1703 : casher « jamais viande et laitage dans le même repas » demandé à l'IA, pas vérifié localement.
+  - FR-1704 : pas de journal par personne ; cibles des membres réduites à une portion au prorata des kcal.
+  - FR-1706 : report = restes non périssables des paquets entamés de la semaine d'avant (pas les articles cochés).
+  - FR-1709 : dépense active lue et affichée, pas utilisée par la calibration.
+  - FR-1712 : quelques chaînes non traduites ; noms d'ingrédients toujours en français (voulu).
+  - FR-1713 : « Réduire les animations » ignoré ; quelques polices de taille fixe.
+  - FR-1714 :
+    - export RGPD incomplet (mensurations, ingrédients, macros) ;
+    - grossesse mentionnée seulement à l'accueil et dans les CGU.
+  - FR-1715 :
+    - accès gratuit consommé par la première action IA, quelle qu'elle soit ;
+    - drapeau en UserDefaults, gardé par « Supprimer toutes mes données » (pas de nouvel essai).
+  - FR-1717 : seuls noms et nombre de plats en direct.
+  - FR-1718 : carte progrès sans courbe ; delta de poids affiché par défaut.
+- Numérotation : pas de FR-1707.
+
 ## À décider
 - Coût IA mesuré (gpt-6-luna, 20/11/2026) : semaine + 28 recettes ≈ 0,013 $, repas remplacé
   ≈ 0,001 $, jour régénéré ≈ 0,002 $. Usage intensif ≈ 0,15 $ / mois ; plafond par quota (ex. 3 semaines

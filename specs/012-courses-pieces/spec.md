@@ -19,4 +19,4 @@ d'achat du produit.
 - FR-1204 : pièces arrondies à l'unité supérieure, marge de 0,15 pièce ; g et ml à l'unité.
 - FR-1205 : rattachement par code Ciqual, sinon par nom exact du produit (plans antérieurs à la spec 010).
 - FR-1206 : sans produit connu, fusion par nom, g et ml confondus (1 ml = 1 g, affiché en ml).
-- FR-1207 : listes existantes reconstruites au lancement si leurs lignes diffèrent (coches gardées par clé).
+- FR-1207 : listes existantes reconstruites au lancement si leurs lignes diffèrent (coches gardées par clé). — *Limitée par FR-1902/1903 (spec 019) : liste validée ou planning terminé, liste figée.*

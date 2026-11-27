@@ -49,7 +49,7 @@ vendus dans ce magasin et estime les prix de cette enseigne, marque distributeur
 
 - Préférences existantes : budget hebdo = budget jour × 7, tolérance 10 %, disponibilité
   « partout », magasin « supermarché classique » ; anciens aliments exclus → « n'aime pas ».
-- Budget impossible à tenir : l'IA renseigne `infeasible`, raison affichée.
+- Budget impossible à tenir : l'IA renseigne `infeasible`, raison affichée. — *Remplacé par la spec 004 (US2, FR-304) et FR-801/802 (spec 008) : le budget n'est jamais un motif de refus.*
 - Magasin « Autre » : nom libre transmis tel quel.
 
 ## Requirements *(mandatory)*
@@ -60,24 +60,24 @@ vendus dans ce magasin et estime les prix de cette enseigne, marque distributeur
   de suggestions, bouton de suppression visible sur chaque élément.
 - **FR-211**: Tout est supprimable : éléments de liste, extras, pesées, plannings de l'historique,
   ensemble des données (avec confirmation).
-- **FR-202**: Coût semaine > budget × (1 + tolérance) : rejet (nouvel essai) ; > budget : signalé.
+- **FR-202**: Coût semaine > budget × (1 + tolérance) : rejet (nouvel essai) ; > budget : signalé. — *Remplacée par FR-304 (spec 004) et FR-801/802 (spec 008) : avertissement après un nouvel essai, plus de rejet ; puis FR-1805 (spec 018).*
 - **FR-203**: Jour régénéré : plafond = budget × (1 + tolérance) − coût des autres jours ; repas
-  remplacé : plafond = plafond du jour − coût des autres repas du jour. Dépassement : rejet.
+  remplacé : plafond = plafond du jour − coût des autres repas du jour. Dépassement : rejet. — *Limitée par FR-304 (spec 004) : dépassement signalé après un nouvel essai, plus de rejet.*
 - **FR-204**: Allergies et aliments refusés en listes séparées, tous deux bloquants ; consigne IA
   « allergies : aucune trace, attention aux dérivés ».
 - **FR-205**: Disponibilité : partout (dont Lidl / Aldi), grand supermarché, spécialisé accepté
   (défaut : partout). Consigne IA associée.
 - **FR-206**: Magasin : supermarché classique (défaut), Lidl, Aldi, Leclerc, Intermarché, Carrefour,
   Carrefour Market, Auchan, Super U, Monoprix, Franprix, Autre (nom libre). Consigne IA : produits
-  de l'enseigne, prix de l'enseigne, marque distributeur en priorité.
+  de l'enseigne, prix de l'enseigne, marque distributeur en priorité. — *Remplacée par FR-1106 (spec 011) : magasin retiré.*
 - **FR-207**: Liste de courses : total, budget, tolérance, écart.
 - **FR-208**: Migration sans perte (FR-111).
 - **FR-209**: Prix toujours présentés comme estimations : aucune base de prix réelle (constitution I,
-  pas de backend).
+  pas de backend). — *Limitée par FR-1101 (spec 011) : table de prix Open Prices embarquée ; prix toujours présentés comme estimations.*
 
 ## Success Criteria *(mandatory)*
 
-- **SC-201**: 100 % des plannings enregistrés ≤ budget × (1 + tolérance), selon les prix estimés.
+- **SC-201**: 100 % des plannings enregistrés ≤ budget × (1 + tolérance), selon les prix estimés. — *Remplacé par FR-304 (spec 004) : planning au-dessus du plafond enregistré, avec avertissement.*
 - **SC-202**: 0 repas avec allergène ou aliment refusé listé.
 
 ## Assumptions
