@@ -1,0 +1,16 @@
+# Postgres local pour le dev : docker compose -f backend/compose.yaml up -d
+name: shreddish
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: shreddish
+      POSTGRES_PASSWORD: shreddish
+      POSTGRES_DB: shreddish
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - db:/var/lib/postgresql/data
+      - ./docker-init:/docker-entrypoint-initdb.d:ro
+volumes:
+  db:
