@@ -71,7 +71,11 @@ cargo test                                       # intégration sur vrai Postgre
 Routes : `GET /health`, `POST /v1/installs`, `GET /v1/quota`, `POST /v1/quota/consume` (`{"kind": "week" |
 "meal" | "day" | "recipe"}`, renvoie un ticket), `POST /v1/entitlements/verify` (dev : `{"proof":
 "dev-subscription:7"}`), `POST /v1/ai/responses` (en-tête `X-Shreddish-Ticket`, corps Responses API : seuls
-`instructions`, `input`, `text.format`, `stream` sont repris).
+`input`, `text.format`, `stream` sont repris ; consignes système du serveur, `backend/prompts/` ; entrée limitée
+aux clés que l'app envoie, `backend/prompts/input_keys.json`).
+Prompts ou entrées modifiés dans l'app : `SHREDDISH_WRITE_PROMPTS=1 swift test --package-path
+ios/Packages/ShreddishCore --filter PromptExport` recopie consignes, entrées types et clés admises dans
+`backend/`. Nouvelle clé envoyée à l'IA : serveur déployé avant l'app, sinon requêtes refusées.
 Réglages dans `.env` (`QUOTA_*`, `TICKET_*`, `OPENAI_*`) ; `ENTITLEMENT_VERIFIER=dev` refusé si
 `APP_ENV=production`. Tests : OpenAI simulé, aucun appel facturé.
 

@@ -58,9 +58,12 @@ avec sa clé et renvoie la réponse telle quelle, en flux si demandé.
   celles envoyées par l'app sont ignorées. Copies des consignes de l'app (`backend/prompts/`), gardées en phase
   par un test de l'app.
 - FR-2312 : entrée contrôlée avant tout appel : JSON de contexte de 32 Ko au plus, tâche conforme au schéma
-  (`week`, `day`, `replace_meal`, `recipe`, `food_match`), aucun texte de plus de 1 000 caractères. Refus :
+  (`week`, `day`, `replace_meal`, `recipe`, `food_match`), seules les clés que l'app envoie pour cette tâche
+  (liste copiée de l'app, `backend/prompts/input_keys.json`), aucun texte de plus de 1 000 caractères. Refus :
   « requête invalide », appel non compté. Entrées types de l'app (`backend/tests/fixtures/inputs/`) : toutes
-  acceptées, vérifié par test.
+  acceptées, vérifié par test. Entrées types maximales (tout champ optionnel rempli) : une clé ajoutée côté app
+  fait échouer le test de l'app tant que la liste du serveur n'est pas réécrite. Déploiement : serveur mis à
+  jour avant l'app qui envoie la nouvelle clé.
 - FR-2310 : quota `recipe` par défaut relevé à 120 (3 semaines × 35 recettes, plus les recettes ouvertes à
   la main) ; valeurs toujours à arrêter (spec 017, « À décider »).
 
@@ -77,7 +80,7 @@ avec sa clé et renvoie la réponse telle quelle, en flux si demandé.
   FR-2312), sans appel supplémentaire.
 
 ## Hypothèses et risques
-- Résidu : une question glissée dans un texte court de l'entrée, réponse contrainte au schéma de repas. Valeur
+- Résidu : une question glissée dans la valeur d'une clé admise (texte court), réponse contrainte au schéma de repas. Valeur
   quasi nulle pour un abus ; App Attest (lot suivant) fermera l'accès aux apps modifiées.
 - Motif de refus de l'IA recopié dans l'entrée (spec 008) : plus de 1 000 caractères = requête refusée. L'app
   devra le tronquer en passant par le serveur.

@@ -1,6 +1,9 @@
 //! Consignes système imposées par le serveur et contrôle de l'entrée (spec 023 FR-2311, FR-2312).
 //! Copies de `PromptBuilder` (app iOS), gardées en phase par `PromptExportTests`.
 
+use std::collections::{HashMap, HashSet};
+use std::sync::OnceLock;
+
 use serde_json::Value;
 
 use crate::error::AppError;
@@ -8,6 +11,15 @@ use crate::error::AppError;
 const SYSTEM: &str = include_str!("../prompts/system.txt");
 const RECIPE: &str = include_str!("../prompts/recipe.txt");
 const FOOD_MATCH: &str = include_str!("../prompts/food_match.txt");
+/// Clés admises par tâche, tirées des entrées de l'app (`PromptExportTests`).
+const INPUT_KEYS: &str = include_str!("../prompts/input_keys.json");
+
+fn input_keys() -> &'static HashMap<String, HashSet<String>> {
+    static KEYS: OnceLock<HashMap<String, HashSet<String>>> = OnceLock::new();
+    KEYS.get_or_init(|| {
+        serde_json::from_str(INPUT_KEYS).expect("prompts/input_keys.json illisible")
+    })
+}
 
 /// Entrée de plus de 32 Ko : refus.
 pub const MAX_INPUT_BYTES: usize = 32 * 1024;
@@ -24,7 +36,8 @@ pub fn instructions(schema: &str) -> Option<&'static str> {
     }
 }
 
-/// Entrée attendue : JSON de contexte construit par l'app, tâche conforme au schéma, textes courts.
+/// Entrée attendue : JSON de contexte construit par l'app, tâche conforme au schéma, clés admises pour la tâche
+/// seulement, textes courts.
 pub fn check_input(schema: &str, input: &str) -> Result<(), AppError> {
     let invalid = |reason: &str| {
         Err(AppError::InvalidRequest(format!(
@@ -51,10 +64,25 @@ pub fn check_input(schema: &str, input: &str) -> Result<(), AppError> {
     if !expected {
         return invalid("tâche non conforme au schéma");
     }
-    if !short_strings(&Value::Object(object)) {
+    let allowed = task.and_then(|task| input_keys().get(task));
+    let value = Value::Object(object);
+    if !allowed.is_some_and(|allowed| known_keys(&value, allowed)) {
+        return invalid("clé inconnue");
+    }
+    if !short_strings(&value) {
         return invalid("texte trop long");
     }
     Ok(())
+}
+
+fn known_keys(value: &Value, allowed: &HashSet<String>) -> bool {
+    match value {
+        Value::Array(items) => items.iter().all(|item| known_keys(item, allowed)),
+        Value::Object(map) => map
+            .iter()
+            .all(|(key, item)| allowed.contains(key) && known_keys(item, allowed)),
+        _ => true,
+    }
 }
 
 fn short_strings(value: &Value) -> bool {
@@ -109,6 +137,27 @@ mod tests {
         assert!(check_input("WeekPlanResponse", r#"{"task":"week","day_count":7}"#).is_ok());
         assert!(
             check_input(
+                "WeekPlanResponse",
+                r#"{"task":"week","question":"Qui est Kant ?"}"#
+            )
+            .is_err()
+        );
+        assert!(
+            check_input(
+                "WeekPlanResponse",
+                r#"{"task":"week","targets":{"question":"?"}}"#
+            )
+            .is_err()
+        );
+        assert!(
+            check_input(
+                "FoodMatchResponse",
+                r#"{"task":"food_match","day_count":7}"#
+            )
+            .is_err()
+        );
+        assert!(
+            check_input(
                 "RecipeResponse",
                 r#"{"task":"recipe","meal":{"name":"Riz"}}"#
             )
@@ -128,7 +177,7 @@ mod tests {
         );
         assert!(check_input("DayPlanResponse", &long).is_err());
         let huge = format!(
-            r#"{{"task":"day","avoid":[{}]}}"#,
+            r#"{{"task":"day","avoid_meal_names":[{}]}}"#,
             vec!["\"x\""; 20_000].join(",")
         );
         assert!(check_input("DayPlanResponse", &huge).is_err());

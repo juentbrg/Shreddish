@@ -11,3 +11,4 @@
 - [x] T008 Champ « Modèle » retiré des Préférences (vue, générateurs, traductions) ; spec 021 FR-2115 annotée
 - [x] T009 Consignes système côté serveur (`backend/prompts/`), test de phase côté app (`PromptExportTests`)
 - [x] T010 Contrôle de l'entrée (FR-2312), entrées types de l'app acceptées (`tests/fixtures/inputs/`)
+- [x] T011 Liste blanche des clés de l'entrée par tâche (`input_keys.json`), entrées types maximales, garde Mirror
