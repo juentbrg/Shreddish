@@ -9,18 +9,18 @@ use crate::error::AppError;
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Entitlement {
-    Trial,
-    TrialUsed,
+    /// Aucun abonnement actif.
+    None,
+    /// Abonnement payant ou offre d'introduction d'une semaine (spec 017 FR-1715), non expiré.
     Subscribed,
 }
 
 impl Entitlement {
-    /// Droit effectif à `now` : abonnement expiré traité comme essai consommé.
+    /// Droit effectif à `now` : abonnement expiré traité comme `None`.
     pub fn effective(stored: &str, expires_at: Option<DateTime<Utc>>, now: DateTime<Utc>) -> Self {
         match stored {
-            "trial" => Self::Trial,
             "subscribed" if expires_at.is_some_and(|expiry| expiry > now) => Self::Subscribed,
-            _ => Self::TrialUsed,
+            _ => Self::None,
         }
     }
 }
@@ -31,7 +31,7 @@ pub trait Verifier: Send + Sync {
     async fn verify(&self, proof: &str, now: DateTime<Utc>) -> Result<DateTime<Utc>, AppError>;
 }
 
-/// Dev seulement : preuve `dev-subscription:<jours>`, 1 à 366 jours.
+/// Dev seulement : preuve `dev-subscription:<jours>`, 1 à 366 jours (essai : 7).
 pub struct DevVerifier;
 
 #[async_trait]

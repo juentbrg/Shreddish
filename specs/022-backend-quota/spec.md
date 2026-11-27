@@ -1,6 +1,8 @@
 # Spec 022 : backend, lot 1 (installations, quota IA, droits)
 
 Créée le 2026-11-27. Premier lot du backend (`backend/`, constitution 2.1.0, principes I et III).
+Essai révisé le 2026-11-27 : offre d'introduction Apple d'une semaine au lieu d'une action IA gratuite
+(FR-2208, FR-2209) ; code du lot à aligner (tâches T015 à T017).
 
 ## Problème
 La clé OpenAI est dans l'app (spec 009) : extractible, coût IA sans plafond, essai gratuit perdu à la
@@ -27,12 +29,14 @@ Chaque action IA consomme une unité du quota du jour pour son type ; au-delà d
 - L'app peut lire ce qui reste pour chaque type, sans rien consommer.
 
 ### US3 (P2) : droits d'accès gardés côté serveur
-Essai gratuit consommé et abonnement stockés par installation, plus dans l'app : effacer les données de
-l'app ne rend plus l'essai (aujourd'hui : drapeau UserDefaults).
-- Étant donné une installation sans abonnement, quand sa première action IA passe, alors l'essai est marqué
-  consommé ; les actions suivantes sont refusées « abonnement requis ».
-- Étant donné une preuve d'achat valide, quand l'app la transmet, alors l'installation devient abonnée jusqu'à
-  la date d'expiration fournie.
+Essai gratuit = offre d'introduction d'une semaine de l'abonnement, gérée par Apple (spec 017 FR-1715) :
+une fois par identifiant Apple, réinstaller ou changer d'appareil ne le rend pas. Le serveur ne gère aucun
+essai : une transaction d'essai est un abonnement actif jusqu'à sa date d'expiration.
+- Étant donné une installation sans preuve d'achat, quand elle demande une action IA, alors refus
+  « abonnement requis ».
+- Étant donné une preuve d'essai ou d'abonnement valide, quand l'app la transmet, alors l'installation est
+  abonnée jusqu'à la date d'expiration fournie, avec le quota quotidien.
+- Étant donné un essai annulé ou un abonnement expiré, alors refus « abonnement requis ».
 
 ### US4 (P3) : service exploitable
 - État du service et de sa base consultable sans jeton.
@@ -52,12 +56,14 @@ l'app ne rend plus l'essai (aujourd'hui : drapeau UserDefaults).
 - FR-2206 : consommation atomique : jamais lecture puis écriture ; N demandes simultanées pour R unités
   restantes : exactement min(N, R) acceptées.
 - FR-2207 : lecture du quota restant par type, sans consommation.
-- FR-2208 : droits par installation : `trial` (essai disponible), `trial_used`, `subscribed` (date
-  d'expiration). Abonnement expiré : traité comme `trial_used`.
-- FR-2209 : consommation d'une unité IA : autorisée si `subscribed`, ou si `trial` (l'essai passe alors à
-  `trial_used`, dans la même opération que la consommation) ; sinon refus « abonnement requis ».
-- FR-2210 : preuve d'achat vérifiée par un vérificateur interchangeable. Ce lot : vérificateur de dev seul
-  (accepte une preuve de test), activé par la configuration, jamais en production.
+- FR-2208 : droits par installation : `none` (aucune preuve) ou `subscribed` (date d'expiration). Essai
+  gratuit = offre d'introduction Apple d'une semaine, vérifiée comme un abonnement (spec 017 FR-1715) ;
+  aucun essai géré par le serveur. Abonnement expiré : traité comme `none`.
+- FR-2209 : consommation d'une unité IA : autorisée seulement si `subscribed` non expiré, dans la même
+  opération que la lecture du droit ; sinon refus « abonnement requis ».
+- FR-2210 : preuve d'achat (essai ou abonnement payant) vérifiée par un vérificateur interchangeable. Ce lot :
+  vérificateur de dev seul (accepte une preuve de test, essai de 7 jours compris), activé par la configuration,
+  jamais en production.
 - FR-2211 : erreurs : corps JSON `{"error": {"code", "message"}}` ; codes stables : `unauthenticated`,
   `invalid_request`, `quota_exceeded`, `subscription_required`, `not_found`, `internal`. Aucune trace
   interne dans le message.
@@ -75,15 +81,17 @@ l'app ne rend plus l'essai (aujourd'hui : drapeau UserDefaults).
 
 ## Critères de succès
 - SC-2201 : 1 000 demandes simultanées à la limite : jamais une unité de plus que la limite acceptée.
-- SC-2202 : essai gratuit d'une installation : une seule action IA acceptée, quel que soit le nombre de
-  demandes simultanées.
+- SC-2202 : installation sans abonnement : aucune action IA acceptée, quel que soit le nombre de demandes
+  simultanées.
 - SC-2203 : lecture ou consommation du quota : réponse en moins de 100 ms sur le VPS, base comprise, au 95e
   centile.
 - SC-2204 : aucun jeton en clair dans la base ni dans les traces.
 
 ## Hypothèses
-- Essai lié à l'installation, pas à l'appareil. Jeton gardé par l'app dans le Keychain (survit en pratique à
-  la désinstallation, sans garantie) ; jeton perdu = nouvel essai. Lien à l'appareil (App Attest, DeviceCheck) : lot suivant, à vérifier avec un compte gratuit.
+- Essai lié à l'identifiant Apple (offre d'introduction), pas à l'installation : jeton perdu = nouvelle
+  installation, à rattacher en renvoyant la preuve d'achat, sans nouvel essai.
+- Offre d'introduction configurable seulement avec un compte payant ; testable en local avec un fichier de
+  configuration StoreKit. Lien à l'appareil (App Attest, DeviceCheck) : lot suivant, à vérifier avec un compte gratuit.
 - Vérification réelle des achats (App Store Server API) : lot suivant, compte payant probablement requis.
 - Une seule instance du serveur, une seule base.
 

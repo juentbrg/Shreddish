@@ -10,7 +10,7 @@ pub struct Model {
     /// SHA-256 du jeton ; jeton jamais stocké en clair.
     #[sea_orm(unique)]
     pub token_hash: Vec<u8>,
-    /// `trial`, `trial_used` ou `subscribed`.
+    /// `none` ou `subscribed`.
     pub entitlement: String,
     pub subscription_expires_at: Option<DateTimeUtc>,
     pub created_at: DateTimeUtc,

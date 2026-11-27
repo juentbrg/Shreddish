@@ -1,4 +1,4 @@
-//! API Shreddish, lot 1 (spec 022) : installations anonymes, quota IA, droits d'accès.
+//! API Shreddish : installations anonymes, quota IA, droits d'accès (spec 022), proxy OpenAI (spec 023).
 
 pub mod auth;
 pub mod config;
@@ -6,8 +6,10 @@ pub mod entities;
 pub mod entitlement;
 pub mod error;
 pub mod migration;
+pub mod prompts;
 pub mod quota;
 mod routes;
+pub mod ticket;
 
 use std::sync::Arc;
 
@@ -19,7 +21,7 @@ use tower_http::request_id::{MakeRequestUuid, PropagateRequestIdLayer, SetReques
 use tower_http::trace::{DefaultOnResponse, TraceLayer};
 use tracing::Level;
 
-use crate::config::Limits;
+use crate::config::{Limits, OpenAiConfig, TicketPolicy};
 use crate::entitlement::Verifier;
 use crate::error::AppError;
 
@@ -27,7 +29,27 @@ use crate::error::AppError;
 pub struct AppState {
     pub db: DatabaseConnection,
     pub limits: Limits,
+    pub tickets: TicketPolicy,
+    /// Absent : service IA coupé (spec 023 FR-2308).
+    pub ai: Option<AiClient>,
     pub verifier: Arc<dyn Verifier>,
+}
+
+/// Client OpenAI côté serveur.
+#[derive(Clone)]
+pub struct AiClient {
+    pub config: OpenAiConfig,
+    pub http: reqwest::Client,
+}
+
+impl AiClient {
+    pub fn new(config: OpenAiConfig) -> Result<Self, reqwest::Error> {
+        let http = reqwest::Client::builder()
+            .connect_timeout(std::time::Duration::from_secs(10))
+            .read_timeout(config.timeout)
+            .build()?;
+        Ok(Self { config, http })
+    }
 }
 
 const REQUEST_ID: HeaderName = HeaderName::from_static("x-request-id");
@@ -40,6 +62,7 @@ pub fn router(state: AppState) -> Router {
         .merge(routes::installs::router())
         .merge(routes::quota::router())
         .merge(routes::entitlements::router())
+        .merge(routes::ai::router())
         .fallback(|| async { AppError::NotFound })
         .with_state(state)
         .layer(PropagateRequestIdLayer::new(REQUEST_ID))

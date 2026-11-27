@@ -1,134 +1,18 @@
-//! Tests d'intégration sur vrai Postgres (`TEST_DATABASE_URL`, base de `compose.yaml`). Spec 022.
+//! Tests d'intégration du lot 1 (spec 022).
 
-use std::sync::{Arc, OnceLock};
+mod common;
 
-use axum::Router;
 use axum::body::Body;
 use axum::http::{Method, Request, StatusCode};
 use chrono::{Duration, Utc};
+use common::*;
 use futures::future::join_all;
-use http_body_util::BodyExt;
-use sea_orm::{ConnectionTrait, Database, DatabaseConnection, DbBackend, Statement};
-use sea_orm_migration::MigratorTrait;
-use serde_json::{Value, json};
-use shreddish_api::config::Limits;
-use shreddish_api::entitlement::DevVerifier;
+use sea_orm::{ConnectionTrait, DbBackend, Statement};
+use serde_json::json;
+use shreddish_api::config::TicketPolicy;
 use shreddish_api::error::AppError;
-use shreddish_api::migration::Migrator;
 use shreddish_api::quota::{self, Kind};
-use shreddish_api::{AppState, router};
 use tower::ServiceExt;
-use uuid::Uuid;
-
-const LIMITS: Limits = Limits {
-    week: 3,
-    meal: 30,
-    day: 10,
-    recipe: 50,
-};
-
-fn database_url() -> String {
-    dotenvy::from_filename(concat!(env!("CARGO_MANIFEST_DIR"), "/.env.example")).ok();
-    std::env::var("TEST_DATABASE_URL")
-        .expect("TEST_DATABASE_URL manquant : docker compose -f backend/compose.yaml up -d")
-}
-
-/// Migrations une seule fois par binaire de test, dans leur propre runtime.
-fn migrate_once() {
-    static DONE: OnceLock<()> = OnceLock::new();
-    DONE.get_or_init(|| {
-        std::thread::spawn(|| {
-            tokio::runtime::Runtime::new().unwrap().block_on(async {
-                let db = Database::connect(database_url()).await.unwrap();
-                Migrator::up(&db, None).await.unwrap();
-            });
-        })
-        .join()
-        .unwrap();
-    });
-}
-
-async fn setup() -> (Router, DatabaseConnection) {
-    migrate_once();
-    let db = Database::connect(database_url()).await.unwrap();
-    let state = AppState {
-        db: db.clone(),
-        limits: LIMITS,
-        verifier: Arc::new(DevVerifier),
-    };
-    (router(state), db)
-}
-
-async fn call(
-    app: &Router,
-    method: Method,
-    path: &str,
-    token: Option<&str>,
-    body: Option<Value>,
-) -> (StatusCode, Value) {
-    let (status, body, _) = call_full(app, method, path, token, body).await;
-    (status, body)
-}
-
-async fn call_full(
-    app: &Router,
-    method: Method,
-    path: &str,
-    token: Option<&str>,
-    body: Option<Value>,
-) -> (StatusCode, Value, axum::http::HeaderMap) {
-    let mut request = Request::builder().method(method).uri(path);
-    if let Some(token) = token {
-        request = request.header("authorization", format!("Bearer {token}"));
-    }
-    let request = match body {
-        Some(body) => request
-            .header("content-type", "application/json")
-            .body(Body::from(body.to_string())),
-        None => request.body(Body::empty()),
-    }
-    .unwrap();
-    let response = app.clone().oneshot(request).await.unwrap();
-    let (status, headers) = (response.status(), response.headers().clone());
-    let bytes = response.into_body().collect().await.unwrap().to_bytes();
-    (
-        status,
-        serde_json::from_slice(&bytes).unwrap_or(Value::Null),
-        headers,
-    )
-}
-
-async fn register(app: &Router) -> (Uuid, String) {
-    let (status, body) = call(app, Method::POST, "/v1/installs", None, None).await;
-    assert_eq!(status, StatusCode::CREATED);
-    (
-        body["install_id"].as_str().unwrap().parse().unwrap(),
-        body["token"].as_str().unwrap().to_string(),
-    )
-}
-
-async fn subscribe(app: &Router, token: &str) {
-    let proof = json!({ "proof": "dev-subscription:30" });
-    let (status, _) = call(
-        app,
-        Method::POST,
-        "/v1/entitlements/verify",
-        Some(token),
-        Some(proof),
-    )
-    .await;
-    assert_eq!(status, StatusCode::OK);
-}
-
-async fn exec(db: &DatabaseConnection, sql: &str, id: Uuid) {
-    db.execute(Statement::from_sql_and_values(
-        DbBackend::Postgres,
-        sql,
-        [id.into()],
-    ))
-    .await
-    .unwrap();
-}
 
 // US1 : identité anonyme
 
@@ -260,20 +144,43 @@ async fn quota_resets_next_utc_day() {
     subscribe(&app, &token).await;
     let today = Utc::now();
     for _ in 0..3 {
-        quota::consume(&db, id, Kind::Week, &LIMITS, today)
-            .await
-            .unwrap();
+        quota::consume(
+            &db,
+            id,
+            Kind::Week,
+            &LIMITS,
+            &TicketPolicy::default(),
+            today,
+        )
+        .await
+        .unwrap();
     }
     assert!(matches!(
-        quota::consume(&db, id, Kind::Week, &LIMITS, today).await,
+        quota::consume(
+            &db,
+            id,
+            Kind::Week,
+            &LIMITS,
+            &TicketPolicy::default(),
+            today
+        )
+        .await,
         Err(AppError::QuotaExceeded { .. })
     ));
     let tomorrow = quota::quota_day(today).1;
     assert_eq!(
-        quota::consume(&db, id, Kind::Week, &LIMITS, tomorrow)
-            .await
-            .unwrap()
-            .used,
+        quota::consume(
+            &db,
+            id,
+            Kind::Week,
+            &LIMITS,
+            &TicketPolicy::default(),
+            tomorrow
+        )
+        .await
+        .unwrap()
+        .0
+        .used,
         1
     );
 }
@@ -287,7 +194,17 @@ async fn concurrent_consumes_never_exceed_limit() {
     let now = Utc::now();
     let results = join_all((0..1000).map(|_| {
         let db = db.clone();
-        tokio::spawn(async move { quota::consume(&db, id, Kind::Recipe, &LIMITS, now).await })
+        tokio::spawn(async move {
+            quota::consume(
+                &db,
+                id,
+                Kind::Recipe,
+                &LIMITS,
+                &TicketPolicy::default(),
+                now,
+            )
+            .await
+        })
     }))
     .await;
     let accepted = results.iter().filter(|r| matches!(r, Ok(Ok(_)))).count();
@@ -305,22 +222,29 @@ async fn concurrent_consumes_never_exceed_limit() {
 // US3 : droits
 
 #[tokio::test]
-async fn trial_allows_exactly_one_action_even_concurrently() {
-    // SC-2202.
+async fn install_without_proof_gets_no_action_even_concurrently() {
+    // SC-2202 : pas d'essai côté serveur (FR-2208).
     let (app, db) = setup().await;
     let (id, token) = register(&app).await;
+    assert_eq!(
+        call(&app, Method::GET, "/v1/quota", Some(&token), None)
+            .await
+            .1["entitlement"],
+        "none"
+    );
     let now = Utc::now();
     let results = join_all((0..20).map(|_| {
         let db = db.clone();
-        tokio::spawn(async move { quota::consume(&db, id, Kind::Meal, &LIMITS, now).await })
+        tokio::spawn(async move {
+            quota::consume(&db, id, Kind::Meal, &LIMITS, &TicketPolicy::default(), now).await
+        })
     }))
     .await;
-    let accepted = results.iter().filter(|r| matches!(r, Ok(Ok(_)))).count();
     let refused = results
         .iter()
         .filter(|r| matches!(r, Ok(Err(AppError::SubscriptionRequired))))
         .count();
-    assert_eq!((accepted, refused), (1, 19));
+    assert_eq!(refused, 20);
 
     let (status, body) = call(
         &app,
@@ -332,12 +256,44 @@ async fn trial_allows_exactly_one_action_even_concurrently() {
     .await;
     assert_eq!(status, StatusCode::PAYMENT_REQUIRED);
     assert_eq!(body["error"]["code"], "subscription_required");
-    assert_eq!(
-        call(&app, Method::GET, "/v1/quota", Some(&token), None)
+}
+
+#[tokio::test]
+async fn seven_day_trial_proof_grants_quota_until_expiry() {
+    // Offre d'introduction Apple d'une semaine = abonnement actif (FR-2208, FR-2210).
+    let (app, db) = setup().await;
+    let (id, token) = register(&app).await;
+    let proof = json!({ "proof": "dev-subscription:7" });
+    let (status, body) = call(
+        &app,
+        Method::POST,
+        "/v1/entitlements/verify",
+        Some(&token),
+        Some(proof),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["entitlement"], "subscribed");
+
+    let now = Utc::now();
+    assert!(
+        quota::consume(&db, id, Kind::Week, &LIMITS, &TicketPolicy::default(), now)
             .await
-            .1["entitlement"],
-        "trial_used"
+            .is_ok()
     );
+    let in_eight_days = now + Duration::days(8);
+    assert!(matches!(
+        quota::consume(
+            &db,
+            id,
+            Kind::Week,
+            &LIMITS,
+            &TicketPolicy::default(),
+            in_eight_days
+        )
+        .await,
+        Err(AppError::SubscriptionRequired)
+    ));
 }
 
 #[tokio::test]
@@ -364,7 +320,7 @@ async fn expired_subscription_is_refused() {
         call(&app, Method::GET, "/v1/quota", Some(&token), None)
             .await
             .1["entitlement"],
-        "trial_used"
+        "none"
     );
 }
 

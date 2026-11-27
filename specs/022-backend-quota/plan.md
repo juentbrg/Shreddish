@@ -17,7 +17,7 @@
 
 ## Modèle de données
 - `installs` : `id` uuid PK, `token_hash` bytea unique (SHA-256 du jeton), `entitlement` text
-  (`trial` | `trial_used` | `subscribed`), `subscription_expires_at` timestamptz null, `created_at`,
+  (`none` | `subscribed`), `subscription_expires_at` timestamptz null, `created_at`,
   `revoked_at` null.
 - `ai_usage` : `install_id` FK (cascade), `day` date (UTC), `kind` text, `count` int ; PK
   (`install_id`, `day`, `kind`).
@@ -25,11 +25,10 @@
 ## Consommation atomique (FR-2206, FR-2209)
 Une transaction :
 1. `SELECT … FROM installs WHERE id = $1 FOR UPDATE` : sérialise les demandes d'une installation.
-2. Droit : `subscribed` non expiré, sinon `trial`, sinon refus `subscription_required`.
+2. Droit : `subscribed` non expiré, sinon refus `subscription_required`.
 3. `INSERT INTO ai_usage … VALUES (…, 1) ON CONFLICT DO UPDATE SET count = ai_usage.count + 1
    WHERE ai_usage.count < $limit RETURNING count` : aucune ligne = `quota_exceeded`. Limite 0 : refus avant.
-4. Essai : `UPDATE installs SET entitlement = 'trial_used'`.
-5. Commit.
+4. Commit.
 
 ## API (`/v1`, JSON)
 - `POST /v1/installs` → 201 `{install_id, token}`.
@@ -37,7 +36,7 @@ Une transaction :
 - `POST /v1/quota/consume` `{kind}` → 200 `{kind, limit, used, remaining}` ; 429 `quota_exceeded` ;
   402 `subscription_required`.
 - `POST /v1/entitlements/verify` `{proof}` → 200 `{entitlement, expires_at}`. Vérificateur dev : preuve
-  `dev-subscription:<jours>`.
+  `dev-subscription:<jours>` (essai : `dev-subscription:7`).
 - `GET /health` → 200 / 503.
 - Erreurs : `{"error": {"code", "message"}}` ; 401, 400, 402, 404, 429, 500.
 

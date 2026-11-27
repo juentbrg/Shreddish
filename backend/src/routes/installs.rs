@@ -29,7 +29,7 @@ async fn register(State(state): State<AppState>) -> ApiResult<(StatusCode, Json<
     let install = installs::ActiveModel {
         id: Set(Uuid::new_v4()),
         token_hash: Set(token_hash(&token)),
-        entitlement: Set("trial".into()),
+        entitlement: Set("none".into()),
         subscription_expires_at: Set(None),
         created_at: Set(Utc::now()),
         revoked_at: Set(None),

@@ -2,6 +2,7 @@
 
 use std::env;
 use std::net::SocketAddr;
+use std::time::Duration;
 
 use crate::quota::Kind;
 
@@ -20,7 +21,8 @@ impl Default for Limits {
             week: 3,
             meal: 30,
             day: 10,
-            recipe: 60,
+            // 3 semaines × 35 recettes, plus les recettes ouvertes à la main (spec 023 FR-2310).
+            recipe: 120,
         }
     }
 }
@@ -32,6 +34,50 @@ impl Limits {
             Kind::Meal => self.meal,
             Kind::Day => self.day,
             Kind::Recipe => self.recipe,
+        }
+    }
+}
+
+/// Tickets d'appels IA (spec 023 FR-2302) : plafond d'appels par type d'action, durée de vie.
+#[derive(Clone, Copy, Debug)]
+pub struct TicketPolicy {
+    pub calls: Limits,
+    pub ttl: Duration,
+}
+
+impl Default for TicketPolicy {
+    fn default() -> Self {
+        Self {
+            calls: Limits {
+                week: 150,
+                meal: 8,
+                day: 15,
+                recipe: 1,
+            },
+            ttl: Duration::from_secs(15 * 60),
+        }
+    }
+}
+
+/// Appels OpenAI côté serveur (spec 023). Absente : service IA coupé (FR-2308).
+#[derive(Clone, Debug)]
+pub struct OpenAiConfig {
+    pub api_key: String,
+    pub base_url: String,
+    pub model: String,
+    pub max_output_tokens: i32,
+    pub timeout: Duration,
+}
+
+impl OpenAiConfig {
+    /// Valeurs par défaut, clé et URL fournies (tests).
+    pub fn new(api_key: impl Into<String>, base_url: impl Into<String>) -> Self {
+        Self {
+            api_key: api_key.into(),
+            base_url: base_url.into(),
+            model: "gpt-6-luna".into(),
+            max_output_tokens: 16_000,
+            timeout: Duration::from_secs(120),
         }
     }
 }
@@ -48,6 +94,8 @@ pub struct Config {
     pub database_url: String,
     pub bind_addr: SocketAddr,
     pub limits: Limits,
+    pub tickets: TicketPolicy,
+    pub openai: Option<OpenAiConfig>,
     pub verifier: VerifierKind,
 }
 
@@ -65,6 +113,35 @@ impl Config {
             day: limit("QUOTA_DAY", defaults.day)?,
             recipe: limit("QUOTA_RECIPE", defaults.recipe)?,
         };
+        let ticket_defaults = TicketPolicy::default();
+        let tickets = TicketPolicy {
+            calls: Limits {
+                week: limit("TICKET_CALLS_WEEK", ticket_defaults.calls.week)?,
+                meal: limit("TICKET_CALLS_MEAL", ticket_defaults.calls.meal)?,
+                day: limit("TICKET_CALLS_DAY", ticket_defaults.calls.day)?,
+                recipe: limit("TICKET_CALLS_RECIPE", ticket_defaults.calls.recipe)?,
+            },
+            ttl: Duration::from_secs(60 * limit("TICKET_TTL_MINUTES", 15)? as u64),
+        };
+        let openai = match env::var("OPENAI_API_KEY")
+            .ok()
+            .filter(|key| !key.is_empty())
+        {
+            None => None,
+            Some(key) => {
+                let defaults =
+                    OpenAiConfig::new(key, var_or("OPENAI_BASE_URL", "https://api.openai.com/v1"));
+                Some(OpenAiConfig {
+                    model: var_or("OPENAI_MODEL", &defaults.model),
+                    max_output_tokens: limit(
+                        "OPENAI_MAX_OUTPUT_TOKENS",
+                        defaults.max_output_tokens,
+                    )?,
+                    timeout: Duration::from_secs(limit("OPENAI_TIMEOUT_SECONDS", 120)? as u64),
+                    ..defaults
+                })
+            }
+        };
         let verifier = match var_or("ENTITLEMENT_VERIFIER", "none").as_str() {
             "dev" => VerifierKind::Dev,
             "none" => VerifierKind::None,
@@ -77,6 +154,8 @@ impl Config {
             database_url,
             bind_addr,
             limits,
+            tickets,
+            openai,
             verifier,
         })
     }

@@ -10,6 +10,7 @@ use crate::AppState;
 use crate::auth::AuthInstall;
 use crate::error::{ApiJson, ApiResult};
 use crate::quota::{self, Kind, Snapshot, Usage};
+use crate::ticket::Ticket;
 
 #[derive(Deserialize)]
 struct ConsumeRequest {
@@ -21,6 +22,7 @@ struct Consumed {
     kind: Kind,
     #[serde(flatten)]
     usage: Usage,
+    ticket: Ticket,
 }
 
 pub fn router() -> Router<AppState> {
@@ -43,16 +45,18 @@ async fn consume(
     AuthInstall(install): AuthInstall,
     ApiJson(request): ApiJson<ConsumeRequest>,
 ) -> ApiResult<Json<Consumed>> {
-    let usage = quota::consume(
+    let (usage, ticket) = quota::consume(
         &state.db,
         install.id,
         request.kind,
         &state.limits,
+        &state.tickets,
         Utc::now(),
     )
     .await?;
     Ok(Json(Consumed {
         kind: request.kind,
         usage,
+        ticket,
     }))
 }

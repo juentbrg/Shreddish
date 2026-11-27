@@ -27,6 +27,18 @@ pub enum AppError {
     },
     #[error("Ressource introuvable.")]
     NotFound,
+    #[error("Ticket d'appels inconnu.")]
+    TicketInvalid,
+    #[error("Ticket d'appels expiré.")]
+    TicketExpired,
+    #[error("Ticket d'appels épuisé.")]
+    TicketExhausted,
+    #[error("Service IA indisponible.")]
+    AiUnavailable,
+    #[error("Le service IA a renvoyé une erreur.")]
+    UpstreamError,
+    #[error("Le service IA n'a pas répondu à temps.")]
+    UpstreamTimeout,
     /// Détail journalisé, jamais renvoyé au client.
     #[error("Erreur interne.")]
     Internal(String),
@@ -40,6 +52,12 @@ impl AppError {
             Self::SubscriptionRequired => "subscription_required",
             Self::QuotaExceeded { .. } => "quota_exceeded",
             Self::NotFound => "not_found",
+            Self::TicketInvalid => "ticket_invalid",
+            Self::TicketExpired => "ticket_expired",
+            Self::TicketExhausted => "ticket_exhausted",
+            Self::AiUnavailable => "ai_unavailable",
+            Self::UpstreamError => "upstream_error",
+            Self::UpstreamTimeout => "upstream_timeout",
             Self::Internal(_) => "internal",
         }
     }
@@ -51,6 +69,12 @@ impl AppError {
             Self::SubscriptionRequired => StatusCode::PAYMENT_REQUIRED,
             Self::QuotaExceeded { .. } => StatusCode::TOO_MANY_REQUESTS,
             Self::NotFound => StatusCode::NOT_FOUND,
+            Self::TicketInvalid => StatusCode::FORBIDDEN,
+            Self::TicketExpired => StatusCode::GONE,
+            Self::TicketExhausted => StatusCode::TOO_MANY_REQUESTS,
+            Self::AiUnavailable => StatusCode::SERVICE_UNAVAILABLE,
+            Self::UpstreamError => StatusCode::BAD_GATEWAY,
+            Self::UpstreamTimeout => StatusCode::GATEWAY_TIMEOUT,
             Self::Internal(_) => StatusCode::INTERNAL_SERVER_ERROR,
         }
     }

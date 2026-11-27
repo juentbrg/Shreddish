@@ -57,7 +57,10 @@ mention « option » ou « à décider ».
 ### Abonnement
 - FR-1715 Abonnement StoreKit 2 : essai gratuit, mensuel et annuel, restauration des achats, gestion
   depuis l'app. Quota d'appels IA par utilisateur et par jour, côté serveur. Pas d'offre gratuite
-  permanente : essai de 7 jours puis abonnement. Un abonnement couvre tout le foyer. Offre de lancement :
+  permanente : essai de 7 jours puis abonnement. Essai = offre d'introduction gratuite d'une semaine de
+  l'abonnement (App Store Connect) : une fois par identifiant Apple, éligibilité gérée par Apple, abonnement
+  payant à la fin sauf annulation ; pendant l'essai, accès complet, quota compris (précisé le 2026-11-27,
+  spec 022 FR-2208). Un abonnement couvre tout le foyer. Offre de lancement :
   première année annuelle à prix réduit pour les premiers abonnés. **Prix : 9,99 € / mois, 69,99 € / an,
   lancement 49,99 € la première année.**
 
@@ -90,7 +93,9 @@ Compte Apple Developer gratuit : iCloud et vente App Store bloqués tant qu'il n
     - export RGPD incomplet (mensurations, ingrédients, macros) ;
     - grossesse mentionnée seulement à l'accueil et dans les CGU.
   - FR-1715 :
-    - accès gratuit consommé par la première action IA, quelle qu'elle soit ;
+    - accès gratuit consommé par la première action IA, quelle qu'elle soit, au lieu de l'offre
+      d'introduction de 7 jours (non configurable sans compte payant ; testable en local avec un fichier
+      de configuration StoreKit) ;
     - drapeau en UserDefaults, gardé par « Supprimer toutes mes données » (pas de nouvel essai).
   - FR-1717 : seuls noms et nombre de plats en direct.
   - FR-1718 : carte progrès sans courbe ; delta de poids affiché par défaut.

@@ -5,7 +5,7 @@ use sea_orm_migration::MigratorTrait;
 use shreddish_api::config::{Config, VerifierKind};
 use shreddish_api::entitlement::{DevVerifier, NoVerifier, Verifier};
 use shreddish_api::migration::Migrator;
-use shreddish_api::{AppState, router};
+use shreddish_api::{AiClient, AppState, router};
 use tracing_subscriber::EnvFilter;
 
 #[tokio::main]
@@ -23,9 +23,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
     let listener = tokio::net::TcpListener::bind(config.bind_addr).await?;
     tracing::info!("écoute sur {}", config.bind_addr);
+    let ai = config.openai.clone().map(AiClient::new).transpose()?;
+    if ai.is_none() {
+        tracing::warn!("OPENAI_API_KEY absent : service IA coupé");
+    }
     let state = AppState {
         db,
         limits: config.limits,
+        tickets: config.tickets,
+        ai,
         verifier,
     };
     axum::serve(listener, router(state))

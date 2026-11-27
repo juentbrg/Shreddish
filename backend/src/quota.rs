@@ -10,10 +10,11 @@ use sea_orm::{
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::config::Limits;
+use crate::config::{Limits, TicketPolicy};
 use crate::entities::{ai_usage, installs};
 use crate::entitlement::Entitlement;
 use crate::error::AppError;
+use crate::ticket::{self, Ticket};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -26,6 +27,10 @@ pub enum Kind {
 
 impl Kind {
     pub const ALL: [Self; 4] = [Self::Week, Self::Meal, Self::Day, Self::Recipe];
+
+    pub fn parse(value: &str) -> Option<Self> {
+        Self::ALL.into_iter().find(|kind| kind.as_str() == value)
+    }
 
     pub fn as_str(self) -> &'static str {
         match self {
@@ -103,14 +108,16 @@ pub async fn snapshot(
 }
 
 /// Consomme une action IA : droit puis quota, en une transaction ; l'installation est verrouillée pour
-/// sérialiser ses demandes (FR-2206). Essai : passe à `trial_used` dans la même transaction (FR-2209).
+/// sérialiser ses demandes (FR-2206). Abonnement exigé (FR-2209). Ticket d'appels créé dans la même
+/// transaction (spec 023 FR-2301).
 pub async fn consume(
     db: &DatabaseConnection,
     install_id: Uuid,
     kind: Kind,
     limits: &Limits,
+    tickets: &TicketPolicy,
     now: DateTime<Utc>,
-) -> Result<Usage, AppError> {
+) -> Result<(Usage, Ticket), AppError> {
     let (day, resets_at) = quota_day(now);
     let limit = limits.of(kind);
     let txn = db.begin().await?;
@@ -128,7 +135,7 @@ pub async fn consume(
         install.try_get::<Option<DateTime<Utc>>>("", "subscription_expires_at")?,
         now,
     );
-    if entitlement == Entitlement::TrialUsed {
+    if entitlement != Entitlement::Subscribed {
         return Err(AppError::SubscriptionRequired);
     }
     let incremented = if limit > 0 {
@@ -167,14 +174,8 @@ pub async fn consume(
             resets_at,
         });
     };
-    if entitlement == Entitlement::Trial {
-        txn.execute(Statement::from_sql_and_values(
-            DatabaseBackend::Postgres,
-            "UPDATE installs SET entitlement = 'trial_used' WHERE id = $1",
-            [install_id.into()],
-        ))
-        .await?;
-    }
+    let used = row.try_get::<i32>("", "count")?;
+    let ticket = ticket::create(&txn, install_id, kind, tickets, now).await?;
     txn.commit().await?;
-    Ok(Usage::new(limit, row.try_get::<i32>("", "count")?))
+    Ok((Usage::new(limit, used), ticket))
 }

@@ -24,3 +24,9 @@
 ## Phase 5 : US4 exploitation (P3)
 - [x] T013 Test : forme des erreurs, en-tête d'id de requête, /health
 - [x] T014 README backend
+
+## Phase 6 : essai = offre d'introduction Apple (révision du 2026-11-27)
+- [x] T015 Tests : installation sans preuve refusée (concurrence, SC-2202), preuve d'essai de 7 jours acceptée
+  puis expirée refusée
+- [x] T016 Migration : `entitlement` `trial` et `trial_used` → `none`, défaut `none`, contrainte mise à jour
+- [x] T017 `entitlement.rs`, `quota.rs` : plus d'état d'essai, consommation seulement si abonné (FR-2208, FR-2209)
