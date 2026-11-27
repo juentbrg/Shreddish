@@ -14,6 +14,16 @@ chers, rapides), journal alimentaire, liste de courses, suivi du poids.
 
 ## Structure
 
+Monorepo : app iOS, app Android (à venir), backend, specs communes.
+
+```text
+ios/                          # app iPhone + Apple Watch (détail ci-dessous)
+android/                      # app Android, à venir
+backend/                      # API Rust (axum, SeaORM, Postgres)
+specs/                        # specs Spec Kit, communes à toutes les plateformes
+tools/                        # communs : pipelines de données (Ciqual, Open Prices), icône
+```
+
 ```text
 ios/
 ├── project.yml               # XcodeGen (Shreddish.xcodeproj non versionné)
@@ -24,7 +34,7 @@ ios/
 ├── AppTests/                 # génération avec transport simulé
 ├── UITests/                  # parcours, IA simulée (`-uitest`)
 ├── Config/                   # App.xcconfig, Secrets.example.xcconfig
-└── scripts/make-app-icon.swift
+└── scripts/backup/           # sauvegarde / restauration des données de l'iPhone
 ```
 
 ## Build et tests
@@ -44,6 +54,23 @@ xcodebuild test -project ios/Shreddish.xcodeproj -scheme Shreddish-UITests \
 ```
 
 SwiftLint tourne en pré-build (`ios/.swiftlint.yml`).
+
+## Backend
+
+API Rust (axum, SeaORM, Postgres), pour le VPS. Lot 1 (spec 022) : installations anonymes, quota IA quotidien,
+droits d'accès (essai, abonnement). La clé OpenAI reste dans l'app tant que le proxy n'est pas fait
+(constitution, principe III) : l'app iOS n'appelle pas encore le serveur.
+
+```bash
+docker compose -f backend/compose.yaml up -d     # Postgres local, port 5433 (bases shreddish, shreddish_test)
+cp backend/.env.example backend/.env
+cd backend && cargo run                          # http://127.0.0.1:8080, migrations au démarrage
+cargo test                                       # intégration sur vrai Postgres (TEST_DATABASE_URL)
+```
+
+Routes : `GET /health`, `POST /v1/installs`, `GET /v1/quota`, `POST /v1/quota/consume` (`{"kind": "week" |
+"meal" | "day" | "recipe"}`), `POST /v1/entitlements/verify` (dev : `{"proof": "dev-subscription:30"}`).
+Limites dans `.env` (`QUOTA_*`) ; `ENTITLEMENT_VERIFIER=dev` refusé si `APP_ENV=production`.
 
 ## Clé API OpenAI
 
@@ -81,5 +108,5 @@ Sans compte Apple Developer payant, la cible `ShreddishWatch` ne se signe pas en
 `Shreddish` en dépend (`ios/project.yml`) : pour un build iPhone seul, retirer la dépendance
 `- target: ShreddishWatch`, puis regénérer avec XcodeGen.
 
-Sauvegarde / restauration des données de l'iPhone (devicectl, hors dépôt) : `tools/backup/backup.sh [dossier]`,
-`tools/backup/restore.sh <dossier>` ; autre appareil : `DEVICE=<UDID>`.
+Sauvegarde / restauration des données de l'iPhone (devicectl, hors dépôt) : `ios/scripts/backup/backup.sh [dossier]`,
+`ios/scripts/backup/restore.sh <dossier>` ; autre appareil : `DEVICE=<UDID>`.

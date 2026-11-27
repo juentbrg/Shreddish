@@ -19,3 +19,12 @@ ios/*.xcodeproj/
 
 # Local secrets (developer OpenAI key, research R13)
 ios/Config/Secrets.xcconfig*
+
+# Backend Rust
+backend/target/
+backend/.env
+
+# Android
+android/.gradle/
+android/local.properties
+android/**/build/

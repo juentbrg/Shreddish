@@ -1,17 +1,3 @@
-<!--
-Sync Impact Report
-- Version : 1.0.0 → 2.0.0 (MAJOR : principe I redéfini pour la spec 017, commercialisation)
-- Principes modifiés :
-  - I. Usage personnel d'abord → I. Personnel d'abord, ouvrable à d'autres
-  - III. Données locales et secrets protégés : iCloud prévu (FR-1701), clé embarquée bornée à
-    l'usage perso
-- Sections modifiées : Contraintes techniques (iPhone + Apple Watch, 5 langues, mention médicale,
-  appels IA automatiques bornés, compte Apple gratuit) ; Workflow (specs a posteriori)
-- Sections ajoutées : aucune
-- Sections retirées : aucune
-- TODO différés : aucun
--->
-
 # Shreddish Constitution
 
 ## Core Principles
@@ -20,8 +6,10 @@ Sync Impact Report
 
 Shreddish (shred + dish) sert d'abord son auteur, sur son iPhone. Il peut être ouvert à
 d'autres via l'App Store (spec 017 : foyer, régimes, abonnement).
-- Aucun compte utilisateur ni backend propre tant qu'une exigence ne l'impose pas
-  (ex. serveur de clé IA, principe III).
+- Aucun compte utilisateur tant qu'une exigence ne l'impose pas.
+- Backend propre (`backend/`) limité à ce que l'app ne peut pas faire seule : clé IA, quota IA,
+  vérification des abonnements (principe III, spec 017 FR-1715). Jamais de stockage des données
+  de santé ou du journal.
 - Chaque fonctionnalité MUST servir directement l'objectif : manger simple, pas cher, rapide,
   aligné sur l'objectif physique (sèche, prise de masse, recomposition).
 - Aucune fonctionnalité sociale. Le foyer (plusieurs personnes, un appareil) est permis.
@@ -49,7 +37,8 @@ d'autres via l'App Store (spec 017 : foyer, régimes, abonnement).
 
 ### IV. Simplicité (YAGNI)
 
-- Stack Apple native, dépendances tierces seulement si justifiées dans le plan.
+- Stack native par plateforme : Swift / SwiftUI (iOS, watchOS), Kotlin (Android), Rust avec axum
+  et SeaORM sur Postgres (backend). Dépendances tierces seulement si justifiées dans le plan.
 - Pas d'abstraction spéculative : un seul fournisseur IA tant qu'un second n'est pas demandé.
 - Toute complexité ajoutée MUST être justifiée dans la section « Complexity Tracking » du plan.
 
@@ -62,7 +51,8 @@ d'autres via l'App Store (spec 017 : foyer, régimes, abonnement).
 
 ## Contraintes techniques
 
-- Plateformes : iPhone (iOS 26+) et app compagnon Apple Watch.
+- Plateformes : iPhone (iOS 26+) et app compagnon Apple Watch ; Android à venir ; backend sur VPS.
+- Calculs du principe II identiques sur chaque plateforme, mêmes valeurs de référence dans les tests.
 - Langues : français (référence), anglais, espagnol, allemand, italien. Noms d'ingrédients en
   français (tables Ciqual et prix France).
 - Mention claire dans l'app : « Estimations, pas un avis médical. »
@@ -75,6 +65,7 @@ d'autres via l'App Store (spec 017 : foyer, régimes, abonnement).
 ## Workflow de développement
 
 - Flux Spec Kit : constitution → specify → clarify (si besoin) → plan → tasks → implement.
+- Monorepo : `ios/`, `android/`, `backend/`, `tools/`. Specs communes à toutes les plateformes.
 - Chaque feature : spec dans `specs/NNN-nom/`, user stories priorisées et testables seules.
 - Code écrit avant sa spec : spec rédigée a posteriori d'après le code, marquée comme telle.
 - Exigence remplacée par une spec plus récente : annotée en place (« Remplacée par … »), jamais
@@ -88,4 +79,4 @@ d'autres via l'App Store (spec 017 : foyer, régimes, abonnement).
   (MAJOR : principe retiré ou redéfini ; MINOR : principe ou section ajouté ; PATCH : wording).
 - Chaque plan (`/speckit-plan`) MUST passer le « Constitution Check » avant implémentation.
 
-**Version**: 2.0.0 | **Ratified**: 2026-11-11 | **Last Amended**: 2026-11-27
+**Version**: 2.1.0 | **Ratified**: 2026-11-11 | **Last Amended**: 2026-11-27
