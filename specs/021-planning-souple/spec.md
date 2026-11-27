@@ -55,7 +55,8 @@ annulation d'un remplacement, restes à écouler par jour, version surgelée des
 - FR-2114 : goût de chaque complément (texte libre, ex. « chocolat ») saisi dans les préférences, envoyé à l'IA
   et repris dans les recettes ; complément sucré jamais dans un plat salé.
 - FR-2115 : modèle OpenAI modifiable dans Réglages → Préférences repas (champ libre) ; ancien modèle par défaut
-  migré vers le nouveau.
+  migré vers le nouveau. — *Remplacée par spec 023 FR-2306 (2026-11-27) : champ retiré, modèle fixe
+  (`gpt-6-luna` dans l'app, configuration du serveur ensuite).*
 
 ### Design
 - FR-2116 : direction « Marché » : palette « Couleurs du marché », polices Bricolage Grotesque (titres) et

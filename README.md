@@ -57,9 +57,9 @@ SwiftLint tourne en pré-build (`ios/.swiftlint.yml`).
 
 ## Backend
 
-API Rust (axum, SeaORM, Postgres), pour le VPS. Lot 1 (spec 022) : installations anonymes, quota IA quotidien,
-droits d'accès (essai, abonnement). La clé OpenAI reste dans l'app tant que le proxy n'est pas fait
-(constitution, principe III) : l'app iOS n'appelle pas encore le serveur.
+API Rust (axum, SeaORM, Postgres), pour le VPS. Spec 022 : installations anonymes, quota IA quotidien, abonnement
+(essai = offre d'introduction Apple). Spec 023 : proxy OpenAI, une action consommée ouvre un ticket d'appels.
+L'app iOS n'appelle pas encore le serveur et garde sa clé de build.
 
 ```bash
 docker compose -f backend/compose.yaml up -d     # Postgres local, port 5433 (bases shreddish, shreddish_test)
@@ -69,8 +69,11 @@ cargo test                                       # intégration sur vrai Postgre
 ```
 
 Routes : `GET /health`, `POST /v1/installs`, `GET /v1/quota`, `POST /v1/quota/consume` (`{"kind": "week" |
-"meal" | "day" | "recipe"}`), `POST /v1/entitlements/verify` (dev : `{"proof": "dev-subscription:30"}`).
-Limites dans `.env` (`QUOTA_*`) ; `ENTITLEMENT_VERIFIER=dev` refusé si `APP_ENV=production`.
+"meal" | "day" | "recipe"}`, renvoie un ticket), `POST /v1/entitlements/verify` (dev : `{"proof":
+"dev-subscription:7"}`), `POST /v1/ai/responses` (en-tête `X-Shreddish-Ticket`, corps Responses API : seuls
+`instructions`, `input`, `text.format`, `stream` sont repris).
+Réglages dans `.env` (`QUOTA_*`, `TICKET_*`, `OPENAI_*`) ; `ENTITLEMENT_VERIFIER=dev` refusé si
+`APP_ENV=production`. Tests : OpenAI simulé, aucun appel facturé.
 
 ## Clé API OpenAI
 
@@ -79,7 +82,7 @@ Limites dans `.env` (`QUOTA_*`) ; `ENTITLEMENT_VERIFIER=dev` refusé si `APP_ENV
 - Usage perso seulement : une clé dans l'app est extractible. Ouverture à d'autres : serveur
   intermédiaire qui garde la clé.
 - Génération réelle (facturée) : `TEST_RUNNER_SHREDDISH_LIVE=1 xcodebuild test ... -only-testing:AppTests/LiveGenerationTests`.
-- Modèle par défaut : `gpt-6-luna`, modifiable dans Réglages → Préférences repas.
+- Modèle : `gpt-6-luna`, fixe (spec 023).
 
 ## Macros et prix embarqués
 

@@ -99,10 +99,9 @@ final class RecipeGenerator {
                 doses = SupplementPlacement.doses(supplements)
             }
         }
-        let model = preferences.aiModel.trimmingCharacters(in: .whitespaces)
         return Request(
             input: PromptBuilder.recipeInput(meal: meal.dto, supplementDoses: doses, preferences: languagePreferences(preferences)),
-            model: model.isEmpty ? AIConfig.defaultModel : model, apiKey: apiKey
+            model: AIConfig.defaultModel, apiKey: apiKey
         )
     }
 }

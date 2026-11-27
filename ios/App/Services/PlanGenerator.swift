@@ -44,7 +44,6 @@ final class PlanGenerator {
     private func context(profile: Profile, preferences: Preferences, portions: Double) throws(AIError) -> Context {
         guard let key = keyStore.read() else { throw .missingKey }
         guard let targets = profile.targets(clock: clock) else { throw .unexpected("Profil invalide") }
-        let model = preferences.aiModel.trimmingCharacters(in: .whitespaces)
         var promptPreferences = preferences.promptPreferences
         promptPreferences.trainingSessionsPerWeek = profile.training?.sessionsPerWeek
         promptPreferences.weeklyBudgetEur /= portions
@@ -54,7 +53,7 @@ final class PlanGenerator {
         return Context(
             apiKey: key, targets: targets, goal: profile.goal, preferences: promptPreferences,
             constraints: constraints,
-            model: model.isEmpty ? AIConfig.defaultModel : model,
+            model: AIConfig.defaultModel,
             resolver: NutritionResolver(cache: matchCache, supplements: preferences.ownedSupplementDetails),
             oil: Self.allowedOil(preferences.constraints(targets: targets.macros))
         )

@@ -3,7 +3,7 @@ import ShreddishCore
 
 enum AIConfig {
     static let baseURL = URL(string: "https://api.openai.com/v1")!
-    /// Modèle par défaut ; modifiable dans Préférences (research R4).
+    /// Modèle fixe (spec 023 FR-2306) ; plus de choix dans les Préférences.
     static let defaultModel = Preferences.defaultAIModel
 }
 

@@ -16,7 +16,6 @@ struct PreferencesView: View {
                 BudgetSection(preferences: preferences)
                 StoreSection(preferences: preferences)
                 FoodsSections(preferences: preferences)
-                ModelSection(preferences: preferences)
             }
         }
         .themedList()
@@ -420,23 +419,6 @@ private struct SupplementsSection: View {
         } footer: {
             ListFooter {
                 Text("Pour placer la collation protéinée.")
-            }
-        }
-    }
-}
-
-private struct ModelSection: View {
-    @Bindable var preferences: Preferences
-
-    var body: some View {
-        Section {
-            TextField("Modèle", text: $preferences.aiModel)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-            Button("Modèle par défaut") { preferences.aiModel = Preferences.defaultAIModel }
-        } header: {
-            ListHeader {
-                Text("Modèle IA")
             }
         }
     }
