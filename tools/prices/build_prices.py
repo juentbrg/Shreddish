@@ -24,7 +24,8 @@ MIN_COUNT = 8
 QUANTILE = 0.5
 # Taille relevée retenue pour caler un format : au moins 3 relevés.
 PACK_MIN_COUNT = 3
-# Aliment Ciqual cuit : prix au g cuit = prix au g cru × "cooked" (g crus par g cuit) ; sans "cooked", non tarifé.
+# Aliment Ciqual cuit : prix au g cuit = prix au g cru × "cooked" (g crus par g cuit) ; sans "cooked", non tarifé,
+# sauf produit vendu cuit ("sold_cooked" dans foods.json).
 COOKED = re.compile(r"\b(cuit|cuite|cuits|cuites|bouilli|bouillie|roti|rotie|grille|grillee|poele|poelee|frit|frite|vapeur|poche|coque)\b|^oeuf dur")
 
 
@@ -179,7 +180,8 @@ def main(parquet, ciqual_path, foods_path, out_path):
         for entry in entries:
             if any(re.search(p, key) for p in entry["ciqual"]):
                 per_kg, yield_ = priced[entry["id"]]
-                if COOKED.search(key):
+                # « sold_cooked » : vendu tel quel cuit ou grillé (jambon cuit, cajou grillée), prix au g acheté.
+                if COOKED.search(key) and not entry.get("sold_cooked"):
                     if "cooked" not in entry:
                         break
                     yield_ = round(yield_ / entry["cooked"], 3)
