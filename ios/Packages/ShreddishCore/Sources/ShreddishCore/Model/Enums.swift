@@ -64,6 +64,16 @@ public enum MealType: String, Codable, Sendable, CaseIterable {
         case .dinner: 3
         }
     }
+
+    /// Heure habituelle (minutes depuis minuit) quand le repas n'a pas d'heure prévue.
+    public var typicalMinutes: Int {
+        switch self {
+        case .breakfast: 8 * 60
+        case .lunch: 12 * 60 + 30
+        case .snack: 16 * 60 + 30
+        case .dinner: 19 * 60 + 30
+        }
+    }
 }
 
 public enum Aisle: String, Codable, Sendable, CaseIterable {

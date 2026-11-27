@@ -100,7 +100,10 @@ public final class DayPlan {
     }
 
     public var day: LocalDay { LocalDay(key: dayKey) }
-    public var sortedMeals: [Meal] { meals.sorted { $0.order < $1.order } }
+    /// Repas dans l'ordre de la journée : heure prévue, sinon heure habituelle du type ; ordre d'origine à égalité.
+    public var sortedMeals: [Meal] {
+        meals.sorted { ($0.clockMinutes, $0.order) < ($1.clockMinutes, $1.order) }
+    }
     public var sortedExtras: [ExtraEntry] { extras.sorted { $0.loggedAt < $1.loggedAt } }
 
     public var plannedTotals: MacroTotals { meals.map(\.macros).sum() }
@@ -163,6 +166,9 @@ public final class Meal {
     }
 
     public var type: MealType { MealType(rawValue: typeRaw) ?? .lunch }
+
+    /// Heure du repas en minutes depuis minuit : heure prévue, sinon heure habituelle du type.
+    public var clockMinutes: Int { SupplementPlacement.minutes(time) ?? type.typicalMinutes }
 
     public var status: MealStatus {
         get { MealStatus(rawValue: statusRaw) ?? .planned }

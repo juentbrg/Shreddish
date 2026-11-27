@@ -69,6 +69,19 @@ struct PlanStoreTests {
         #expect(day.actualTotals.kcal == meals[1].kcal + 300)
     }
 
+    @Test func mealsSortedByTimeOfDay() throws {
+        // Collation à 20:15 après le dîner de 19:00 : affichée après lui, même si le type la place avant.
+        let day = DayPlan(day: Self.start, offset: 0)
+        let meal = { (type: MealType, time: String?, order: Int) in
+            Meal(dto: MealDTO(type: type, name: "\(type)-\(time ?? "nil")", ingredients: [], steps: [], prepMinutes: 0,
+                              costEur: 0, kcal: 0, proteinG: 0, carbsG: 0, fatG: 0, prepSessionRef: nil, time: time),
+                 order: order)
+        }
+        day.meals = [meal(.lunch, "13:00", 0), meal(.snack, "15:30", 1), meal(.snack, "20:15", 2),
+                     meal(.dinner, "19:00", 3), meal(.breakfast, nil, 4)]
+        #expect(day.sortedMeals.map(\.name) == ["breakfast-nil", "lunch-13:00", "snack-15:30", "dinner-19:00", "snack-20:15"])
+    }
+
     // MARK: Spec 006 : semaine à venir
 
     @Test func upcomingWeekTrimsOverlappingDays() throws {
